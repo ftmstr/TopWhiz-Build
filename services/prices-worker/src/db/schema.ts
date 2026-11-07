@@ -78,3 +78,29 @@ export const priceObservations = pgTable("price_observations", {
 }, (table) => [
   index("price_observations_offer_observed_idx").on(table.offerId, table.observedAt)
 ]);
+
+
+export const sourceImportBatches = pgTable("source_import_batches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  merchantId: uuid("merchant_id").notNull().references(() => merchants.id),
+  collectionMethod: varchar("collection_method", { length: 24 }).notNull(),
+  rightsEvidenceRef: text("rights_evidence_ref").notNull(),
+  sourceBatchKey: varchar("source_batch_key", { length: 160 }).notNull(),
+  status: varchar("status", { length: 24 }).notNull().default("pending_review"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex("source_import_batches_unique_idx").on(table.merchantId, table.sourceBatchKey)
+]);
+
+export const stagedPriceRecords = pgTable("staged_price_records", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  batchId: uuid("batch_id").notNull().references(() => sourceImportBatches.id),
+  externalOfferId: varchar("external_offer_id", { length: 120 }).notNull(),
+  payload: text("payload").notNull(),
+  validationStatus: varchar("validation_status", { length: 24 }).notNull(),
+  rejectionReasons: text("rejection_reasons").notNull(),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex("staged_price_records_unique_idx").on(table.batchId, table.externalOfferId),
+  index("staged_price_records_status_idx").on(table.validationStatus, table.receivedAt)
+]);
