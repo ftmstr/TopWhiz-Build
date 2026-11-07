@@ -36,6 +36,17 @@ All **15** source PNG assets were copied byte-for-byte to GitHub binary blobs af
 
 **Total source size:** 17180538 bytes.
 
+## Verified image characteristics
+
+The 15 downloaded files were decoded with an image parser and independently checked against their exact Git blob SHA-1 identities.
+
+- **3 full-logo sources:** 1254 × 1254 pixels, `RGB` (no alpha channel).
+- **6 TW marks:** actual 512 × 512 or 1024 × 1024 pixels matching each filename; `RGBA` color mode.
+- **6 app icons:** actual 512 × 512 or 1024 × 1024 pixels matching each filename; `RGBA` color mode.
+- Every file successfully passed a PNG structural decode/verification; all 15 locally computed Git blob hashes matched the GitHub-uploaded blobs.
+
+Note: an RGBA mode supplies an alpha channel but does not, by itself, prove that every background pixel is transparent. Appearance should be reviewed in context.
+
 ## Asset governance
 
 1. Maintain original filenames for reproducibility.
