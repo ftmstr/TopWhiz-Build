@@ -1,0 +1,98 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import pg from "pg";
+import { CmsRepository } from "../src/cms/repository";
+
+const connectionString=process.env.TEST_DATABASE_URL;
+if(!connectionString)throw Error("TEST_DATABASE_URL required; CMS integration cannot silently skip");
+const when=new Date("2026-11-07T20:30:00Z");
+const text=(
+  "Bu içerik yalnızca sentetik PostgreSQL entegrasyon testi içindir. "+
+  "Gerçek bir cihaz, kullanıcıya açık haber veya lisanslı kaynak olduğunu iddia etmez. "+
+  "Karantina, hak denetimi ve atomik yayınlama sonuçları test edilir."
+);
+function news(title="Tamamen sentetik teknoloji haberi: ilk sürüm"){
+  return {
+    type:"news" as const,slug:"sentetik-teknoloji-haberi",
+    title,summary:"Bu tamamen kurgu metin, yayın işleminin güvenlik kapılarını ve veri sürümlerini test eder.",
+    body:text,language:"tr",observedAt:"2026-11-07T20:00:00Z",
+    sources:["test-manufacturer-source"],coverMediaId:"test-approved-hero"
+  };
+}
+test("Postgres 16 transactions: pending -> approved -> published -> revised -> withdrawn; durable outbox",async()=>{
+  const admin=new pg.Pool({connectionString,max:2});
+  await admin.query("CREATE SCHEMA IF NOT EXISTS tur006_cms_test");
+  const pool=new pg.Pool({connectionString,options:"-c search_path=tur006_cms_test",max:3});
+  const cms=new CmsRepository(pool);
+  try{
+    for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql"]){
+      await pool.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
+    }
+    const first=await cms.submit("test-intake-key-v1",news());
+    assert.equal(first.state,"pending_review");
+    const same=await cms.submit("test-intake-key-v1",news());
+    assert.equal(same.id,first.id);assert.equal(same.replay,true);
+    await assert.rejects(
+      ()=>cms.submit("test-intake-key-v1",news("Başka bir başlıkla yapılan hatalı tekrar denemesi")),
+      /external_key_conflict/);
+    const prior=await cms.publish(first.id,1,when);
+    assert.equal(prior.state,"quarantined");
+    assert.ok(prior.failures?.includes("source_rights_missing"));
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM published_content_versions")).rows[0].n,0);
+    await pool.query(
+      "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,rights_approved,reviewed_by) VALUES($1,'official',$2,true,'synthetic-reviewer')",
+      ["test-manufacturer-source","SYNTHETIC_SOURCE_LICENSE"]);
+    await pool.query(
+      "INSERT INTO cms_media_assets(id,r2_key,content_type,bytes,sha256_hex,alt_text,license_evidence_ref,rights_approved,reviewed_by) VALUES($1,$2,'image/png',24,$3,'Synthetic test image','SYNTHETIC_MEDIA_LICENSE',true,'synthetic-reviewer')",
+      ["test-approved-hero","media/reviewed/test-approved-hero/fake.png","a".repeat(64)]);
+    async function grant(revision:number){
+      await pool.query(
+        "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at) VALUES($1,$2,true,true,true,true,'independent-test-reviewer',$3)",
+        [first.id,revision,when]);
+    }
+    await grant(1);
+    const firstPublished=await cms.publish(first.id,1,when);
+    assert.equal(firstPublished.state,"published");assert.equal(firstPublished.version,1);
+    assert.deepEqual(firstPublished.routes,["/haberler/sentetik-teknoloji-haberi","/haberler","/"]);
+    const replay=await cms.publish(first.id,1,when);
+    assert.equal(replay.replay,true);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM cms_delivery_outbox")).rows[0].n,1);
+
+    const rev=await cms.revise(first.id,1,news("Tamamen sentetik teknoloji haberi: ikinci sürüm"));
+    assert.equal(rev.revision,2);
+    await assert.rejects(()=>cms.revise(first.id,1,news()),/revision_conflict/);
+    const deniedRev=await cms.publish(first.id,2,when);
+    assert.equal(deniedRev.state,"quarantined");
+    // A failed draft revision cannot change the public immutable version.
+    const publicBefore=await pool.query(
+      "SELECT v.public_payload FROM content_submissions s JOIN published_content_versions v ON v.submission_id=s.id WHERE s.id=$1 ORDER BY v.version DESC LIMIT 1",
+      [first.id]);
+    assert.equal(publicBefore.rows[0].public_payload.title,news().title);
+    assert.equal((await pool.query("SELECT state FROM content_submissions WHERE id=$1",[first.id])).rows[0].state,"published");
+    await grant(2);
+    const second=await cms.publish(first.id,2,when);
+    assert.equal(second.version,2);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM published_content_versions")).rows[0].n,2);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM cms_delivery_outbox")).rows[0].n,2);
+
+    const removed=await cms.withdraw(first.id,2);
+    assert.equal(removed.version,3);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM published_route_bindings")).rows[0].n,0);
+    assert.equal((await pool.query("SELECT state FROM content_submissions WHERE id=$1",[first.id])).rows[0].state,"withdrawn");
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM cms_delivery_outbox")).rows[0].n,3);
+    await assert.rejects(()=>cms.publish(first.id,3,when),/withdrawn_requires_explicit_reactivation/);
+
+    const outbox=await cms.pendingOutbox();
+    assert.equal(outbox.length,3);
+    assert.equal(outbox[2].event_kind,"withdrawn");
+    assert.equal(await cms.markDelivered(outbox[0].id),true);
+    assert.equal(await cms.markDelivered(outbox[0].id),false);
+    assert.equal((await cms.pendingOutbox()).length,2);
+    // No real phone, merchant, or news data crossed the test database boundary.
+  }finally{
+    await pool.end();
+    await admin.query("DROP SCHEMA IF EXISTS tur006_cms_test CASCADE");
+    await admin.end();
+  }
+});
