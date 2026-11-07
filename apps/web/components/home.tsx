@@ -67,7 +67,7 @@ export function Home() {
             <span className="logo-word">TOP<span>WHIZ</span></span>
           </a>
           <nav className="nav-links" aria-label="Ana menü">
-            <a href="#catalog">Cihazlar</a><a href="#compare">Karşılaştır</a><a href="#prices">Fiyatlar</a><a href="#how">Nasıl çalışır?</a>
+            <a href="/telefonlar">Telefonlar</a><a href="/haberler">Haberler</a><a href="#compare">Karşılaştır</a><a href="#prices">Fiyatlar</a><a href="#how">Nasıl çalışır?</a>
           </nav>
           <a className="header-action" href="#catalog">Cihazları keşfet <span aria-hidden="true">↗</span></a>
         </div>
