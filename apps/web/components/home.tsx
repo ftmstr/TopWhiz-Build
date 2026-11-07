@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
 import { PriceComparison } from "./price-comparison";
 import { AdSlot } from "./ad-slots";
+import { approvedContent } from "../lib/content-registry";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
@@ -93,6 +94,25 @@ export function Home() {
         </section>
 
         <div className="container"><div className="feature-strip"><div><span className="feature-icon red">01</span><strong>Keşfet</strong><small>Kategori ve arama</small></div><div><span className="feature-icon blue">02</span><strong>Karşılaştır</strong><small>Yan yana özellikler</small></div><div><span className="feature-icon gold">03</span><strong>Değerlendir</strong><small>Kaynaklı karar desteği hedefi</small></div></div></div>
+
+
+        <section className="section container" id="news" aria-labelledby="news-title">
+          <div className="section-top">
+            <div><span className="section-kicker">GÜNCEL TEKNOLOJİ HABERLERİ</span>
+              <h2 id="news-title">Yeni gelişmeleri <span>keşfet.</span></h2>
+              <p>Doğrulanıp yayımlanan haberler standart sayfa şablonuyla burada otomatik görünür.</p>
+            </div>
+            <a className="btn btn-secondary" href="/haberler">Tüm haberler</a>
+          </div>
+          {approvedContent.news.length ? <div className="article-list">
+            {[...approvedContent.news].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)).slice(0,3).map(article=>
+              <article className="article-item" key={article.slug}>
+                <h3><a href={"/haberler/"+article.slug}>{article.title}</a></h3>
+                <p>{article.summary}</p>
+                <time dateTime={article.publishedAt}>{article.publishedAt.slice(0,10)}</time>
+              </article>)}
+          </div> : <div className="empty-state">Henüz doğrulanmış yayımlanmış haber yok. Kurgusal haber üretilmeyecek.</div>}
+        </section>
 
         <section className="section container" id="catalog" aria-labelledby="catalog-title">
           <div className="section-top"><div><span className="section-kicker">CİHAZ KATALOĞU</span><h2 id="catalog-title">Merak ettiğin teknolojiyi <span>bul.</span></h2><p>Arama ve filtreleme etkileşimlerini test etmek için hazırlanmış örnek katalog.</p></div><span className="section-stamp">TUR 002 · İLK TASARIM</span></div>
