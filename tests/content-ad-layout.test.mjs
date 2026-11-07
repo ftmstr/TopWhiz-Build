@@ -7,11 +7,9 @@ const now = new Date("2026-11-07T18:00:00Z");
 const context = {
   sourceRightsApproved:true,sourceRightsRef:"independent-reviewed-license",
   editorialVerification:"verified", approvedSourceIds:["official-release"],
-  approvedMediaIds:["owned-cover"], originali tyChecked:true,
+  approvedMediaIds:["owned-cover"], originalityChecked:true,
   sourceType:"manufacturer", specificationsVerified:true
 };
-context.originalityChecked=true;
-delete context["originali tyChecked"];
 const base = {
   type:"news",slug:"test-cihaz-duyurusu",
   title:"Tamamen kurgusal cihaz duyurusu",
