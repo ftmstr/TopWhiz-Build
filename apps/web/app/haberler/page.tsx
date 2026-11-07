@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { approvedContent, safeMediaPath } from "../../lib/content-registry";
+import { safeMediaPath } from "../../lib/content-registry";
+import { listCmsNews } from "../../lib/cms-runtime";
 import { EditorialShell } from "../../components/editorial-shell";
 
-export default function NewsIndex(){
-  const articles=[...approvedContent.news].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt));
+export default async function NewsIndex(){
+  const articles=(await listCmsNews()).sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt));
   return <EditorialShell>
     <section className="section container">
       <span className="section-kicker">TOPWHIZ HABERLER</span>

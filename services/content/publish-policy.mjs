@@ -63,6 +63,14 @@ export function assessPublishableContent(content, trustedContext, now = new Date
         v.storageGb <= 0 || !Number.isInteger(v.ramGb) || v.ramGb < 0 ||
         !isSafeText(v.warrantyClass, 2, 50))) failures.push("invalid_phone_variants");
     if (!trustedContext?.specificationsVerified) failures.push("specifications_not_verified");
+    if (!Array.isArray(content.specifications) || content.specifications.length === 0 ||
+        content.specifications.length > 120 ||
+        content.specifications.some(field => !field ||
+          !isSafeText(field.label, 2, 160) || !isSafeText(field.value, 1, 280) ||
+          typeof field.sourceId !== "string" ||
+          !trustedContext?.approvedSourceIds?.includes(field.sourceId))) {
+      failures.push("unverified_specification_sources");
+    }
   }
   return {
     status: failures.length ? "quarantined" : "ready_for_auto_publish",

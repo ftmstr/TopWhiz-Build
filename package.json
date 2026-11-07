@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "packageManager": "pnpm@10.18.3",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "pnpm --filter @topwhiz/web dev",
     "build": "pnpm --filter @topwhiz/web build",
     "typecheck": "pnpm --filter @topwhiz/web typecheck && pnpm --filter @topwhiz/prices-worker typecheck",
     "worker:check": "pnpm --filter @topwhiz/prices-worker build:check",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "cms:dry-run": "pnpm --filter @topwhiz/prices-worker cms:dry-run"
   }
 }

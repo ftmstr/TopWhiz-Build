@@ -1,0 +1,9 @@
+# TUR006: dry-run only. NO queues consumers, R2 buckets, routes or secrets.
+# All live Cloudflare bindings require separate authorized provisioning/review.
+name = "topwhiz-cms-purge-preview"
+main = "src/cms/queue-purge-worker.ts"
+compatibility_date = "2026-11-07"
+workers_dev = false
+
+[observability]
+enabled = false

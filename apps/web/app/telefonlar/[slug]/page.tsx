@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { approvedContent, safeMediaPath } from "../../../lib/content-registry";
+import { safeMediaPath } from "../../../lib/content-registry";
+import { getCmsPhone } from "../../../lib/cms-runtime";
 import { EditorialShell } from "../../../components/editorial-shell";
 
 export default async function PhonePage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
-  const phone=approvedContent.phones.find(item=>item.slug===slug);
+  const phone=await getCmsPhone(slug);
   if(!phone)return notFound();
   const image=safeMediaPath(phone.mediaPath);
   return <EditorialShell>

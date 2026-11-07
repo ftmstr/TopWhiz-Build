@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { approvedContent, safeMediaPath } from "../../../lib/content-registry";
+import { safeMediaPath } from "../../../lib/content-registry";
+import { getCmsNews } from "../../../lib/cms-runtime";
 import { EditorialShell } from "../../../components/editorial-shell";
 
 export default async function StoryPage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
-  const article=approvedContent.news.find(item=>item.slug===slug);
+  const article=await getCmsNews(slug);
   if(!article)return notFound();
   const image=safeMediaPath(article.mediaPath);
   return <EditorialShell>

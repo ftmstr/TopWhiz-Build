@@ -37,7 +37,8 @@ test("AI self-certification cannot override trusted editorial rights",()=>{
 });
 test("verified phone schema maps to phone catalog and compare templates",()=>{
   const phone={...base,type:"phone",brand:"Fictional",modelCode:"M-01",
-    market:"TR",variants:[{storageGb:256,ramGb:12,warrantyClass:"standard"}]};
+    market:"TR",variants:[{storageGb:256,ramGb:12,warrantyClass:"standard"}],
+    specifications:[{label:"Ekran",value:"6 inç",sourceId:"official-release"}]};
   delete phone.body;
   const result=assessPublishableContent(phone,context,now);
   assert.equal(result.status,"ready_for_auto_publish");

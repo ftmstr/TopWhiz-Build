@@ -1,0 +1,55 @@
+name: TUR006 CMS transactions, queues, R2, immutable publication
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur006-cms-transactions-workers-20261107
+
+permissions:
+  contents: read
+
+jobs:
+  cms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@localhost:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen install (no network lock drift)
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: All policy, media, queue, content and web unit tests
+        run: pnpm test
+      - name: Inherited PostgreSQL pricing and staging migrations
+        run: pnpm --filter @topwhiz/prices-worker test:pg
+      - name: CMS real PostgreSQL publication transactions
+        run: pnpm --filter @topwhiz/prices-worker test:cms
+      - name: TypeScript compile checks
+        run: pnpm typecheck
+      - name: Next.js static/SSR production build
+        run: pnpm build
+      - name: Price API Workers dry-run (no deploy)
+        run: pnpm worker:check
+      - name: Queue purge worker dry-run (no deploy)
+        run: pnpm cms:dry-run
+      - name: vinext compatibility scan (no deploy)
+        run: pnpm --filter @topwhiz/web compat:check
