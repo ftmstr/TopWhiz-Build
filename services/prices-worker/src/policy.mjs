@@ -18,6 +18,7 @@ export function verifiedMerchantUrl(raw, allowedHosts) {
   try {
     const parsed = new URL(raw);
     const host = parsed.hostname.toLowerCase();
+    if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) return null;
     if (parsed.protocol !== "https:" || parsed.username || parsed.password ||
         parsed.port || parsed.hash || !SAFE_HOSTNAME.test(host) ||
         !host.includes(".") || host.endsWith(".localhost") ||
