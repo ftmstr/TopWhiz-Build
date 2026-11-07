@@ -8,7 +8,8 @@
     "build:check": "wrangler deploy --dry-run --outdir dist",
     "test:pg": "tsx --test tests/postgres.integration.test.ts",
     "test:cms": "tsx --test tests/cms.integration.test.ts",
-    "cms:dry-run": "wrangler deploy --dry-run --config wrangler.cms.toml --outdir dist-cms"
+    "cms:dry-run": "wrangler deploy --dry-run --config wrangler.cms.toml --outdir dist-cms",
+    "test:cms-e2e": "tsx --test tests/cms-e2e.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
