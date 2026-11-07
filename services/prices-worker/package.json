@@ -1,0 +1,18 @@
+{
+  "name": "@topwhiz/prices-worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build:check": "wrangler deploy --dry-run --outdir dist"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "wrangler": "4.131.0"
+  }
+}
