@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
 import { PriceComparison } from "./price-comparison";
 import { AdSlot } from "./ad-slots";
-import { approvedContent, safeMediaPath } from "../lib/content-registry";
+import { safeMediaPath, type PublishedStory } from "../lib/content-registry";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
