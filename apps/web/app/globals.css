@@ -124,3 +124,20 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .prices-empty { padding: 40px 22px; color: #a9bad3; font-size: 12px; text-align: center; line-height: 1.65; }
 @media (max-width: 760px) { .prices-controls { grid-template-columns: 1fr; gap: 12px; padding: 15px; }.prices-offer { grid-template-columns: 1fr 1fr; gap: 13px; padding: 18px 15px; }.prices-action { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; } .prices-amount strong { font-size: 18px; } }
 @media (max-width: 420px) { .prices-offer { grid-template-columns: 1fr; }.prices-action { grid-column: 1; }.prices-amount strong { font-size: 22px; } }
+
+/* TUR005: reserved ad placements. No ad code, clickable placeholders or overlays. */
+.topwhiz-ad-slot { box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; text-align:center; border:1px dashed #637188; background:#151f30; color:#d0d8e7; border-radius:12px; margin:22px auto; padding:12px; }
+.topwhiz-ad-slot .ad-slot-label { font-size:10px; color:#f0c464; font-weight:800; letter-spacing:.12em; }
+.topwhiz-ad-slot .ad-slot-hint { font-size:10px; color:#96a8c3; }
+.ad-top, .ad-bottom { width:min(1152px, calc(100% - 48px)); min-height:92px; }
+.topwhiz-with-rail { width:min(1590px,100%); display:grid; grid-template-columns:minmax(0,1fr); gap:24px; margin:0 auto; }
+.topwhiz-main { min-width:0; }
+.topwhiz-rail { display:none; }
+@media (min-width: 1410px) {
+  .topwhiz-with-rail { grid-template-columns:minmax(0,1fr) 275px; padding:0 24px; }
+  .topwhiz-rail { display:block; align-self:start; }
+  .ad-right { width:100%; min-height:540px; margin:58px 0 0; }
+}
+@media (max-width:760px) {
+  .ad-top,.ad-bottom { width:calc(100% - 32px); min-height:90px; }
+}
