@@ -62,13 +62,15 @@ export async function stageFeedBatch(db: NodePgDatabase, batch: IngestionBatch, 
       merchantId: batch.merchantId,
       sourceBatchKey: batch.sourceBatchKey,
       collectionMethod: batch.collectionMethod,
-      rightsEvidenceRef: merchant.rightsEvidenceRef || "UNVERIFIED_SOURCE_RIGHTS",
+      rightsEvidenceRef: merchant.rightsEvidenceRef,
       status: results.every((row) => row.status === "quarantined") ? "quarantined" : "pending_review"
     }).returning({ id: sourceImportBatches.id });
     if (!created) throw new Error("insert_failed");
     await tx.insert(stagedPriceRecords).values(batch.rows.map((row, index) => ({
       batchId: created.id,
-      externalOfferId: row.externalOfferId,
+      externalOfferId: typeof row.externalOfferId === "string" && /^[A-Za-z0-9._:-]{1,120}$/.test(row.externalOfferId)
+        ? row.externalOfferId : "invalid-row-" + index,
+      rowIndex: index,
       payload: row,
       validationStatus: results[index].status,
       rejectionReasons: results[index].reasons
