@@ -4,7 +4,7 @@
  * rights-cleared database, never from public demo fixtures.
  */
 import {
-  boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid, varchar
+  boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid, varchar
 } from "drizzle-orm/pg-core";
 
 export const deviceVariants = pgTable("device_variants", {
@@ -96,9 +96,9 @@ export const stagedPriceRecords = pgTable("staged_price_records", {
   id: uuid("id").primaryKey().defaultRandom(),
   batchId: uuid("batch_id").notNull().references(() => sourceImportBatches.id),
   externalOfferId: varchar("external_offer_id", { length: 120 }).notNull(),
-  payload: text("payload").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
   validationStatus: varchar("validation_status", { length: 24 }).notNull(),
-  rejectionReasons: text("rejection_reasons").notNull(),
+  rejectionReasons: jsonb("rejection_reasons").$type<string[]>().notNull().default([]),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow()
 }, (table) => [
   uniqueIndex("staged_price_records_unique_idx").on(table.batchId, table.externalOfferId),
