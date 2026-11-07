@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
 import { PriceComparison } from "./price-comparison";
 import { AdSlot } from "./ad-slots";
-import { approvedContent } from "../lib/content-registry";
+import { approvedContent, safeMediaPath } from "../lib/content-registry";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
@@ -107,6 +107,7 @@ export function Home() {
           {approvedContent.news.length ? <div className="article-list">
             {[...approvedContent.news].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)).slice(0,3).map(article=>
               <article className="article-item" key={article.slug}>
+                {safeMediaPath(article.mediaPath) && <Image className="article-thumb" src={safeMediaPath(article.mediaPath)!} alt={article.mediaAlt || article.title} width={640} height={360}/>}
                 <h3><a href={"/haberler/"+article.slug}>{article.title}</a></h3>
                 <p>{article.summary}</p>
                 <time dateTime={article.publishedAt}>{article.publishedAt.slice(0,10)}</time>
