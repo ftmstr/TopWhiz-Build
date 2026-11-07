@@ -111,6 +111,16 @@ export class CmsRepository{
         author:"TOPWHIZ Editör Ekibi"};
       delete safe.mediaPath;delete safe.mediaUrl;
       if(!authorization.approvedMediaIds.length)delete safe.coverMediaId;
+      if(row.content_type==="phone" && Array.isArray(row.payload.specifications)){
+        const sourceNames=new Map((row.payload.sources??[]).map((id,index)=>[
+          id,authorization.publicSourceLinks[index]?.label
+        ]));
+        safe.specifications=row.payload.specifications.map(item=>{
+          const field=item as {label:string;value:string;sourceId:string};
+          return {label:field.label,value:field.value,
+            sourceLabel:sourceNames.get(field.sourceId)??"Verified source"};
+        });
+      }
       await c.query("INSERT INTO published_content_versions(submission_id,version,public_payload) VALUES($1,$2,$3::jsonb)",
         [id,expectedRevision,JSON.stringify(safe)]);
       await c.query("DELETE FROM published_route_bindings WHERE submission_id=$1",[id]);
