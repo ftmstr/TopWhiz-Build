@@ -118,14 +118,16 @@ jobs:
           node-version: "22"
       - name: Frozen install
         run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
-      - name: Activate CI-only HTTPS API interception after dependencies and checkout
-        run: echo "NODE_OPTIONS=--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" >> "$GITHUB_ENV"
       - name: Create two approved CI-only news/phone records in real Postgres
         run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
       - name: Build website using real Postgres-backed CMS API contract (isolated fetch shim)
         run: pnpm build
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
       - name: Verify actual Next.js SSR renders database API, image and reserved Ads slots
         shell: bash
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
         run: |
           pnpm --filter @topwhiz/web exec next start -p 3108 > /tmp/topwhiz-ci-api-server.log 2>&1 &
           server_pid=$!
