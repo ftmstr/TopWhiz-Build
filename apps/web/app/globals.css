@@ -160,3 +160,5 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .editorial-specs th,.editorial-specs td { padding:12px 10px; border-bottom:1px solid #2e3c56; text-align:left; font-size:12px; }
 .editorial-specs th { color:#d3e1fa; }
 @media(max-width:760px) { .editorial-article .article-body { font-size:14px; } }
+
+.article-thumb { display:block; width:100%; height:auto; max-height:270px; object-fit:contain; background:#141f31; border-radius:10px; margin-bottom:15px; }
