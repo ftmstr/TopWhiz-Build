@@ -44,13 +44,13 @@ test("migrations + Drizzle inserts + rights-gated staging persist to isolated Po
     };
     const result=await stageFeedBatch(db,{
       sourceBatchKey:"test-batch-001",merchantId:merchant.id,
-      collectionMethod:"authorized_feed",rows:[item,{...item,externalOfferId:"bad-2",productUrl:"https://evil.example.net/item"}]
+      collectionMethod:"authorized_feed",rows:[item,{...item,externalOfferId:"bad-2",productUrl:"https://evil.example.net/item"},item]
     },fixtureNow);
     assert.equal(result.staged,1);
-    assert.equal(result.quarantined,1);
+    assert.equal(result.quarantined,2);
     assert.equal(result.published,0);
     const stored=await db.select().from(stagedPriceRecords);
-    assert.deepEqual(stored.map(v=>v.validationStatus).sort(),["pending_review","quarantined"].sort());
+    assert.deepEqual(stored.map(v=>v.validationStatus).sort(),["pending_review","quarantined","quarantined"].sort());
     assert.equal((await db.select().from(merchantOffers)).length,0);
     assert.equal((await db.select().from(priceObservations)).length,0);
     await assert.rejects(
