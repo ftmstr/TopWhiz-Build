@@ -48,7 +48,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
       ["test-approved-hero","media/reviewed/test-approved-hero/fake.png","a".repeat(64)]);
     async function grant(revision:number){
       await pool.query(
-        "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at) VALUES($1,$2,true,true,true,true,'independent-test-reviewer',$3)",
+        "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,credited_author,verified_at) VALUES($1,$2,true,true,true,true,'independent-test-reviewer','Synthetic Test Writer',$3)",
         [first.id,revision,when]);
     }
     await grant(1);
@@ -69,6 +69,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
       "SELECT v.public_payload FROM content_submissions s JOIN published_content_versions v ON v.submission_id=s.id WHERE s.id=$1 ORDER BY v.version DESC LIMIT 1",
       [first.id]);
     assert.equal(publicBefore.rows[0].public_payload.title,news().title);
+    assert.equal(publicBefore.rows[0].public_payload.author,"Synthetic Test Writer");
     assert.equal((await pool.query("SELECT state FROM content_submissions WHERE id=$1",[first.id])).rows[0].state,"published");
     await grant(2);
     const second=await cms.publish(first.id,2,when);
@@ -104,7 +105,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
     const unreviewed=await cms.publish(phoneRecord.id,1,when);
     assert.equal(unreviewed.state,"quarantined");
     await pool.query(
-      "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at) VALUES($1,1,true,true,true,true,'independent-test-reviewer',$2)",
+      "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,credited_author,verified_at) VALUES($1,1,true,true,true,true,'independent-test-reviewer','Synthetic Test Writer',$2)",
       [phoneRecord.id,when]);
     const phonePublished=await cms.publish(phoneRecord.id,1,when);
     assert.equal(phonePublished.state,"published");
