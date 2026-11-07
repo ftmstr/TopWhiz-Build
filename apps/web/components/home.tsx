@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
+import { PriceComparison } from "./price-comparison";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
@@ -32,6 +33,7 @@ export function Home() {
   const [category, setCategory] = useState<Category>("Tümü");
   const [leftId, setLeftId] = useState("orion-a1");
   const [rightId, setRightId] = useState("orion-max");
+  const [priceDeviceId, setPriceDeviceId] = useState("orion-max");
   const filtered = useMemo(() => demoCatalog.filter((device) =>
     (category === "Tümü" || device.category === category) &&
     (device.name + " " + device.category + " " + device.tag).toLocaleLowerCase("tr").includes(query.trim().toLocaleLowerCase("tr"))
@@ -48,6 +50,11 @@ export function Home() {
     document.getElementById("compare")?.scrollIntoView({ behavior: "smooth" });
   }
 
+  function selectPrices(deviceId: string) {
+    setPriceDeviceId(deviceId);
+    document.getElementById("prices")?.scrollIntoView({ behavior: "smooth" });
+  }
+
   return (
     <>
       <a className="skip-link" href="#main">İçeriğe geç</a>
@@ -59,7 +66,7 @@ export function Home() {
             <span className="logo-word">TOP<span>WHIZ</span></span>
           </a>
           <nav className="nav-links" aria-label="Ana menü">
-            <a href="#catalog">Cihazlar</a><a href="#compare">Karşılaştır</a><a href="#how">Nasıl çalışır?</a>
+            <a href="#catalog">Cihazlar</a><a href="#compare">Karşılaştır</a><a href="#prices">Fiyatlar</a><a href="#how">Nasıl çalışır?</a>
           </nav>
           <a className="header-action" href="#catalog">Cihazları keşfet <span aria-hidden="true">↗</span></a>
         </div>
@@ -92,10 +99,12 @@ export function Home() {
           <div className="result-caption" aria-live="polite">{filtered.length} örnek cihaz gösteriliyor</div>
           {filtered.length ? <div className="catalog-grid">{filtered.map((device) => <article className="device-card" key={device.id}>
             <DeviceVisual category={device.category} color={device.color} />
-            <div className="card-body"><div className="card-topline"><span>{device.category}</span><span className="sample-tag">DEMO</span></div><h3>{device.name}</h3><p>{device.tag}</p><div className="card-details"><span>{device.specs.display}</span><span>{device.specs.ram} RAM</span></div><button className="card-action" type="button" onClick={() => selectCompare(device.id)}>Karşılaştır <span aria-hidden="true">↗</span></button></div>
+            <div className="card-body"><div className="card-topline"><span>{device.category}</span><span className="sample-tag">DEMO</span></div><h3>{device.name}</h3><p>{device.tag}</p><div className="card-details"><span>{device.specs.display}</span><span>{device.specs.ram} RAM</span></div><button className="card-action" type="button" onClick={() => selectCompare(device.id)}>Karşılaştır <span aria-hidden="true">↗</span></button><button className="card-action" type="button" onClick={() => selectPrices(device.id)}>Fiyatları gör <span aria-hidden="true">↗</span></button></div>
           </article>)}</div> : <div className="empty-state">Bu arama için örnek cihaz bulunamadı. Arama ifadesini veya kategoriyi değiştirin.</div>}
           <p className="data-note"><strong>Veri uyarısı:</strong> Bu bölümdeki marka, model, teknik özellik ve cihaz adları arayüz testi için kurgulanmıştır. Gerçek cihaz, güncel fiyat veya performans sonucu olarak kullanılmamalıdır.</p>
         </section>
+
+        <PriceComparison selectedDeviceId={priceDeviceId} onDeviceChange={setPriceDeviceId} />
 
         <section className="section comparison-section" id="compare" aria-labelledby="compare-title"><div className="container">
           <div className="section-top"><div><span className="section-kicker">AKILLI KIYASLAMA ALANI</span><h2 id="compare-title">Detaylarda <span>farkı gör.</span></h2><p>İki örnek cihaz seç; teknik özelliklerini aynı tabloda incele.</p></div><span className="section-stamp comparison-stamp">ETKİLEŞİMLİ DEMO</span></div>
