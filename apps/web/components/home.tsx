@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
 import { PriceComparison } from "./price-comparison";
+import { AdSlot } from "./ad-slots";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
@@ -72,7 +73,9 @@ export function Home() {
         </div>
       </header>
 
-      <main id="main">
+      <AdSlot placement="top" />
+      <div className="topwhiz-with-rail">
+      <main id="main" className="topwhiz-main">
         <section className="hero container" id="top" aria-labelledby="hero-title">
           <div className="hero-copy">
             <div className="eyebrow"><span className="eyebrow-line" /> TEKNOLOJİYİ ANLAMANIN YENİ YOLU</div>
@@ -121,6 +124,9 @@ export function Home() {
           <div className="principle-grid"><article><span className="principle-index">01 / DOĞRULAMA</span><h3>Kaynağı belli bilgiler</h3><p>Her gerçek teknik özelliğin doğrulanabilir kaynak, tarih ve model varyantıyla ilişkilendirilmesi.</p></article><article><span className="principle-index">02 / KARŞILAŞTIRMA</span><h3>Aynı ölçü, net kıyas</h3><p>RAM, depolama, ekran ve benchmark gibi verilerin birim ve sürüm farklılıkları korunarak sunulması.</p></article><article><span className="principle-index">03 / ŞEFFAFLIK</span><h3>Eksik veriyi gizleme</h3><p>Henüz doğrulanmamış bilgi, fiyat ve görsellerin kesinmiş gibi yayınlanmaması.</p></article></div>
         </section>
       </main>
+      <aside className="topwhiz-rail" aria-label="Sağ reklam yerleşimi"><AdSlot placement="right" /></aside>
+      </div>
+      <AdSlot placement="bottom" />
       <footer className="site-footer"><div className="container footer-inner"><div><div className="footer-brand">TOP<span>WHIZ</span></div><small>Teknolojiyi anlamanın yeni yolu.</small></div><div className="footer-right"><span>Public GitHub geliştirme önizlemesi</span><span>© 2026 TOPWHIZ · Çalışma markası, marka incelemesi açık.</span></div></div></footer>
     </>
   );
