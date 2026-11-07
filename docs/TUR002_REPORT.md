@@ -34,3 +34,11 @@ Change type: staged web design preview; draft only.
 ## Recommendation
 
 Continue with evidence-first GitHub PR workflow: no automatic merging to main, no domain/hosting purchase yet, but start domain availability and official trademark checks now.
+
+## GitHub CI acceptance evidence (2026-11-07)
+
+- Run: https://github.com/ftmstr/TopWhiz-Build/actions/runs/42384164151
+- Workflow: TUR002 web design checks, pull_request, head d1115a5370a54a80d9623e163f6a5050bba06e44.
+- Verified completed **SUCCESS**: pnpm install, Node guardrail tests, TypeScript `tsc --noEmit`, Next.js `next build`.
+- This is build/logic evidence, **not** a visual desktop/mobile/browser acceptance or a production release approval.
+- The next documentation-only commit does not affect runtime code; after removing the external font import, re-check CI on the new HEAD.
