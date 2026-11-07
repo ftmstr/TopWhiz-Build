@@ -13,7 +13,7 @@ export default async function PhoneIndex(){
       <p className="hero-description">Marka, model, varyant ve teknik özellikleri doğrulanmış kayıtlar.</p>
       {phones.length?
         <div className="article-list">{phones.map(phone=><article className="article-item" key={phone.slug}>
-          {safeMediaPath(phone.mediaPath) && <Image className="article-thumb" src={safeMediaPath(phone.mediaPath)!} alt={phone.mediaAlt || phone.title} width={640} height={480}/>}
+          {safeMediaPath(phone.mediaPath) && <Image unoptimized className="article-thumb" src={safeMediaPath(phone.mediaPath)!} alt={phone.mediaAlt || phone.title} width={640} height={480}/>}
           <h2><Link href={"/telefonlar/"+phone.slug}>{phone.title}</Link></h2>
           <p>{phone.summary}</p>
           <small>{phone.brand} · {phone.modelCode} · {phone.market}</small>

@@ -16,7 +16,7 @@ export default async function PhonePage({params}:{params:Promise<{slug:string}>}
       <h1>{phone.title}</h1>
       <p className="hero-description">{phone.summary}</p>
       <p>{phone.brand} · Model: {phone.modelCode} · Bölge: {phone.market}</p>
-      {image && <figure><Image src={image} alt={phone.mediaAlt || phone.title} width={1000} height={800}/></figure>}
+      {image && <figure><Image unoptimized src={image} alt={phone.mediaAlt || phone.title} width={1000} height={800}/></figure>}
       <h2>Model varyantları</h2>
       <ul>{phone.variants.map((v,i)=><li key={i}>{v.name}: RAM {v.ramGb} GB · Depolama {v.storageGb} GB · {v.warrantyClass}</li>)}</ul>
       <h2>Teknik özellikler</h2>

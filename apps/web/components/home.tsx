@@ -64,7 +64,7 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
       <header className="site-header">
         <div className="container header-inner">
           <a className="logo-lockup" href="#top" aria-label="TOPWHIZ ana sayfa">
-            <span className="logo-thumb"><Image src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" alt="" width={52} height={52} /></span>
+            <span className="logo-thumb"><Image unoptimized src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" alt="" width={52} height={52} /></span>
             <span className="logo-word">TOP<span>WHIZ</span></span>
           </a>
           <nav className="nav-links" aria-label="Ana menü">
@@ -87,7 +87,7 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
           </div>
           <div className="hero-visual">
             <div className="hero-orbit orbit-1" /><div className="hero-orbit orbit-2" />
-            <div className="hero-logo-frame"><Image className="hero-logo" src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" width={720} height={720} alt="TOPWHIZ: gözlüklü teknolojik ejderha, kırmızı ve sarı halka, mavi dijital dünya ve teknoloji ürünleri" priority /></div>
+            <div className="hero-logo-frame"><Image unoptimized className="hero-logo" src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" width={720} height={720} alt="TOPWHIZ: gözlüklü teknolojik ejderha, kırmızı ve sarı halka, mavi dijital dünya ve teknoloji ürünleri" priority /></div>
             <div className="floating-label float-top">TECH <strong>DISCOVERY</strong></div>
             <div className="floating-label float-bottom"><span className="status-dot" /> YENİ BİR KIYASLAMA DENEYİMİ</div>
           </div>
@@ -107,7 +107,7 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
           {latestNews.length ? <div className="article-list">
             {[...latestNews].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)).slice(0,3).map(article=>
               <article className="article-item" key={article.slug}>
-                {safeMediaPath(article.mediaPath) && <Image className="article-thumb" src={safeMediaPath(article.mediaPath)!} alt={article.mediaAlt || article.title} width={640} height={360}/>}
+                {safeMediaPath(article.mediaPath) && <Image unoptimized className="article-thumb" src={safeMediaPath(article.mediaPath)!} alt={article.mediaAlt || article.title} width={640} height={360}/>}
                 <h3><a href={"/haberler/"+article.slug}>{article.title}</a></h3>
                 <p>{article.summary}</p>
                 <time dateTime={article.publishedAt}>{article.publishedAt.slice(0,10)}</time>

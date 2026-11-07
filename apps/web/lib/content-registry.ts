@@ -26,7 +26,8 @@ export interface PublishedPhone {
 export const approvedContent = data as {news:PublishedStory[]; phones:PublishedPhone[]};
 
 export function safeMediaPath(value: string | undefined): string | null {
-  if(!value || !/^\/media\/[a-z0-9/_-]+\.(?:webp|png|jpe?g)$/.test(value)) return null;
+  if(!value || !(/^\/media\/[a-z0-9/_-]+\.(?:webp|png|jpe?g)$/.test(value) ||
+    /^\/media\/cms\/[a-z0-9][a-z0-9_-]{0,95}$/.test(value))) return null;
   if(value.includes("//") || value.includes("..")) return null;
   return value;
 }
