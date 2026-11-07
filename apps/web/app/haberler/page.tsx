@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { approvedContent } from "../../lib/content-registry";
+import Image from "next/image";
+import { approvedContent, safeMediaPath } from "../../lib/content-registry";
 import { EditorialShell } from "../../components/editorial-shell";
 
 export default function NewsIndex(){
@@ -11,6 +12,7 @@ export default function NewsIndex(){
       <p className="hero-description">Kaynakları ve kullanım hakları kontrol edilmiş teknoloji haberleri.</p>
       {articles.length? <div className="article-list">{articles.map(article=>
         <article className="article-item" key={article.slug}>
+          {safeMediaPath(article.mediaPath) && <Image className="article-thumb" src={safeMediaPath(article.mediaPath)!} alt={article.mediaAlt || article.title} width={640} height={360}/>}
           <h2><Link href={"/haberler/"+article.slug}>{article.title}</Link></h2>
           <p>{article.summary}</p>
           <time dateTime={article.publishedAt}>{article.publishedAt.slice(0,10)}</time>
