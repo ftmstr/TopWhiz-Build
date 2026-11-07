@@ -1,0 +1,31 @@
+name: TUR004 price API checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur004-price-api-drizzle-20261107
+
+permissions:
+  contents: read
+
+jobs:
+  price-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies (temporary pre-lockfile gate)
+        run: pnpm install --no-frozen-lockfile
+      - name: Policy and repository tests
+        run: pnpm test
+      - name: Next.js + Worker type checks
+        run: pnpm typecheck
+      - name: Cloudflare Worker bundle dry-run (no deploy)
+        run: pnpm worker:check
