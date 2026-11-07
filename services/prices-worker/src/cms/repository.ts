@@ -55,7 +55,10 @@ async function trusted(c:PoolClient,row:Submission,now:Date){
     reviewer:permitted?grant.verified_by:null,
     creditedAuthor:permitted?grant.credited_author:null,
     mediaRightsRef:asset?.rights_approved?asset.license_evidence_ref:null,
-    publicSourceLinks: validSources?found.map(x=>({label:x.source_label,url:x.source_url})):[]
+    publicSourceLinks: validSources?sources.map(id=>{
+      const entry=found.find(x=>x.id===id);
+      return {id,label:entry!.source_label,url:entry!.source_url};
+    }):[]
   };
 }
 export class CmsRepository{
@@ -107,14 +110,14 @@ export class CmsRepository{
       const prior=(await c.query<{public_path:string}>("SELECT public_path FROM published_route_bindings WHERE submission_id=$1",[id]))
         .rows.map(r=>r.public_path);
       const safe:Record<string,unknown>={...row.payload,
-        sources:authorization.publicSourceLinks,
+        sources:authorization.publicSourceLinks.map(({label,url})=>({label,url})),
         publishedAt:now.toISOString(),
         author:authorization.creditedAuthor};
       delete safe.mediaPath;delete safe.mediaUrl;
       if(!authorization.approvedMediaIds.length)delete safe.coverMediaId;
       if(row.content_type==="phone" && Array.isArray(row.payload.specifications)){
-        const sourceNames=new Map((row.payload.sources??[]).map((id,index)=>[
-          id,authorization.publicSourceLinks[index]?.label
+        const sourceNames=new Map(authorization.publicSourceLinks.map(item=>[
+          item.id,item.label
         ]));
         safe.specifications=row.payload.specifications.map(item=>{
           const field=item as {label:string;value:string;sourceId:string};
