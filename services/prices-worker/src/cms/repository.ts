@@ -33,8 +33,8 @@ async function locked(c:PoolClient,id:string):Promise<Submission>{
 async function trusted(c:PoolClient,row:Submission,now:Date){
   const sources=Array.isArray(row.payload.sources)?row.payload.sources:[];
   const unique=new Set(sources);
-  const found=sources.length? (await c.query<{id:string;source_type:string;rights_ref:string;rights_approved:boolean}>(
-    "SELECT id,source_type,rights_ref,rights_approved FROM cms_trusted_sources WHERE id=ANY($1::varchar[])",[sources])).rows:[];
+  const found=sources.length? (await c.query<{id:string;source_type:string;rights_ref:string;rights_approved:boolean;source_label:string;source_url:string}>(
+    "SELECT id,source_type,rights_ref,rights_approved,source_label,source_url FROM cms_trusted_sources WHERE id=ANY($1::varchar[])",[sources])).rows:[];
   const validSources=sources.length>0&&unique.size===sources.length&&found.length===sources.length&&
     found.every(s=>s.rights_approved);
   const asset=row.payload.coverMediaId?(await c.query<{id:string;r2_key:string;license_evidence_ref:string;rights_approved:boolean}>(
@@ -53,7 +53,8 @@ async function trusted(c:PoolClient,row:Submission,now:Date){
     specificationsVerified:!!(permitted&&grant.specifications_verified),
     sourceType:validSources?found[0].source_type:"",
     reviewer:permitted?grant.verified_by:null,
-    mediaRightsRef:asset?.rights_approved?asset.license_evidence_ref:null
+    mediaRightsRef:asset?.rights_approved?asset.license_evidence_ref:null,
+    publicSourceLinks: validSources?found.map(x=>({label:x.source_label,url:x.source_url})):[]
   };
 }
 export class CmsRepository{
@@ -104,7 +105,11 @@ export class CmsRepository{
       }
       const prior=(await c.query<{public_path:string}>("SELECT public_path FROM published_route_bindings WHERE submission_id=$1",[id]))
         .rows.map(r=>r.public_path);
-      const safe={...row.payload};delete safe.mediaPath;delete safe.mediaUrl;
+      const safe={...row.payload,
+        sources:authorization.publicSourceLinks,
+        publishedAt:now.toISOString(),
+        author:"TOPWHIZ Editör Ekibi"};
+      delete safe.mediaPath;delete safe.mediaUrl;
       if(!authorization.approvedMediaIds.length)delete safe.coverMediaId;
       await c.query("INSERT INTO published_content_versions(submission_id,version,public_payload) VALUES($1,$2,$3::jsonb)",
         [id,expectedRevision,JSON.stringify(safe)]);
