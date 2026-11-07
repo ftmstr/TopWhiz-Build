@@ -42,3 +42,10 @@ Continue with evidence-first GitHub PR workflow: no automatic merging to main, n
 - Verified completed **SUCCESS**: pnpm install, Node guardrail tests, TypeScript `tsc --noEmit`, Next.js `next build`.
 - This is build/logic evidence, **not** a visual desktop/mobile/browser acceptance or a production release approval.
 - The next documentation-only commit does not affect runtime code; after removing the external font import, re-check CI on the new HEAD.
+
+## Final web-code verification
+
+- Latest runtime-code commit: `5b30ee737d75e9f1bbb2885f828f2291e83e259a` (removed external Google Fonts request).
+- GitHub Actions run: https://github.com/ftmstr/TopWhiz-Build/actions/runs/42384448555
+- Job `checks`: **COMPLETED / SUCCESS**. Node tests, TypeScript type check and Next production build all passed.
+- PR #5 remains Draft; mergeable status was true when verified. No browser-based visual acceptance performed; never report it as PASS.
