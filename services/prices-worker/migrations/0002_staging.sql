@@ -5,7 +5,7 @@ CREATE TABLE source_import_batches (
   merchant_id uuid NOT NULL REFERENCES merchants(id),
   collection_method varchar(24) NOT NULL
     CHECK (collection_method IN ('authorized_feed', 'licensed_manual')),
-  rights_evidence_ref text NOT NULL CHECK (length(trim(rights_evidence_ref)) > 0),
+  rights_evidence_ref text CHECK (rights_evidence_ref IS NULL OR length(trim(rights_evidence_ref)) > 0),
   source_batch_key varchar(160) NOT NULL,
   status varchar(24) NOT NULL DEFAULT 'pending_review'
     CHECK (status IN ('pending_review','quarantined','reviewed','rejected')),
@@ -16,12 +16,13 @@ CREATE TABLE staged_price_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id uuid NOT NULL REFERENCES source_import_batches(id),
   external_offer_id varchar(120) NOT NULL,
+  row_index integer NOT NULL CHECK (row_index >= 0),
   payload jsonb NOT NULL,
   validation_status varchar(24) NOT NULL
     CHECK (validation_status IN ('pending_review','quarantined')),
   rejection_reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
   received_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (batch_id, external_offer_id),
+  UNIQUE (batch_id, row_index),
   CONSTRAINT staged_price_records_reasons_array CHECK (jsonb_typeof(rejection_reasons) = 'array'),
   CONSTRAINT staged_price_records_payload_object CHECK (jsonb_typeof(payload) = 'object')
 );
