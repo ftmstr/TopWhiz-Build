@@ -89,6 +89,39 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
     assert.equal(await cms.markDelivered(outbox[0].id),true);
     assert.equal(await cms.markDelivered(outbox[0].id),false);
     assert.equal((await cms.pendingOutbox()).length,2);
+    // A separate phone record must pass per-field source attestation before publish.
+    const phone = {
+      type:"phone" as const,slug:"sentetik-deneme-telefonu",
+      title:"Sentetik test telefonu ve doğrulanmış teknik özellik",
+      summary:"Bu tamamen sentetik ürün kaydı, teknik özellik kaynaklarının zorunlu olarak doğrulandığını test eder.",
+      brand:"Fictional",modelCode:"FAKE-CI-01",market:"TR",
+      language:"tr",observedAt:"2026-11-07T20:00:00Z",
+      sources:["test-manufacturer-source"],coverMediaId:"test-approved-hero",
+      variants:[{name:"Deneme 8 GB / 256 GB",ramGb:8,storageGb:256,warrantyClass:"test-warranty"}],
+      specifications:[{label:"Ekran",value:"6 inç sentetik",sourceId:"test-manufacturer-source"}]
+    };
+    const phoneRecord=await cms.submit("test-phone-001",phone);
+    const unreviewed=await cms.publish(phoneRecord.id,1,when);
+    assert.equal(unreviewed.state,"quarantined");
+    await pool.query(
+      "INSERT INTO cms_review_grants(submission_id,revision_no,approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at) VALUES($1,1,true,true,true,true,'independent-test-reviewer',$2)",
+      [phoneRecord.id,when]);
+    const phonePublished=await cms.publish(phoneRecord.id,1,when);
+    assert.equal(phonePublished.state,"published");
+    const publicPhone=await pool.query(
+      "SELECT v.public_payload FROM published_content_versions v WHERE v.submission_id=$1 AND v.version=1",[phoneRecord.id]);
+    assert.equal(publicPhone.rows[0].public_payload.specifications[0].sourceLabel,"Synthetic Manufacturer");
+    assert.equal(publicPhone.rows[0].public_payload.specifications[0].sourceId,undefined);
+    assert.deepEqual(phonePublished.routes,[
+      "/telefonlar/sentetik-deneme-telefonu","/telefonlar","/karsilastir"
+    ]);
+    // The public reader must explicitly require state='published' even when
+    // historical immutable published_content_versions rows still exist.
+    await cms.withdraw(phoneRecord.id,1);
+    const hidden=await pool.query(
+      "SELECT v.public_payload FROM content_submissions s JOIN published_content_versions v ON v.submission_id=s.id WHERE s.id=$1 AND s.state='published'",
+      [phoneRecord.id]);
+    assert.equal(hidden.rowCount,0);
     // No real phone, merchant, or news data crossed the test database boundary.
   }finally{
     await pool.end();
