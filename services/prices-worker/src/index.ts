@@ -26,8 +26,6 @@ export default {
     const url = new URL(request.url);
     if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
     if (url.pathname === "/health") return json({ status: "ok", mode: "read_only" });
-    if (url.pathname !== "/v1/prices") return json({ error: "not_found" }, 404);
-
     if (url.pathname === "/v1/content" || url.pathname.startsWith("/v1/content/")) {
       const parts=url.pathname.split("/").filter(Boolean);
       const listing=parts.length===2 && parts[1]==="content";
@@ -51,6 +49,8 @@ export default {
         return json({status:"temporarily_unavailable",items:[]},503);
       }
     }
+
+    if (url.pathname !== "/v1/prices") return json({ error: "not_found" }, 404);
 
     // Strict public query contract; do not accept user-supplied seller URLs or SQL filters.
     const keys = [...url.searchParams.keys()];
