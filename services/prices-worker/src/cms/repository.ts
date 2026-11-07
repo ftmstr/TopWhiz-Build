@@ -39,7 +39,7 @@ async function trusted(c:PoolClient,row:Submission,now:Date){
     found.every(s=>s.rights_approved);
   const asset=row.payload.coverMediaId?(await c.query<{id:string;r2_key:string;license_evidence_ref:string;rights_approved:boolean}>(
     "SELECT * FROM cms_media_assets WHERE id=$1",[row.payload.coverMediaId])).rows[0]:undefined;
-  const grant=(await c.query<{approved:boolean;editorial_verified:boolean;originality_verified:boolean;specifications_verified:boolean;verified_at:Date;verified_by:string}>(
+  const grant=(await c.query<{approved:boolean;editorial_verified:boolean;originality_verified:boolean;specifications_verified:boolean;verified_at:Date;verified_by:string;credited_author:string}>(
     "SELECT * FROM cms_review_grants WHERE submission_id=$1 AND revision_no=$2",[row.id,row.revision_no])).rows[0];
   const grantAge=grant?now.getTime()-new Date(grant.verified_at).getTime():Infinity;
   const permitted=grant?.approved===true&&grantAge>=-300000&&grantAge<=30*86400000;
@@ -53,6 +53,7 @@ async function trusted(c:PoolClient,row:Submission,now:Date){
     specificationsVerified:!!(permitted&&grant.specifications_verified),
     sourceType:validSources?found[0].source_type:"",
     reviewer:permitted?grant.verified_by:null,
+    creditedAuthor:permitted?grant.credited_author:null,
     mediaRightsRef:asset?.rights_approved?asset.license_evidence_ref:null,
     publicSourceLinks: validSources?found.map(x=>({label:x.source_label,url:x.source_url})):[]
   };
@@ -108,7 +109,7 @@ export class CmsRepository{
       const safe:Record<string,unknown>={...row.payload,
         sources:authorization.publicSourceLinks,
         publishedAt:now.toISOString(),
-        author:"TOPWHIZ Editör Ekibi"};
+        author:authorization.creditedAuthor};
       delete safe.mediaPath;delete safe.mediaUrl;
       if(!authorization.approvedMediaIds.length)delete safe.coverMediaId;
       if(row.content_type==="phone" && Array.isArray(row.payload.specifications)){
