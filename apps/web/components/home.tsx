@@ -30,7 +30,7 @@ function DeviceVisual({ category, color }: { category: string; color: string }) 
   );
 }
 
-export function Home() {
+export function Home({latestNews}:{latestNews:PublishedStory[]}) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("Tümü");
   const [leftId, setLeftId] = useState("orion-a1");
@@ -104,8 +104,8 @@ export function Home() {
             </div>
             <a className="btn btn-secondary" href="/haberler">Tüm haberler</a>
           </div>
-          {approvedContent.news.length ? <div className="article-list">
-            {[...approvedContent.news].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)).slice(0,3).map(article=>
+          {latestNews.length ? <div className="article-list">
+            {[...latestNews].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)).slice(0,3).map(article=>
               <article className="article-item" key={article.slug}>
                 {safeMediaPath(article.mediaPath) && <Image className="article-thumb" src={safeMediaPath(article.mediaPath)!} alt={article.mediaAlt || article.title} width={640} height={360}/>}
                 <h3><a href={"/haberler/"+article.slug}>{article.title}</a></h3>
