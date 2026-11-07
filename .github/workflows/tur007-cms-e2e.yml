@@ -1,0 +1,88 @@
+name: TUR007 verified CMS E2E and synthetic website acceptance
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur007-cms-e2e-r2-20261107
+
+permissions:
+  contents: read
+
+jobs:
+  cms-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@localhost:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen dependency installation
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: All existing and new policy/media tests
+        run: pnpm test
+      - name: Price and staging PostgreSQL integrations
+        run: pnpm --filter @topwhiz/prices-worker test:pg
+      - name: Previous CMS transactional PostgreSQL integration
+        run: pnpm --filter @topwhiz/prices-worker test:cms
+      - name: Single-entry E2E PostgreSQL -> API -> R2 -> Queues
+        run: pnpm --filter @topwhiz/prices-worker test:cms-e2e
+      - name: TypeScript strict checks
+        run: pnpm typecheck
+      - name: Next.js production build
+        run: pnpm build
+      - name: Read-only API Worker Wrangler bundle (NO deploy)
+        run: pnpm worker:check
+      - name: Queue consumer Worker Wrangler bundle (NO deploy)
+        run: pnpm cms:dry-run
+      - name: vinext static compatibility scan (NO deploy)
+        run: pnpm --filter @topwhiz/web compat:check
+
+  synthetic-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen install
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: Ensure committed content registry is EMPTY
+        run: pnpm test
+      - name: Build CI-only fictional fixtures locally (NEVER committed)
+        run: node scripts/tur007-synthetic-site-test.mjs prepare
+      - name: Build Next.js with synthetic CI records
+        run: pnpm build
+      - name: Run localhost production server, check news/phone SSR and inactive Ads
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web exec next start -p 3107 > /tmp/topwhiz-ci-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node scripts/tur007-synthetic-site-test.mjs verify
+      - name: Assert synthetic content changes stay confined to CI workspace
+        run: |
+          test -n "$(git status --short -- apps/web/data/published-content.json)"
+          test "$(git show HEAD:apps/web/data/published-content.json | tr -d '[:space:]')" = '{"news":[],"phones":[]}'
