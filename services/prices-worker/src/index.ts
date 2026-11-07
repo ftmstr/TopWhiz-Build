@@ -34,7 +34,7 @@ export default {
       return json({ error: "invalid_query" }, 400);
     }
     const variantId = url.searchParams.get("variantId");
-    if (!isUuid(variantId) || url.searchParams.get("market") !== "TR") {
+    if (!variantId || !isUuid(variantId) || url.searchParams.get("market") !== "TR") {
       return json({ error: "unsupported_variant_or_market" }, 400);
     }
     if (!env.DATABASE_URL || !/^postgres(ql)?:\/\//.test(env.DATABASE_URL)) {
