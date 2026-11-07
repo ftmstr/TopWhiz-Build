@@ -105,7 +105,7 @@ export class CmsRepository{
       }
       const prior=(await c.query<{public_path:string}>("SELECT public_path FROM published_route_bindings WHERE submission_id=$1",[id]))
         .rows.map(r=>r.public_path);
-      const safe={...row.payload,
+      const safe:Record<string,unknown>={...row.payload,
         sources:authorization.publicSourceLinks,
         publishedAt:now.toISOString(),
         author:"TOPWHIZ Editör Ekibi"};
