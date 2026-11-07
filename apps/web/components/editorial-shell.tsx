@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AdSlot } from "./ad-slots";
 
 export function EditorialShell({children}:{children:React.ReactNode}){
@@ -6,6 +7,7 @@ export function EditorialShell({children}:{children:React.ReactNode}){
     <header className="site-header">
       <div className="container header-inner">
         <Link className="logo-lockup" href="/" aria-label="TOPWHIZ ana sayfa">
+          <span className="logo-thumb"><Image src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" alt="" width={52} height={52}/></span>
           <span className="logo-word">TOP<span>WHIZ</span></span>
         </Link>
         <nav className="nav-links" aria-label="Ana menü">
