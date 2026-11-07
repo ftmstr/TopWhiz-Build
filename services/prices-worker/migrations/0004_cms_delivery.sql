@@ -12,6 +12,8 @@ CREATE TABLE cms_trusted_sources (
   source_type varchar(24) NOT NULL
     CHECK (source_type IN ('manufacturer','official','licensed_editorial')),
   rights_ref text NOT NULL CHECK (length(trim(rights_ref)) >= 6),
+  source_label varchar(180) NOT NULL,
+  source_url text NOT NULL CHECK (source_url LIKE 'https://%'),
   rights_approved boolean NOT NULL DEFAULT false,
   reviewed_by varchar(120) NOT NULL,
   reviewed_at timestamptz NOT NULL DEFAULT now()
