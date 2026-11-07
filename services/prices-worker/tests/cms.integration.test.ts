@@ -90,6 +90,9 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
     assert.equal(await cms.markDelivered(outbox[0].id),true);
     assert.equal(await cms.markDelivered(outbox[0].id),false);
     assert.equal((await cms.pendingOutbox()).length,2);
+    await pool.query(
+      "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by) VALUES($1,'manufacturer',$2,'Second synthetic spec source','https://example.org/second-synthetic-source',true,'synthetic-reviewer')",
+      ["test-secondary-source","SYNTHETIC_SECOND_LICENSE"]);
     // A separate phone record must pass per-field source attestation before publish.
     const phone = {
       type:"phone" as const,slug:"sentetik-deneme-telefonu",
@@ -97,9 +100,9 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
       summary:"Bu tamamen sentetik ürün kaydı, teknik özellik kaynaklarının zorunlu olarak doğrulandığını test eder.",
       brand:"Fictional",modelCode:"FAKE-CI-01",market:"TR",
       language:"tr",observedAt:"2026-11-07T20:00:00Z",
-      sources:["test-manufacturer-source"],coverMediaId:"test-approved-hero",
+      sources:["test-secondary-source","test-manufacturer-source"],coverMediaId:"test-approved-hero",
       variants:[{name:"Deneme 8 GB / 256 GB",ramGb:8,storageGb:256,warrantyClass:"test-warranty"}],
-      specifications:[{label:"Ekran",value:"6 inç sentetik",sourceId:"test-manufacturer-source"}]
+      specifications:[{label:"Ekran",value:"6 inç sentetik",sourceId:"test-secondary-source"}]
     };
     const phoneRecord=await cms.submit("test-phone-001",phone);
     const unreviewed=await cms.publish(phoneRecord.id,1,when);
@@ -111,7 +114,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
     assert.equal(phonePublished.state,"published");
     const publicPhone=await pool.query(
       "SELECT v.public_payload FROM published_content_versions v WHERE v.submission_id=$1 AND v.version=1",[phoneRecord.id]);
-    assert.equal(publicPhone.rows[0].public_payload.specifications[0].sourceLabel,"Synthetic Manufacturer");
+    assert.equal(publicPhone.rows[0].public_payload.specifications[0].sourceLabel,"Second synthetic spec source");
     assert.equal(publicPhone.rows[0].public_payload.specifications[0].sourceId,undefined);
     assert.deepEqual(phonePublished.routes,[
       "/telefonlar/sentetik-deneme-telefonu","/telefonlar","/karsilastir"
