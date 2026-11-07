@@ -1,0 +1,41 @@
+name: TUR005 lockfile generation (feature branch only)
+
+on:
+  push:
+    branches:
+      - feat/tur005-staging-postgres-frozen-20261107
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: github.repository == 'ftmstr/TopWhiz-Build' && github.ref == 'refs/heads/feat/tur005-staging-postgres-frozen-20261107'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Produce deterministic lockfile from pinned manifests
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: Verify generated lockfile with frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Commit generated lockfile to THIS feature branch only
+        run: |
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo 'Lockfile already up to date'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build(tur005): commit generated pnpm lockfile [skip ci]'
+          git push origin HEAD:refs/heads/feat/tur005-staging-postgres-frozen-20261107
