@@ -1,9 +1,12 @@
 import { isUuid } from "./policy.mjs";
 import { readPublicPrices } from "./db/reader";
 import { readPublishedCms } from "./cms/public-reader";
+import { readApprovedMediaAsset } from "./cms/media-reader";
+import { handleCmsMedia } from "./cms/media-handler.mjs";
 
 interface Env {
   DATABASE_URL?: string; // Cloudflare encrypted secret; NEVER in Git, response or logs.
+  MEDIA_BUCKET?: {get(key:string):Promise<unknown>}; // unbound unless explicitly configured
 }
 
 function json(body: unknown, status = 200): Response {
@@ -26,6 +29,15 @@ export default {
     const url = new URL(request.url);
     if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405);
     if (url.pathname === "/health") return json({ status: "ok", mode: "read_only" });
+    if (url.pathname.startsWith("/v1/media/")) {
+      if(!env.DATABASE_URL || !/^postgres(ql)?:\/\//.test(env.DATABASE_URL) || !env.MEDIA_BUCKET)
+        return json({error:"not_configured"},503);
+      return handleCmsMedia(request,{
+        bucket:env.MEDIA_BUCKET,
+        findApprovedAsset:(id:string)=>readApprovedMediaAsset(env.DATABASE_URL!,id)
+      });
+    }
+
     if (url.pathname === "/v1/content" || url.pathname.startsWith("/v1/content/")) {
       const parts=url.pathname.split("/").filter(Boolean);
       const listing=parts.length===2 && parts[1]==="content";
