@@ -41,7 +41,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
     assert.ok(prior.failures?.includes("source_rights_missing"));
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM published_content_versions")).rows[0].n,0);
     await pool.query(
-      "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,rights_approved,reviewed_by) VALUES($1,'official',$2,true,'synthetic-reviewer')",
+      "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by) VALUES($1,'official',$2,'Synthetic Manufacturer','https://example.org/synthetic-document',true,'synthetic-reviewer')",
       ["test-manufacturer-source","SYNTHETIC_SOURCE_LICENSE"]);
     await pool.query(
       "INSERT INTO cms_media_assets(id,r2_key,content_type,bytes,sha256_hex,alt_text,license_evidence_ref,rights_approved,reviewed_by) VALUES($1,$2,'image/png',24,$3,'Synthetic test image','SYNTHETIC_MEDIA_LICENSE',true,'synthetic-reviewer')",
