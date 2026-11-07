@@ -41,6 +41,7 @@ CREATE TABLE cms_review_grants (
   originality_verified boolean NOT NULL DEFAULT false,
   specifications_verified boolean NOT NULL DEFAULT false,
   verified_by varchar(120) NOT NULL CHECK (length(trim(verified_by)) > 2),
+  credited_author varchar(120) NOT NULL CHECK (length(trim(credited_author)) > 2),
   verified_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (submission_id, revision_no)
 );
