@@ -1,0 +1,65 @@
+name: TUR005 PostgreSQL, content, frozen dependency and vinext checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur005-staging-postgres-frozen-20261107
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@localhost:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce repository lockfile
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: Price, staging, auto-publication and layout policy tests
+        run: pnpm test
+      - name: PostgreSQL 16 migrations and real Drizzle transactions
+        run: pnpm --filter @topwhiz/prices-worker test:pg
+      - name: Typecheck all code
+        run: pnpm typecheck
+      - name: Next.js production build
+        run: pnpm build
+      - name: Cloudflare Worker dry-run ONLY
+        run: pnpm worker:check
+
+  vinext-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frozen install
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: vinext non-deploy compatibility analysis
+        run: pnpm --filter @topwhiz/web compat:check
