@@ -18,10 +18,12 @@ const fixtureNow = new Date("2026-11-07T18:00:00Z");
 
 test("migrations + Drizzle inserts + rights-gated staging persist to isolated PostgreSQL", async (t)=>{
   try {
-    for(const name of ["0001_price_core.sql","0002_staging.sql"]){
+    for(const name of ["0001_price_core.sql","0002_staging.sql","0003_content_cms.sql"]){
       const source=readFileSync(new URL("../migrations/"+name, import.meta.url),"utf8");
       await pool.query(source);
     }
+    const contentState=await pool.query("SELECT count(*)::int AS total FROM content_submissions");
+    assert.equal(contentState.rows[0].total,0,"new CMS must not seed fabricated news or phones");
     const [device]=await db.insert(deviceVariants).values({
       brand:"Fictional Manufacturer",modelCode:"TEST-PHONE",market:"TR",
       ramGb:8,storageGb:256,colorCode:"black",itemCondition:"new",warrantyClass:"test"
