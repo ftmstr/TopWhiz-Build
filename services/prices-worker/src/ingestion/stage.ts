@@ -1,13 +1,14 @@
 /**
- * Offline/authorized ingestion entrypoint; NOT imported by public Worker.
- * Staging is the only persistence mutation here. Publication requires an
- * entirely separate reviewer and privileges that are NOT implemented.
+ * Authorized staging only. No public Worker import; no promotion methods.
+ * Import user DB role should have SELECT on merchant/domain, INSERT on
+ * staging tables, and no write access to published price tables.
  */
-import { eq } from "drizzle-orm";
-import { sourceImportBatches, stagedPriceRecords } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { merchants, merchantDomains, sourceImportBatches, stagedPriceRecords } from "../db/schema";
 import { validateStagingBatch } from "./validate.mjs";
 
-type ImportedRow = {
+export type ImportedRow = {
   externalOfferId: string;
   deviceVariantId?: string;
   productUrl?: string;
@@ -20,47 +21,48 @@ type ImportedRow = {
   observedAt?: string;
   sourceRecordRef?: string;
 };
-type SourceContext = {
-  merchantId: string;
-  collectionMethod: string;
-  rightsEvidenceRef: string;
-  rightsStatus: string;
-  verifiedHosts: string[];
-};
 export type IngestionBatch = {
   sourceBatchKey: string;
-  context: SourceContext;
+  merchantId: string;
+  collectionMethod: "authorized_feed" | "licensed_manual";
   rows: ImportedRow[];
 };
 
-/**
- * Drizzle transaction/insert adapter is deliberately injected by caller.
- * Import credentials should have INSERT on staging tables only.
- */
-export async function stageFeedBatch(db: any, batch: IngestionBatch, now = new Date()) {
+export async function stageFeedBatch(db: NodePgDatabase, batch: IngestionBatch, now = new Date()) {
   if (!batch || typeof batch.sourceBatchKey !== "string" ||
       !/^[A-Za-z0-9._:-]{1,160}$/.test(batch.sourceBatchKey)) throw new Error("invalid_batch_key");
-  if (!batch.context || !batch.context.rightsEvidenceRef?.trim()) throw new Error("missing_rights_evidence");
-  const results = validateStagingBatch(batch.rows, batch.context, now);
-  const existing = await db.select({ id: sourceImportBatches.id })
-    .from(sourceImportBatches)
-    .where(eq(sourceImportBatches.merchantId, batch.context.merchantId))
-    .limit(100); // deliberately small; a more specific unique-key lookup follows
-  // Never modify a previously imported source batch.
-  const existingBatch = await db.select({ id: sourceImportBatches.id })
-    .from(sourceImportBatches)
-    .where(eq(sourceImportBatches.sourceBatchKey, batch.sourceBatchKey))
-    .limit(101);
-  // Fail closed on key reuse. The database unique index covers concurrent calls.
-  if (existingBatch.length > 100 || existing.length > 100) throw new Error("batch_lookup_limit");
-  if (existingBatch.length) throw new Error("duplicate_source_batch_key");
+  if (!batch.merchantId || !batch.rows) throw new Error("invalid_batch");
+  // Never trust a feed's claimed rights or merchant allowed domains.
+  const [merchant] = await db.select({
+    id: merchants.id,
+    rightsStatus: merchants.rightsStatus,
+    rightsEvidenceRef: merchants.rightsEvidenceRef
+  }).from(merchants).where(eq(merchants.id, batch.merchantId)).limit(1);
+  if (!merchant) throw new Error("merchant_not_found");
+  const approvedDomains = await db.select({ hostname: merchantDomains.hostname })
+    .from(merchantDomains)
+    .where(and(eq(merchantDomains.merchantId, batch.merchantId),
+      eq(merchantDomains.verificationStatus, "verified")))
+    .limit(501);
+  if (approvedDomains.length > 500) throw new Error("domain_limit_exceeded");
 
-  return db.transaction(async (tx: any) => {
+  const context = {
+    merchantId: merchant.id,
+    collectionMethod: batch.collectionMethod,
+    rightsStatus: merchant.rightsStatus,
+    rightsEvidenceRef: merchant.rightsEvidenceRef,
+    verifiedHosts: approvedDomains.map((row) => row.hostname)
+  };
+  const results = validateStagingBatch(batch.rows, context, now);
+
+  // Database UNIQUE (merchant_id, source_batch_key) is the concurrency gate.
+  // No auto-upsert or retry into the same source batch.
+  return db.transaction(async (tx) => {
     const [created] = await tx.insert(sourceImportBatches).values({
-      merchantId: batch.context.merchantId,
+      merchantId: batch.merchantId,
       sourceBatchKey: batch.sourceBatchKey,
-      collectionMethod: batch.context.collectionMethod,
-      rightsEvidenceRef: batch.context.rightsEvidenceRef,
+      collectionMethod: batch.collectionMethod,
+      rightsEvidenceRef: merchant.rightsEvidenceRef || "UNVERIFIED_SOURCE_RIGHTS",
       status: results.every((row) => row.status === "quarantined") ? "quarantined" : "pending_review"
     }).returning({ id: sourceImportBatches.id });
     if (!created) throw new Error("insert_failed");
