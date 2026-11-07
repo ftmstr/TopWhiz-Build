@@ -16,7 +16,7 @@ export default async function StoryPage({params}:{params:Promise<{slug:string}>}
       <h1>{article.title}</h1>
       <p className="hero-description">{article.summary}</p>
       <p><time dateTime={article.publishedAt}>{article.publishedAt.slice(0,10)}</time> · {article.author}</p>
-      {image && <figure><Image src={image} alt={article.mediaAlt || article.title}
+      {image && <figure><Image unoptimized src={image} alt={article.mediaAlt || article.title}
         width={1200} height={675}/></figure>}
       <div className="article-body">{article.body.split(/\n{2,}/).map((paragraph,i)=><p key={i}>{paragraph}</p>)}</div>
       <h2>Kaynaklar</h2>
