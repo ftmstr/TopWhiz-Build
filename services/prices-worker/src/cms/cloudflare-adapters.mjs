@@ -95,3 +95,22 @@ export async function stageLicensedMedia(bucket,assetId,buffer,approval){
   return {assetId,key,sha256,contentType:mime,bytes:bytes.length,
     publicationStatus:"staged"};
 }
+
+
+/** Node outbox relay -> official Cloudflare Queues HTTP Push API.
+ * Requires QUEUES Write token from secret manager, never committed to Git.
+ */
+export function createCloudflareQueueSender({fetcher,accountId,queueId,apiToken}){
+  if(typeof fetcher!=="function"||!/^[a-f0-9]{32}$/i.test(accountId??"")||
+     !/^[a-f0-9]{32}$/i.test(queueId??"")||!apiToken)throw Error("queue_sender_config_required");
+  return {async send(message){
+    const safe=validatePurgeEvent(message);
+    const response=await fetcher(
+      "https://api.cloudflare.com/client/v4/accounts/"+accountId+"/queues/"+queueId+"/messages",{
+      method:"POST",headers:{"Authorization":"Bearer "+apiToken,"Content-Type":"application/json"},
+      body:JSON.stringify({body:safe,content_type:"json"})});
+    if(!response.ok)throw Error("queue_http_failure");
+    const data=await response.json();
+    if(data?.success!==true)throw Error("queue_rejected");
+  }};
+}
