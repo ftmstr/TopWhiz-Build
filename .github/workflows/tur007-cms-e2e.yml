@@ -86,3 +86,51 @@ jobs:
         run: |
           test -n "$(git status --short -- apps/web/data/published-content.json)"
           test "$(git show HEAD:apps/web/data/published-content.json | tr -d '[:space:]')" = '{"news":[],"phones":[]}'
+
+
+  api-to-nextjs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@localhost:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: "1"
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen install
+        run: test -s pnpm-lock.yaml && pnpm install --frozen-lockfile
+      - name: Create two approved CI-only news/phone records in real Postgres
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Build website using real Postgres-backed CMS API contract (isolated fetch shim)
+        run: pnpm build
+      - name: Verify actual Next.js SSR renders database API, image and reserved Ads slots
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web exec next start -p 3108 > /tmp/topwhiz-ci-api-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node scripts/tur007-api-ssr-verify.mjs
+      - name: Check source registry is still empty
+        run: |
+          git diff --exit-code -- apps/web/data/published-content.json
+          test "$(git show HEAD:apps/web/data/published-content.json | tr -d '[:space:]')" = '{"news":[],"phones":[]}'
