@@ -53,7 +53,7 @@ test("PostgreSQL roles, signed-public view, revision-safe source/media revoke an
 
     const roles=await admin.query(
       "SELECT rolname,rolcanlogin,rolsuper FROM pg_roles WHERE rolname LIKE 'tw_cms_%' ORDER BY rolname");
-    assert.equal(roles.rows.length,7);
+    assert.equal(roles.rows.length,8);
     assert.ok(roles.rows.every(r=>r.rolcanlogin===false&&r.rolsuper===false));
     const draft=await asRole("tw_cms_intake",
       "SELECT * FROM cms_ingest_draft($1::varchar,$2::varchar,$3::varchar,$4::jsonb)",
