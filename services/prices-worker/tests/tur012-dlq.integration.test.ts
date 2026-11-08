@@ -14,6 +14,8 @@ test("60 synthetic DLQ messages, audit/Queue outages, replay and completed idemp
  await admin.query("CREATE SCHEMA IF NOT EXISTS "+schema);
  const db=new pg.Pool({connectionString,options:"-c search_path="+schema,max:12});
  try{
+  for(const migration of ["0003_content_cms.sql","0004_cms_delivery.sql"])
+    await db.query(readFileSync(new URL("../migrations/"+migration,import.meta.url),"utf8"));
   await db.query(readFileSync(new URL("../migrations/0007_cms_queue_receipts.sql",import.meta.url),"utf8"));
   await db.query(readFileSync(new URL("../migrations/0011_cms_queue_receipt_hash.sql",import.meta.url),"utf8"));
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
@@ -22,6 +24,17 @@ test("60 synthetic DLQ messages, audit/Queue outages, replay and completed idemp
     kind:"withdrawn",routes:["/haberler/ci-dlq-"+i,"/haberler","/"],
     approved:true,ticket:"FAKE_UNTRUSTED_QUEUED_TICKET"
   }));
+  // Every DLQ event must originate in the independently committed
+  // outbox; fabricated messages cannot reach the origin queue.
+  for(let i=0;i<items.length;i++){
+    const event=items[i];
+    await db.query(
+      "INSERT INTO content_submissions(id,external_key,content_type,slug,payload,state) VALUES($1,$2,'news',$3,'{}'::jsonb,'pending_review')",
+      [event.submissionId,"ci-tur012-dlq-"+i,"ci-tur012-dlq-"+i]);
+    await db.query(
+      "INSERT INTO cms_delivery_outbox(id,submission_id,revision_no,event_kind,routes) VALUES($1,$2,$3,$4,$5::jsonb)",
+      [event.eventId,event.submissionId,event.revision,event.kind,JSON.stringify(event.routes)]);
+  }
   const idToIndex=new Map(items.map((x,i)=>[x.eventId,i]));
   const delivered=new Set<string>(),audited=new Set<string>();
   const acked:string[]=[],retry:string[]=[];
