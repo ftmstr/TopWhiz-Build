@@ -21,6 +21,13 @@ for(let i=0;i<75;i++){
 assert.ok(ready,"local workerd did not become ready");
 for(const path of ["/","/haberler","/telefonlar","/robots.txt","/haberler/not-published"]){
  const response=await fetch(base+path,{signal:AbortSignal.timeout(10000)});
+ // robots.txt is served directly as a STATIC asset before the Worker,
+ // contains only the universal "Disallow: /" policy, not licensed CMS HTML.
+ // Its max-age=0 caching is not a content-freshness bypass.
+ if(path==="/robots.txt"){
+   assert.match(await response.text(),/Disallow:\\s*\\//);
+   continue;
+ }
  const cc=response.headers.get("cache-control");
  assert.match(cc??"",/no-store/,"Edge HTML must not be cacheable "+path);
  assert.equal(response.headers.get("cloudflare-cdn-cache-control"),"no-store");
