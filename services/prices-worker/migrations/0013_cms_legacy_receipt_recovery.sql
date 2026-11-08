@@ -23,8 +23,7 @@ CREATE FUNCTION cms_claim_legacy_redrive(
 SET search_path FROM CURRENT AS $fn$
 DECLARE prior RECORD;
 BEGIN
- IF p_event_id IS NULL OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}
-
+ IF p_event_id IS NULL OR p_digest IS NULL OR p_digest !~ '^[a-f0-9]{64}$'
     OR p_actor IS NULL OR length(trim(p_actor))<3 OR length(p_actor)>120
     OR p_ticket IS NULL OR length(trim(p_ticket))<8 OR length(p_ticket)>240
  THEN RAISE EXCEPTION 'invalid_legacy_recovery_ticket'; END IF;
