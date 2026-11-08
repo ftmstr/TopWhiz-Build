@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { safeMediaPath } from "../../../lib/content-registry";
 import { getCmsNews } from "../../../lib/cms-runtime";
 import { EditorialShell } from "../../../components/editorial-shell";
+
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
+  const {slug}=await params;
+  const item=await getCmsNews(slug);
+  return {title:item?item.title+" | TOPWHIZ":"Teknoloji haberi | TOPWHIZ",
+    description:item?.summary??"Henüz doğrulanmış kayıt bulunmuyor.",
+    robots:{index:false,follow:false}};
+}
 
 export default async function StoryPage({params}:{params:Promise<{slug:string}>}){
   const {slug}=await params;
