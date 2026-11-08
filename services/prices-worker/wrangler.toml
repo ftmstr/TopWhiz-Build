@@ -2,7 +2,7 @@
 # Do not add production routes, custom domains or secret values here.
 name = "topwhiz-prices-api-preview"
 main = "src/index.ts"
-compatibility_date = "2026-11-07"
+compatibility_date = "2026-09-25"
 workers_dev = false
 
 [observability]
