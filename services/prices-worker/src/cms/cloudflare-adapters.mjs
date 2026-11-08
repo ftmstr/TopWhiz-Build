@@ -1,3 +1,4 @@
+import {validPngStructure} from "./png-structure.mjs";
 /**
  * Cloudflare Queue/R2 and zone-purge adapters. No bindings or credentials in Git.
  * Queue delivery is at-least-once; retry/purge is idempotent.
@@ -100,6 +101,9 @@ export async function stageLicensedMedia(bucket,assetId,buffer,approval){
   const bytes=buffer instanceof Uint8Array?buffer:new Uint8Array(buffer);
   if(bytes.length<12||bytes.length>10*1024*1024)throw Error("invalid_media_size");
   const {mime,extension}=sniff(bytes);
+  if(mime==="image/png"&&!validPngStructure(bytes))throw Error("invalid_png_structure");
+  if(mime==="image/jpeg"&&(bytes[bytes.length-2]!==255||bytes[bytes.length-1]!==217))throw Error("invalid_jpeg_termination");
+  if(mime==="image/webp"&&(new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength)).getUint32(4,true)+8!==bytes.length)throw Error("invalid_webp_length");
   const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
   const sha256=[...digest].map(value=>value.toString(16).padStart(2,"0")).join("");
   const key="media/reviewed/"+assetId+"/"+sha256+"."+extension;
