@@ -1,3 +1,4 @@
+import {validPngStructure} from "./png-structure.mjs";
 /**
  * Controlled, read-only publication of R2 image bytes.
  * The media lookup MUST independently verify approval AND current published
@@ -39,6 +40,9 @@ async function verifiedBytes(stream,expectedBytes,expectedHash,expectedMime){
   const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
   const hex=[...digest].map(v=>v.toString(16).padStart(2,"0")).join("");
   if(hex!==expectedHash)throw Error("media_digest_mismatch");
+  if(expectedMime==="image/png"&&!validPngStructure(bytes))throw Error("media_png_structure_invalid");
+  if(expectedMime==="image/jpeg"&&(bytes[bytes.length-2]!==255||bytes[bytes.length-1]!==217))throw Error("media_jpeg_termination_invalid");
+  if(expectedMime==="image/webp"&&(new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength)).getUint32(4,true)+8!==bytes.length)throw Error("media_webp_length_invalid");
   return bytes;
 }
 
