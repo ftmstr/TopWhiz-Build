@@ -10,6 +10,7 @@ export async function replayDeadLetters(batch,{
   if(typeof verifyOperatorTicket!=="function"||
      typeof originQueue?.send!=="function"||
      typeof receipts?.status!=="function"||
+     typeof receipts?.verifyEvent!=="function"||
      typeof auditReplay!=="function")
     throw Error("dlq_requires_authenticated_operator_and_audit");
   if(!batch||!Array.isArray(batch.messages)||batch.messages.length>10)
@@ -25,6 +26,9 @@ export async function replayDeadLetters(batch,{
         continue;
       }
       seen.add(event.eventId);
+      // An operator ticket is NOT enough: a forged DLQ event must match the
+      // original immutable DB outbox transaction, not the event body.
+      if(!(await receipts.verifyEvent(event)))throw Error("dlq_not_in_durable_outbox");
       // Never trust the message body's self-reported approval fields.
       const approval=await verifyOperatorTicket({
         eventId:event.eventId,submissionId:event.submissionId,
