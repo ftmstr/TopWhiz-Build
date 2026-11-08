@@ -1,0 +1,153 @@
+name: TUR010 local workerd, frozen vinext, responsive/a11y/SEO acceptance
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur010-vinext-workerd-accessibility-20261108
+permissions:
+  contents: read
+
+jobs:
+  security-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact frozen install; verify React/RSC/Playwright pins
+        run: |
+          test -s pnpm-lock.yaml
+          pnpm install --frozen-lockfile
+          pnpm --filter @topwhiz/prices-worker exec wrangler --version
+          node scripts/tur008-preview-preflight.mjs static
+          node scripts/tur010-dependency-gate.mjs
+      - name: Unit/security/ads/image policies
+        run: pnpm test
+      - name: Real PostgreSQL staging
+        run: pnpm --filter @topwhiz/prices-worker test:pg
+      - name: Real PostgreSQL CMS lifecycle
+        run: pnpm --filter @topwhiz/prices-worker test:cms
+      - name: Real PostgreSQL signed API/R2/Queue E2E
+        run: pnpm --filter @topwhiz/prices-worker test:cms-e2e
+      - name: Real PostgreSQL source/media takedown and ACL
+        run: pnpm --filter @topwhiz/prices-worker test:security
+      - name: Real PostgreSQL issuer/key/evidence revoke
+        run: pnpm --filter @topwhiz/prices-worker test:issuer-revocation
+      - name: Eight independent genuine database service logins
+        run: pnpm --filter @topwhiz/prices-worker test:service-sessions
+      - name: Real PostgreSQL DLQ replay and receipt
+        run: pnpm --filter @topwhiz/prices-worker test:dlq
+      - name: TypeScript + Next production build
+        run: pnpm typecheck && pnpm build
+      - name: vinext frozen production build (NOT Cloudflare deployment)
+        run: pnpm --filter @topwhiz/web build:vinext
+      - name: vinext static compatibility
+        run: pnpm --filter @topwhiz/web compat:check
+      - name: Prices and CMS Cloudflare bundles dry-run ONLY
+        run: pnpm worker:check && pnpm cms:dry-run
+
+  local-workerd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Ephemeral workerd on localhost ONLY; no secrets, no remote bindings
+        shell: bash
+        env:
+          CI: 'true'
+        run: |
+          cd services/prices-worker
+          pnpm exec wrangler dev --local --ip 127.0.0.1 --port 8789 > /tmp/topwhiz-tur010-workerd.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          cd ../..
+          if ! node scripts/tur010-workerd-smoke.mjs; then
+            cat /tmp/topwhiz-tur010-workerd.log
+            exit 1
+          fi
+
+  chromium-mobile-accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Install isolated Playwright Chromium
+        run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Seed independently signed fictional media/news/phone in Postgres
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Build Next with synthetic database-backed CMS contract
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Chromium screenshots, 390px mobile, 1440px desktop, axe and SEO
+        shell: bash
+        run: |
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm --filter @topwhiz/web exec next start -p 3109 > /tmp/topwhiz-tur010-browser-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          if ! pnpm --filter @topwhiz/web test:browser; then
+            cat /tmp/topwhiz-tur010-browser-server.log
+            exit 1
+          fi
+      - name: Upload CI synthetic screenshots/trace/HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: topwhiz-tur010-synthetic-browser-evidence
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 7
+          if-no-files-found: warn
