@@ -161,6 +161,11 @@ GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_publication_fences TO tw_cm
 GRANT SELECT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_publication_fences
  TO tw_cms_rights_admin,tw_cms_issuer_admin;
 
+-- Queue consumer can compare event UUID/version/kind/route to the durable
+-- transaction outbox, but cannot create, approve or mutate CMS publications.
+GRANT SELECT (id,submission_id,revision_no,event_kind,routes)
+ ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_queue_consumer;
+
 -- Queue consumer sees only idempotency receipts.
 GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts
  TO tw_cms_queue_consumer;
