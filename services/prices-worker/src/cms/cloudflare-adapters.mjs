@@ -32,14 +32,29 @@ export async function dispatchCmsOutbox(repository,queue,limit=20){
   return {delivered};
 }
 /** Queue handler: acknowledge success; let Cloudflare retry transient failures. */
-export async function consumeCmsPurgeBatch(batch,purger){
+export async function consumeCmsPurgeBatch(batch,purger,receipts){
   for(const msg of batch.messages){
+    let claim=null, event=null;
     try{
-      const event=validatePurgeEvent(msg.body);
+      event=validatePurgeEvent(msg.body);
+      if(receipts){
+        claim=await receipts.claim(event.eventId);
+        if(claim.status==="completed"){msg.ack();continue}
+        if(claim.status!=="acquired"){
+          msg.retry({delaySeconds:30});continue;
+        }
+      }
       await purger(event.routes);
+      if(receipts)await receipts.complete(event.eventId,claim.token);
       msg.ack();
     }catch{
-      msg.retry();
+      if(receipts&&claim?.status==="acquired"&&event){
+        try{await receipts.release(event.eventId,claim.token)}catch{/* retry safely */}
+      }
+      // Cloudflare max_retries routes permanently failing messages to
+      // configured DLQ. Nothing is silently acknowledged as success.
+      const attempts=Number.isInteger(msg.attempts)?msg.attempts:1;
+      msg.retry({delaySeconds:Math.min(300,5*2**Math.min(6,Math.max(0,attempts-1)))});
     }
   }
 }
