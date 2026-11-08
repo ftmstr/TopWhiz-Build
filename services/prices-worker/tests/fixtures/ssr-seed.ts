@@ -7,17 +7,19 @@ import { readFileSync } from "node:fs";
 import pg from "pg";
 import { createCmsAuthorizedPipeline } from "../../src/cms/authorized-pipeline";
 import { stageLicensedMedia } from "../../src/cms/cloudflare-adapters.mjs";
+import {temporaryCiIssuer,addVerifiedAttestation} from "./ci-issuer";
 
 if(process.env.CI!=="true"||process.env.TOPWHIZ_SYNTHETIC_API!=="1")
   throw Error("Synthetic API fixture is forbidden outside GitHub CI");
 if(!process.env.TEST_DATABASE_URL)throw Error("TEST_DATABASE_URL required");
 
 const now=new Date("2026-11-07T22:00:00Z");
+const issuer=temporaryCiIssuer();
 const admin=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,max:1});
 await admin.query("CREATE SCHEMA IF NOT EXISTS tur007_ssr_ci");
 const db=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,options:"-c search_path=tur007_ssr_ci",max:2});
 try{
-  for(const name of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql"])
+  for(const name of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql","0006_cms_security.sql"])
     await db.query(readFileSync(new URL("../../migrations/"+name,import.meta.url),"utf8"));
   await db.query(
     "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by,reviewed_at) VALUES('ci-ssr-source','manufacturer','SYNTHETIC_CI_SOURCE_LICENSE','Synthetic API Source','https://example.org/nonreal-device',true,'CI Independent Reviewer',$1)",[now]);
@@ -28,7 +30,7 @@ try{
     "INSERT INTO cms_media_assets(id,r2_key,content_type,bytes,sha256_hex,alt_text,license_evidence_ref,rights_approved,reviewed_by,reviewed_at) VALUES($1,$2,$3,$4,$5,'Synthetic empty illustration','SYNTHETIC_CI_RIGHTS',true,'CI Independent Reviewer',$6)",
     [receipt.assetId,receipt.key,receipt.contentType,receipt.bytes,receipt.sha256,now]);
   await db.query(
-    "INSERT INTO cms_review_authorities(id,active,reviewer_class) VALUES('ci-ssr-authority',true,'licensed_verifier')");
+    "INSERT INTO cms_review_authorities(id,active,reviewer_class,public_key_pem) VALUES('ci-ssr-authority',true,'licensed_verifier',$1)",[issuer.publicPem]);
   const pipeline=createCmsAuthorizedPipeline(db,{async send(){}},()=>now);
   const news={
     type:"news" as const,slug:"ci-api-published-news",
@@ -54,9 +56,9 @@ try{
   ] as const){
     const row=await pipeline.repository.submit(externalKey,payload);
     for(const kind of types){
-      await db.query(
-        "INSERT INTO cms_external_attestations(submission_id,revision_no,attestation_type,authority_id,evidence_ref,status,credited_author,verified_at) VALUES($1,1,$2,'ci-ssr-authority',$3,'verified','CI Verified Test Writer',$4)",
-        [row.id,kind,"SYNTHETIC_CI_ATTESTATION_"+kind,now]);
+      await addVerifiedAttestation(db,{submissionId:row.id,revision:1,type:kind,
+        authorityId:"ci-ssr-authority",privateKey:issuer.privateKey,
+        verifiedAt:now,creditedAuthor:"CI Verified Test Writer"});
     }
     const published=await pipeline.process(row.id,1);
     assert.equal(published.state,"published","CI fixture must go through real reviewer/publisher");
