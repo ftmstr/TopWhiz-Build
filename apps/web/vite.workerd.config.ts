@@ -17,6 +17,7 @@ export default defineConfig({
       remoteBindings:false,
       config:{
         name:"topwhiz-tur011-synthetic-local-only",
+        main:"./workerd-entry.ts",
         compatibility_date:"2026-09-25",
         compatibility_flags:["nodejs_compat"],
         workers_dev:false
