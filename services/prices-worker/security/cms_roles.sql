@@ -1,6 +1,6 @@
 -- TEMPLATE ONLY: replace __TOPWHIZ_SCHEMA__ with a verified schema identifier.
 -- Run as database owner, AFTER migrations, in approved nonproduction first.
--- The five NOLOGIN roles receive account-specific membership through
+-- The six NOLOGIN roles receive account-specific membership through
 -- separate secret-managed provisioning, NOT from this repository.
 DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_intake') THEN
@@ -61,7 +61,8 @@ GRANT UPDATE ON __TOPWHIZ_SCHEMA__.content_submissions,
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.published_content_versions,
  __TOPWHIZ_SCHEMA__.published_route_bindings,
  __TOPWHIZ_SCHEMA__.content_rights_audit,
- __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_publisher;
+ __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
+ __TOPWHIZ_SCHEMA__.cms_public_dependencies TO tw_cms_publisher;
 GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_publisher;
 
 -- Rights authority cannot forge a reviewer signature or publish a new page.
