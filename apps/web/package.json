@@ -11,7 +11,10 @@
     "build:vinext": "vinext build",
     "start:vinext": "vinext start",
     "check:vinext": "vinext check",
-    "test:browser": "playwright test --config=playwright.config.ts"
+    "test:browser": "playwright test --config=playwright.config.ts",
+    "build:workerd": "vite build --config vite.workerd.config.ts",
+    "dev:workerd": "vite dev --config vite.workerd.config.ts --host 127.0.0.1 --port 3116 --strictPort",
+    "preview:workerd": "vite preview --config vite.workerd.config.ts --host 127.0.0.1 --port 3116 --strictPort"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -27,6 +30,8 @@
     "vinext": "1.4.4",
     "@vitejs/plugin-rsc": "0.5.39",
     "@playwright/test": "1.65.0",
-    "@axe-core/playwright": "4.14.0"
+    "@axe-core/playwright": "4.14.0",
+    "@cloudflare/vite-plugin": "1.67.0",
+    "vite": "8.3.6"
   }
 }
