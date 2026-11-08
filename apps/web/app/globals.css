@@ -194,3 +194,10 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .editorial-specs th,.editorial-specs td { min-width: 95px; }
   .editorial-article h1 { overflow-wrap: anywhere; }
 }
+
+
+/* TUR010 Chromium 390px regression: decorative orbit must not stretch page. */
+@media (max-width: 760px) {
+  .hero-visual { overflow: hidden; }
+  .hero-orbit { pointer-events: none; }
+}
