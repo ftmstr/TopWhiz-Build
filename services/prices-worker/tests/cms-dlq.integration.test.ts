@@ -25,6 +25,7 @@ test("DLQ replay uses independent ticket, persistent receipts and audited Queue 
  const db=new pg.Pool({connectionString:uri,options:"-c search_path="+schema,max:2});
  try{
   await db.query(readFileSync(new URL("../migrations/0007_cms_queue_receipts.sql",import.meta.url),"utf8"));
+  await db.query(readFileSync(new URL("../migrations/0011_cms_queue_receipt_hash.sql",import.meta.url),"utf8"));
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
   const final=await receipts.claim(ids.finished);
   assert.equal(final.status,"acquired");
