@@ -45,3 +45,19 @@ Official references:
 
 **Do not call any real wrangler preview/deploy, vinext-cloudflare deploy,
 domain mutation or production credentials during this tour.**
+
+
+## Verified isolated local runtime finding
+
+At GitHub Actions run 42465786472, the separate
+vinext-local-exploratory job completed SUCCESS on Linux with pnpm 10.18.3.
+After a frozen repository install, the disposable CI runner added
+@vitejs/plugin-rsc 0.5.39 and React/react-dom/react-server-dom-webpack 19.3.1.
+vinext 1.4.4 then generated complete Vite RSC, server, client and SSR outputs.
+The runner started local vinext server on 127.0.0.1:3112: /haberler and
+/telefonlar returned HTTP 200 with TOPWHIZ and reserved advertisement labels;
+no adsbygoogle.js was present. This is substantive local runtime smoke
+evidence and **does not change the tracked app dependencies**, so native
+vinext with committed frozen React 19.2.0 is still **not reproducible without
+an approved web dependency migration and lockfile refresh**. Nor does the
+result test real Cloudflare workerd, Access, DB, R2 or Queue bindings.
