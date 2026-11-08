@@ -1,9 +1,10 @@
+import {makeSyntheticPng} from "../services/prices-worker/tests/fixtures/png-factory.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { handleCmsMedia } from "../services/prices-worker/src/cms/media-handler.mjs";
 import { stageLicensedMedia } from "../services/prices-worker/src/cms/cloudflare-adapters.mjs";
 
-function png(){return new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);}
+function png(){return makeSyntheticPng();}
 test("R2 public media route only serves current approved/linked media",async()=>{
   const objects=new Map();
   const bucket={
@@ -59,7 +60,7 @@ test("mismatch and missing R2 bytes fail closed",async()=>{
 });
 
 test("tampered R2 bytes are rejected even if object metadata claims original SHA",async()=>{
-  const valid=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const valid=makeSyntheticPng();
   const {stageLicensedMedia}=await import("../services/prices-worker/src/cms/cloudflare-adapters.mjs");
   const storage=new Map();
   const bucket={
