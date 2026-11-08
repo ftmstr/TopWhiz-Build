@@ -178,8 +178,8 @@ export class CmsRepository{
       }
       for(const issuer of issuerDeps){
         await c.query(
-          "INSERT INTO cms_public_issuer_dependencies(submission_id,version,attestation_type,authority_id,approved_public_key) VALUES($1,$2,$3,$4,$5)",
-          [id,expectedRevision,issuer.attestation_type,issuer.authority_id,issuer.public_key_pem]);
+          "INSERT INTO cms_public_issuer_dependencies(submission_id,version,attestation_type,authority_id,approved_public_key,approved_signature_base64) VALUES($1,$2,$3,$4,$5,$6)",
+          [id,expectedRevision,issuer.attestation_type,issuer.authority_id,issuer.public_key_pem,issuer.signature_base64]);
       }
       await c.query("DELETE FROM published_route_bindings WHERE submission_id=$1",[id]);
       for(const route of checked.destinations)
