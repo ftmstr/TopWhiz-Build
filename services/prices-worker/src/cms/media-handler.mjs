@@ -12,6 +12,36 @@ function answer(status){
     "Referrer-Policy":"no-referrer"
   }});
 }
+async function verifiedBytes(stream,expectedBytes,expectedHash,expectedMime){
+  if(!stream || typeof stream.getReader!=="function")throw Error("missing_image_body");
+  const reader=stream.getReader();
+  const parts=[];let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(!(value instanceof Uint8Array))throw Error("invalid_stream_chunk");
+      total+=value.byteLength;
+      if(total>expectedBytes || total>10485760)throw Error("media_bytes_exceeded");
+      parts.push(value);
+    }
+  }catch(e){try{await reader.cancel()}catch{}throw e}
+  finally{reader.releaseLock()}
+  if(total!==expectedBytes)throw Error("media_length_mismatch");
+  const bytes=new Uint8Array(total);let offset=0;
+  for(const chunk of parts){bytes.set(chunk,offset);offset+=chunk.length}
+  const png=bytes.length>=8&&[137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v);
+  const jpg=bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+  const webp=bytes.length>=12&&String.fromCharCode(...bytes.slice(0,4))==="RIFF"&&
+    String.fromCharCode(...bytes.slice(8,12))==="WEBP";
+  if(!((expectedMime==="image/png"&&png)||(expectedMime==="image/jpeg"&&jpg)||
+     (expectedMime==="image/webp"&&webp)))throw Error("media_signature_mismatch");
+  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes));
+  const hex=[...digest].map(v=>v.toString(16).padStart(2,"0")).join("");
+  if(hex!==expectedHash)throw Error("media_digest_mismatch");
+  return bytes;
+}
+
 export async function handleCmsMedia(request,{findApprovedAsset,bucket}={}){
   const url=new URL(request.url);
   if(request.method!=="GET" && request.method!=="HEAD")return answer(405);
@@ -32,6 +62,9 @@ export async function handleCmsMedia(request,{findApprovedAsset,bucket}={}){
     if(image.size!==asset.bytes||
        image.customMetadata?.sha256!==asset.sha256Hex||
        image.httpMetadata?.contentType!==asset.contentType)return answer(503);
+    // R2 metadata is NOT proof that object bytes were not tampered with.
+    // Read with strict size cap, validate signature and re-hash all bytes.
+    const verified=await verifiedBytes(image.body,asset.bytes,asset.sha256Hex,asset.contentType);
     const headers={
       "Content-Type":asset.contentType,
       "Content-Length":String(image.size),
@@ -41,6 +74,6 @@ export async function handleCmsMedia(request,{findApprovedAsset,bucket}={}){
       "Referrer-Policy":"no-referrer",
       "Content-Security-Policy":"default-src 'none'; sandbox"
     };
-    return new Response(request.method==="HEAD"?null:image.body,{status:200,headers});
+    return new Response(request.method==="HEAD"?null:verified,{status:200,headers});
   }catch{return answer(503)}
 }

@@ -26,7 +26,7 @@ test("Postgres 16 transactions: pending -> approved -> published -> revised -> w
   const pool=new pg.Pool({connectionString,options:"-c search_path=tur006_cms_test",max:3});
   const cms=new CmsRepository(pool);
   try{
-    for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql"]){
+    for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql","0006_cms_security.sql"]){
       await pool.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
     }
     const first=await cms.submit("test-intake-key-v1",news());

@@ -1,0 +1,18 @@
+# TUR008 architecture sample ONLY: DO NOT DEPLOY. Configure queue/DLQ
+# deliberately in a private Cloudflare account and review jurisdiction,
+# Access, nonprod DB, API token scopes and branch preview isolation.
+name = "topwhiz-cms-preview-only"
+main = "src/cms/queue-purge-worker.ts"
+compatibility_date = "2026-11-08"
+workers_dev = false
+
+[[queues.consumers]]
+queue = "topwhiz-preview-cms-purge"
+dead_letter_queue = "topwhiz-preview-cms-purge-dlq"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 30
+
+# This file is not referenced by CI Wrangler dry-run nor deployed. Real
+# secrets must come through a secure environment, not checked into Git.
