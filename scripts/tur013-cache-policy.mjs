@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const config=readFileSync(new URL("../apps/web/vite.workerd.config.ts",import.meta.url),"utf8");
 const apiConfig=readFileSync(new URL("../services/prices-worker/wrangler.toml",import.meta.url),"utf8");
-for(const src of [config,apiConfig])assert.match(src,/cache\s*[:=].*enabled\s*[:=]\s*false|enabled\s*=\s*false/s);
+assert.match(config,/cache\s*:\s*\{\s*enabled\s*:\s*false/);
+assert.match(apiConfig,/\[cache\]\s*enabled\s*=\s*false/);
 assert.match(config,/remoteBindings:false/);
 assert.match(config,/workers_dev:false/);
 const base="http://127.0.0.1:3116";
@@ -25,7 +26,7 @@ for(const path of ["/","/haberler","/telefonlar","/robots.txt","/haberler/not-pu
  // contains only the universal "Disallow: /" policy, not licensed CMS HTML.
  // Its max-age=0 caching is not a content-freshness bypass.
  if(path==="/robots.txt"){
-   assert.match(await response.text(),/Disallow:\\s*\\//);
+   assert.ok((await response.text()).includes("Disallow: /"),"static robots must disable indexing");
    continue;
  }
  const cc=response.headers.get("cache-control");
@@ -37,4 +38,4 @@ for(const path of ["/","/haberler","/telefonlar","/robots.txt","/haberler/not-pu
  const body=await response.text();
  assert.ok(!body.includes("adsbygoogle.js"),"no ad code");
 }
-console.log("TUR013 local vinext/workerd: five RSC/SSR routes all no-store, deny unpublished; PASS");
+console.log("TUR013 local vinext/workerd: dynamic RSC/SSR routes no-store (static robots separate), deny unpublished; PASS");
