@@ -16,7 +16,7 @@ test("DLQ does not believe a Queue payload's self-asserted approval",async()=>{
   let sends=0,audits=0;
   const x=await replayDeadLetters({messages:[msg]},{
     verifyOperatorTicket:async()=>({approved:false}),
-    receipts:{async status(){return "missing"}},
+    receipts:{async verifyEvent(){return true},async status(){return "missing"}},
     auditReplay:async()=>{audits++},
     originQueue:{async send(){sends++}}
   });
@@ -31,7 +31,7 @@ test("DLQ audit failure and active receipt lease never enqueue or ACK",async()=>
       verifyOperatorTicket:async()=>({
         approved:true,ticket:"CI-HUMAN-APPROVED-1234",operator:"CI Rights Controller"
       }),
-      receipts:{async status(){return reason==="lease-active"?"processing":"missing"}},
+      receipts:{async verifyEvent(){return true},async status(){return reason==="lease-active"?"processing":"missing"}},
       auditReplay:async()=>{throw Error("audit deliberately unavailable")},
       originQueue:{async send(){sent++}}
     });
@@ -46,7 +46,7 @@ test("Duplicate redrive event in same batch is not enqueued twice",async()=>{
    verifyOperatorTicket:async()=>({
      approved:true,ticket:"CI-INDEPENDENT-OPERATOR-1234",operator:"CI Rights Controller"
    }),
-   receipts:{async status(){return "missing"}},
+   receipts:{async verifyEvent(){return true},async status(){return "missing"}},
    auditReplay:async()=>{},
    originQueue:{async send(){sent++}}
  });
