@@ -57,3 +57,29 @@ test("mismatch and missing R2 bytes fail closed",async()=>{
   assert.equal((await handleCmsMedia(req,{findApprovedAsset:async()=>asset,bucket:broken})).status,503);
   assert.equal((await handleCmsMedia(req,{findApprovedAsset:async()=>asset,bucket:{get:async()=>null}})).status,404);
 });
+
+test("tampered R2 bytes are rejected even if object metadata claims original SHA",async()=>{
+  const valid=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const {stageLicensedMedia}=await import("../services/prices-worker/src/cms/cloudflare-adapters.mjs");
+  const storage=new Map();
+  const bucket={
+    async put(key,bytes,metadata){storage.set(key,{bytes,metadata})},
+    async get(key){
+      const saved=storage.get(key);
+      if(!saved)return null;
+      const altered=new Uint8Array(saved.bytes);
+      altered[11]=255; // identical length and image signature, WRONG SHA-256
+      return {size:altered.length,body:new Response(altered).body,
+        customMetadata:saved.metadata.customMetadata,
+        httpMetadata:saved.metadata.httpMetadata};
+    }
+  };
+  const receipt=await stageLicensedMedia(bucket,"tamper-ci",valid,{
+    rightsApproved:true,evidenceRef:"SYNTHETIC_IMAGE_RIGHTS",reviewer:"CI Reviewer"});
+  const asset={key:receipt.key,sha256Hex:receipt.sha256,bytes:receipt.bytes,
+    contentType:receipt.contentType,rightsApproved:true};
+  const response=await handleCmsMedia(new Request("https://cms.example.test/v1/media/tamper-ci"),{
+    findApprovedAsset:async()=>asset,bucket
+  });
+  assert.equal(response.status,503,"spoofed R2 metadata must not bypass byte-level digest validation");
+});
