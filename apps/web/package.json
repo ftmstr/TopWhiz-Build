@@ -10,7 +10,8 @@
     "compat:check": "vinext check",
     "build:vinext": "vinext build",
     "start:vinext": "vinext start",
-    "check:vinext": "vinext check"
+    "check:vinext": "vinext check",
+    "test:browser": "playwright test --config=playwright.config.ts"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -24,6 +25,8 @@
     "@types/react-dom": "19.2.0",
     "typescript": "5.9.3",
     "vinext": "1.4.4",
-    "@vitejs/plugin-rsc": "0.5.39"
+    "@vitejs/plugin-rsc": "0.5.39",
+    "@playwright/test": "1.65.0",
+    "@axe-core/playwright": "4.14.0"
   }
 }
