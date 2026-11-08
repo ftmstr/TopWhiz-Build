@@ -127,6 +127,18 @@ export class CmsRepository{
       }
       await c.query("INSERT INTO published_content_versions(submission_id,version,public_payload) VALUES($1,$2,$3::jsonb)",
         [id,expectedRevision,JSON.stringify(safe)]);
+      // Rights dependencies belong to THIS immutable published version,
+      // not to the mutable current draft or copied public source credits.
+      for(const sourceId of row.payload.sources){
+        await c.query(
+          "INSERT INTO cms_public_dependencies(submission_id,version,resource_kind,resource_id) VALUES($1,$2,'source',$3)",
+          [id,expectedRevision,sourceId]);
+      }
+      if(typeof safe.coverMediaId==="string"){
+        await c.query(
+          "INSERT INTO cms_public_dependencies(submission_id,version,resource_kind,resource_id) VALUES($1,$2,'media',$3)",
+          [id,expectedRevision,safe.coverMediaId]);
+      }
       await c.query("DELETE FROM published_route_bindings WHERE submission_id=$1",[id]);
       for(const route of checked.destinations)
         await c.query("INSERT INTO published_route_bindings(submission_id,public_path) VALUES($1,$2)",[id,route]);
