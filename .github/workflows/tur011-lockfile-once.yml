@@ -1,0 +1,37 @@
+name: TUR011 one-shot dependency lockfile (branch only)
+on:
+  push:
+    branches:
+      - feat/tur011-local-vinext-workerd-races-20261108
+    paths:
+      - apps/web/package.json
+permissions:
+  contents: write
+jobs:
+  resolve-lockfile:
+    if: github.repository == 'ftmstr/TopWhiz-Build' && github.ref == 'refs/heads/feat/tur011-local-vinext-workerd-races-20261108'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tur011-local-vinext-workerd-races-20261108
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Resolve lockfile without package lifecycle scripts
+        run: pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile
+      - name: Fail unless ONLY pnpm-lock.yaml changes
+        run: |
+          git diff --exit-code -- apps/web/package.json package.json services/prices-worker/package.json
+          test "$(git diff --name-only | wc -l)" = "1"
+          git diff --name-only | grep -Fx 'pnpm-lock.yaml'
+      - name: Push only to TUR011 branch, NEVER main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pnpm-lock.yaml
+          git commit -m 'chore(tur011): pin Cloudflare Vite adapter in frozen lockfile'
+          git push origin HEAD:refs/heads/feat/tur011-local-vinext-workerd-races-20261108
