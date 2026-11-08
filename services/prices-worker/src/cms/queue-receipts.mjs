@@ -48,8 +48,10 @@ export function makeReceiptStore(query){
       // Legacy pre-TUR013 rows have no event hash. Reconciliation cannot
       // assert payload identity for them; deployments MUST inventory/retire
       // outstanding legacy DLQ messages before strict rollout.
-      if(eventDigest!==null&&saved[0]?.event_sha256!=null&&
-         saved[0].event_sha256!==eventDigest)throw Error("receipt_event_hash_mismatch");
+      if(eventDigest!==null&&saved[0]&&saved[0].event_sha256!==eventDigest)
+        throw Error(saved[0].event_sha256===null
+          ?"legacy_receipt_requires_independent_recovery"
+          :"receipt_event_hash_mismatch");
       return saved[0]?.status??"missing";
     },
     async claim(eventId,eventDigest=null){
@@ -60,7 +62,9 @@ export function makeReceiptStore(query){
       if(acquired.length===1)return {status:"acquired",token};
       const saved=await query(receiptStatusSql,[eventId]);
       if(saved[0]&&saved[0].event_sha256!==eventDigest)
-        throw Error("receipt_event_hash_mismatch");
+        throw Error(saved[0].event_sha256===null&&eventDigest!==null
+          ?"legacy_receipt_requires_independent_recovery"
+          :"receipt_event_hash_mismatch");
       return {status:saved[0]?.status==="completed"?"completed":"busy"};
     },
     async complete(eventId,token){
