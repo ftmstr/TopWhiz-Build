@@ -45,7 +45,7 @@ test("PostgreSQL roles, signed-public view, revision-safe source/media revoke an
     for(const file of [
       "0003_content_cms.sql","0004_cms_delivery.sql",
       "0005_cms_trusted_attestations.sql","0006_cms_security.sql",
-      "0007_cms_queue_receipts.sql","0008_cms_issuer_lifecycle.sql"
+      "0007_cms_queue_receipts.sql","0008_cms_issuer_lifecycle.sql","0009_cms_publication_rollback.sql"
     ])await db.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
     const script=readFileSync(new URL("../security/cms_roles.sql",import.meta.url),"utf8")
       .replaceAll("__TOPWHIZ_SCHEMA__",schema);
