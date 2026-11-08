@@ -2,7 +2,7 @@
 # All live Cloudflare bindings require separate authorized provisioning/review.
 name = "topwhiz-cms-purge-preview"
 main = "src/cms/queue-purge-worker.ts"
-compatibility_date = "2026-11-07"
+compatibility_date = "2026-09-25"
 workers_dev = false
 
 [observability]
