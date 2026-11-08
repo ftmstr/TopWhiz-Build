@@ -54,7 +54,8 @@ GRANT SELECT ON __TOPWHIZ_SCHEMA__.content_submissions,
  __TOPWHIZ_SCHEMA__.cms_review_grants,
  __TOPWHIZ_SCHEMA__.published_content_versions,
  __TOPWHIZ_SCHEMA__.published_route_bindings,
- __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_publisher;
+ __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
+ __TOPWHIZ_SCHEMA__.cms_public_dependencies TO tw_cms_publisher;
 GRANT UPDATE ON __TOPWHIZ_SCHEMA__.content_submissions,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_publisher;
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.published_content_versions,
@@ -67,7 +68,8 @@ GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_publisher;
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.content_submissions,
  __TOPWHIZ_SCHEMA__.cms_trusted_sources,
  __TOPWHIZ_SCHEMA__.cms_media_assets,
- __TOPWHIZ_SCHEMA__.published_route_bindings
+ __TOPWHIZ_SCHEMA__.published_route_bindings,
+ __TOPWHIZ_SCHEMA__.cms_public_dependencies
  TO tw_cms_rights_admin;
 GRANT UPDATE(rights_approved) ON __TOPWHIZ_SCHEMA__.cms_trusted_sources,
  __TOPWHIZ_SCHEMA__.cms_media_assets TO tw_cms_rights_admin;
