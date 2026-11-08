@@ -25,7 +25,7 @@ test("license and signed-issuer rollback races never leave hidden invalid public
  try{
   for(const f of [
     "0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql",
-    "0006_cms_security.sql","0007_cms_queue_receipts.sql",
+    "0006_cms_security.sql","0007_cms_queue_receipts.sql","0011_cms_queue_receipt_hash.sql",
     "0008_cms_issuer_lifecycle.sql","0009_cms_publication_rollback.sql","0010_cms_cache_fences.sql"
   ])await db.query(readFileSync(new URL("../migrations/"+f,import.meta.url),"utf8"));
   for(const id of ["ci-race-old","ci-race-new","ci-race-issuer-old"]){
