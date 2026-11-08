@@ -82,6 +82,10 @@ jobs:
           node-version: "22"
       - name: Frozen install
         run: pnpm install --frozen-lockfile
-      - name: Attempt real local vinext build (NO Cloudflare Preview/deploy)
+      - name: Probe optional App Router RSC plugin in disposable runner only
+        run: |
+          pnpm --filter @topwhiz/web add -D @vitejs/plugin-rsc@0.5.39 --ignore-scripts --no-frozen-lockfile
+          test "$(git show HEAD:apps/web/package.json | grep -c vinext)" -ge 1
+      - name: Attempt local vinext App Router build (NO Preview or deploy)
         run: |
           pnpm --filter @topwhiz/web exec vinext build
