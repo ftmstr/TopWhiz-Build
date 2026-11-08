@@ -95,7 +95,11 @@ DECLARE
  proc record;
 BEGIN
  IF target IS NULL OR target IN ('public','pg_catalog','information_schema')
-  OR has_schema_privilege('public',target,'CREATE') THEN
+  OR EXISTS (
+    SELECT 1 FROM pg_namespace n
+    JOIN LATERAL aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) a ON true
+    WHERE n.nspname=target AND a.grantee=0 AND a.privilege_type='CREATE'
+  ) THEN
   RAISE EXCEPTION 'untrusted_cms_security_definer_schema';
  END IF;
  IF NOT EXISTS(
