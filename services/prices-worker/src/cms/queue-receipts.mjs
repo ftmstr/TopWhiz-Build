@@ -25,6 +25,22 @@ function checkDigest(value){
 export function makeReceiptStore(query){
   if(typeof query!=="function")throw Error("receipt_database_required");
   return {
+    /** A Queue message has NO authority to invent an event or change its
+     * routes/revision: match every field against the durable publication
+     * transaction outbox BEFORE touching Cloudflare's zone cache.
+     */
+    async verifyEvent(event){
+      const id=event?.eventId;
+      if(!UUID.test(id??""))throw Error("invalid_event_id");
+      const rows=await query(
+        "SELECT submission_id,revision_no,event_kind,routes FROM cms_delivery_outbox WHERE id=$1",
+        [id]);
+      const rec=rows[0];
+      return !!rec&&rec.submission_id===event.submissionId&&
+        Number(rec.revision_no)===event.revision&&rec.event_kind===event.kind&&
+        Array.isArray(rec.routes)&&
+        JSON.stringify([...new Set(rec.routes)])===JSON.stringify(event.routes);
+    },
     async status(eventId,eventDigest=null){
       if(!UUID.test(eventId??""))throw Error("invalid_event_id");
       checkDigest(eventDigest);
