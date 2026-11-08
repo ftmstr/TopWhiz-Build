@@ -19,6 +19,15 @@ export function validatePurgeEvent(event){
   return {eventId:event.eventId,submissionId:event.submissionId,
     revision:event.revision,kind:event.kind,routes:[...new Set(event.routes)]};
 }
+/** SHA-256 binds the UUID and ALL canonical event fields. No signature
+ * or authorisation is derived from this digest; durable DB outbox is trusted.
+ */
+export async function fingerprintPurgeEvent(raw){
+  const event=validatePurgeEvent(raw);
+  const encoded=new TextEncoder().encode(JSON.stringify(event));
+  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",encoded));
+  return [...digest].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
 /** Mark delivered ONLY after Queue accepted event; failed sends remain pending. */
 export async function dispatchCmsOutbox(repository,queue,limit=20){
   if(!repository||!queue||typeof queue.send!=="function")throw Error("queue_binding_required");
@@ -42,7 +51,12 @@ export async function consumeCmsPurgeBatch(batch,purger,receipts){
     try{
       event=validatePurgeEvent(msg.body);
       if(receipts){
-        claim=await receipts.claim(event.eventId);
+        if(typeof receipts.verifyEvent!=="function"||
+           !(await receipts.verifyEvent(event)))throw Error("cache_event_not_durable");
+        // A matching UUID with a substituted route, version or kind must
+        // never inherit the successful receipt (including on DLQ replay).
+        const digest=await fingerprintPurgeEvent(event);
+        claim=await receipts.claim(event.eventId,digest);
         if(claim.status==="completed"){msg.ack();continue}
         if(claim.status!=="acquired"){
           msg.retry({delaySeconds:30});continue;
