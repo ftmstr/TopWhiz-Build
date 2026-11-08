@@ -15,6 +15,7 @@ test("60 synthetic DLQ messages, audit/Queue outages, replay and completed idemp
  const db=new pg.Pool({connectionString,options:"-c search_path="+schema,max:12});
  try{
   await db.query(readFileSync(new URL("../migrations/0007_cms_queue_receipts.sql",import.meta.url),"utf8"));
+  await db.query(readFileSync(new URL("../migrations/0011_cms_queue_receipt_hash.sql",import.meta.url),"utf8"));
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
   const items=Array.from({length:60},(_,i)=>({
     eventId:randomUUID(),submissionId:randomUUID(),revision:1,
