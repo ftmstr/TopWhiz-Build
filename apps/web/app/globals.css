@@ -162,3 +162,35 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 @media(max-width:760px) { .editorial-article .article-body { font-size:14px; } }
 
 .article-thumb { display:block; width:100%; height:auto; max-height:270px; object-fit:contain; background:#141f31; border-radius:10px; margin-bottom:15px; }
+
+
+/* TUR010: visible mobile editorial navigation and keyboard-first landmarks.
+ * No live ad activation; reserved slots keep their original placement. */
+:where(.editorial-article, .article-item, .topwhiz-main) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.editorial-specs { display: block; overflow-x: auto; max-width: 100%; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .site-header .header-inner:has(.editorial-nav) {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding-block: 9px;
+  }
+  .site-header .editorial-nav {
+    display: flex;
+    order: 2;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    justify-content: start;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .editorial-nav a { min-height: 40px; display: inline-flex; align-items: center; }
+  .article-item { padding: 15px; }
+  .editorial-article figure img { max-width: 100%; }
+  .editorial-specs th,.editorial-specs td { min-width: 95px; }
+  .editorial-article h1 { overflow-wrap: anywhere; }
+}
