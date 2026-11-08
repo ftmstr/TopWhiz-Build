@@ -49,6 +49,8 @@ test("deferred COMMIT gate rejects un-audited source/media/issuer/evidence mutat
   }
   const sourceId=await publishManual("ci-tur014-source-record",article("ci-tur014-source-article","ci-tur014-source"));
   assert.equal((await db.query(publicCmsDetailSql,["news","ci-tur014-source-article"])).rowCount,1);
+  await assert.rejects(()=>db.query("UPDATE cms_trusted_sources SET source_url='https://example.org/forged' WHERE id='ci-tur014-source'"),
+   /cms_source_evidence_is_immutable/);
   await assert.rejects(()=>db.query("UPDATE cms_trusted_sources SET rights_approved=false WHERE id='ci-tur014-source'"),
     /cms_unfenced_sensitive_mutation_requires_withdrawal_outbox/);
   assert.equal((await db.query("SELECT rights_approved FROM cms_trusted_sources WHERE id='ci-tur014-source'")).rows[0].rights_approved,true);
@@ -74,6 +76,10 @@ test("deferred COMMIT gate rejects un-audited source/media/issuer/evidence mutat
   assert.equal((await pipeline.process(row.id,1)).state,"published");
   await assert.rejects(()=>db.query("UPDATE cms_review_authorities SET active=false WHERE id='ci-tur014-signer'"),
    /cms_unfenced_sensitive_mutation_requires_withdrawal_outbox/);
+  await assert.rejects(()=>db.query("UPDATE cms_review_authorities SET reviewer_class='human' WHERE id='ci-tur014-signer'"),
+   /cms_issuer_identity_metadata_immutable/);
+  await assert.rejects(()=>db.query("UPDATE cms_external_attestations SET evidence_ref='CI_FORGED_EVIDENCE_REF' WHERE submission_id=$1",[row.id]),
+   /cms_attestation_binding_immutable/);
   await assert.rejects(()=>db.query("UPDATE cms_external_attestations SET status='revoked' WHERE submission_id=$1",[row.id]),
    /cms_unfenced_sensitive_mutation_requires_withdrawal_outbox/);
   assert.equal((await db.query(publicCmsDetailSql,["news","ci-tur014-signed-article"])).rowCount,1);
@@ -90,6 +96,8 @@ test("deferred COMMIT gate rejects un-audited source/media/issuer/evidence mutat
    "INSERT INTO cms_media_assets(id,r2_key,content_type,bytes,sha256_hex,alt_text,license_evidence_ref,rights_approved,reviewed_by) VALUES('ci-tur014-img','media/reviewed/ci-tur014-img/original-ci.png','image/png',1024,$1,'Self generated CI picture','CI_GENERATED_RIGHTS_ONLY',true,'Independent CI Image Reviewer')",
    ["a".repeat(64)]);
   const mediaId=await publishManual("ci-tur014-media-article",article("ci-tur014-media-article","ci-tur014-media-source","ci-tur014-img"));
+  await assert.rejects(()=>db.query("UPDATE cms_media_assets SET sha256_hex=$1 WHERE id='ci-tur014-img'",["f".repeat(64)]),
+   /cms_media_license_or_digest_is_immutable/);
   await assert.rejects(()=>db.query("UPDATE cms_media_assets SET rights_approved=false WHERE id='ci-tur014-img'"),
    /cms_unfenced_sensitive_mutation_requires_withdrawal_outbox/);
   assert.equal((await revokeLicensedResource(db,"media","ci-tur014-img",
