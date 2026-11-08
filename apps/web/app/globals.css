@@ -219,3 +219,17 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .site-header .nav-links { flex-wrap: wrap; gap: 9px 12px; min-width: 0; }
   .site-header .header-inner { gap: 12px; }
 }
+
+
+/* TUR012 Chromium 1024/1280px: decorative orbit and redundant header CTA
+ * may overrun the viewport in tablet/small-desktop widths. Do not clip
+ * functional nav links, article content or keyboard focus indicators. */
+@media (min-width: 1001px) and (max-width: 1409px) {
+  .hero-visual { overflow: hidden; }
+  .hero { min-width: 0; }
+  .site-header .header-inner { gap: 12px; }
+  .site-header .nav-links { gap: 10px; min-width: 0; flex-wrap: wrap; }
+}
+@media (min-width: 1001px) and (max-width: 1350px) {
+  .site-header .header-action { display: none; }
+}
