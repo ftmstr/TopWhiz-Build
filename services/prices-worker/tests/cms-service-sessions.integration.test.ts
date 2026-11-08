@@ -81,6 +81,22 @@ test("real PostgreSQL LOGIN sessions exercise each inherited least-privilege ide
   await assert.rejects(()=>asService("rights_admin","INSERT INTO cms_review_grants DEFAULT VALUES"),/permission denied/i);
   await assert.rejects(()=>asService("issuer_admin","UPDATE cms_media_assets SET rights_approved=true"),/permission denied/i);
   await assert.rejects(()=>asService("queue_consumer","SELECT payload FROM content_submissions"),/permission denied/i);
+  await assert.rejects(()=>asService("reader",
+    "DELETE FROM published_content_versions"),/permission denied/i);
+  await assert.rejects(()=>asService("intake",
+    "UPDATE cms_review_authorities SET active=false"),/permission denied/i);
+  await assert.rejects(()=>asService("attestor",
+    "SELECT * FROM published_content_versions"),/permission denied/i);
+  await assert.rejects(()=>asService("reviewer",
+    "DELETE FROM cms_public_issuer_dependencies"),/permission denied/i);
+  await assert.rejects(()=>asService("publisher",
+    "INSERT INTO cms_external_attestations DEFAULT VALUES"),/permission denied/i);
+  await assert.rejects(()=>asService("rights_admin",
+    "UPDATE cms_review_authorities SET active=false"),/permission denied/i);
+  await assert.rejects(()=>asService("issuer_admin",
+    "UPDATE cms_trusted_sources SET rights_approved=true"),/permission denied/i);
+  await assert.rejects(()=>asService("queue_consumer",
+    "DELETE FROM cms_purge_receipts"),/permission denied/i);
   assert.equal((await asService("queue_consumer","SELECT count(*)::int AS n FROM cms_purge_receipts")).rows[0].n,0);
   assert.equal((await asService("publisher","SELECT count(*)::int AS n FROM published_content_versions")).rows[0].n,1);
   assert.equal((await asService("rights_admin","SELECT count(*)::int AS n FROM cms_trusted_sources")).rows[0].n,1);

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {title: "Telefonlar | TOPWHIZ", description: "Kaynaklı ve teknik özellikleri doğrulanmış telefon kataloğu.", robots:{index:false,follow:false}};
 import Link from "next/link";
 import Image from "next/image";
 import { safeMediaPath } from "../../lib/content-registry";

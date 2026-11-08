@@ -54,6 +54,7 @@ function parseNews(x:unknown):PublishedStory|null{
      !string(x.publishedAt,40)||!string(x.author,120))return null;
   return {slug:x.slug,title:x.title,summary:x.summary,body:x.body,
     publishedAt:x.publishedAt,author:x.author,sources:safeSources(x.sources),
+    ...(string(x.mediaAlt,180)?{mediaAlt:x.mediaAlt}:{}),
     ...(typeof x.mediaPath==="string"&&/^\/media\/cms\/[a-z0-9][a-z0-9_-]{0,95}$/.test(x.mediaPath)
       ? {mediaPath:x.mediaPath}: {})};
 }
@@ -73,6 +74,7 @@ function parsePhone(x:unknown):PublishedPhone|null{
   if(!variants.length||!specs.length)return null;
   return {slug:x.slug,title:x.title,summary:x.summary,brand:x.brand,
     modelCode:x.modelCode,market:x.market,variants,specifications:specs,
+    ...(string(x.mediaAlt,180)?{mediaAlt:x.mediaAlt}:{}),
     ...(typeof x.mediaPath==="string"&&/^\/media\/cms\/[a-z0-9][a-z0-9_-]{0,95}$/.test(x.mediaPath)
       ? {mediaPath:x.mediaPath}: {})};
 }

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = {title: "Haberler | TOPWHIZ", description: "Yayın hakkı ve kaynak denetimi tamamlanmış teknoloji haberleri.", robots:{index:false,follow:false}};
 import Link from "next/link";
 import Image from "next/image";
 import { safeMediaPath } from "../../lib/content-registry";

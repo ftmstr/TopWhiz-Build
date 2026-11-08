@@ -75,9 +75,22 @@ test("issuer revocation and rotation immediately deny public view and atomically
   assert.equal((await db.query("SELECT 1 FROM cms_public_pages WHERE submission_id=$1",[c.record.id])).rowCount,0);
   assert.equal((await reconcileInvalidIssuerPublications(db)).withdrawn,1);
   assert.equal((await reconcileInvalidIssuerPublications(db)).withdrawn,0);
+  // A signature altered AFTER publication remains non-empty and can still
+  // satisfy superficial status checks, but MUST fail immutable exact-byte
+  // signature projection before reconciliation.
+  const d=await create("ci-issuer-tampered","ci-replaced-signature-article");
+  await db.query(
+    "UPDATE cms_external_attestations SET signature_base64=$2 WHERE submission_id=$1 AND attestation_type='editorial'",
+    [d.record.id,"A".repeat(88)]);
+  assert.equal((await db.query(
+    "SELECT 1 FROM cms_public_pages WHERE submission_id=$1",[d.record.id])).rowCount,0);
+  assert.equal((await reconcileInvalidIssuerPublications(db)).withdrawn,1);
+  assert.equal((await db.query(
+    "SELECT state FROM content_submissions WHERE id=$1",[d.record.id])).rows[0].state,"withdrawn");
+
   assert.equal((await db.query("SELECT count(*)::int AS n FROM cms_issuer_revocations WHERE authority_id='ci-issuer-revoked'")).rows[0].n,2);
   // Six publish/revoke events are durable and do not leak active content.
-  assert.equal((await db.query("SELECT count(*)::int AS n FROM cms_delivery_outbox")).rows[0].n,6);
+  assert.equal((await db.query("SELECT count(*)::int AS n FROM cms_delivery_outbox")).rows[0].n,8);
  }finally{
   await db.end();
   await admin.query("DROP SCHEMA IF EXISTS "+schema+" CASCADE");

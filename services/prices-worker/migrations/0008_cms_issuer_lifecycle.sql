@@ -8,6 +8,7 @@ CREATE TABLE cms_public_issuer_dependencies (
     CHECK(attestation_type IN ('editorial','originality','specifications')),
   authority_id varchar(120) NOT NULL REFERENCES cms_review_authorities(id),
   approved_public_key text NOT NULL,
+  approved_signature_base64 text NOT NULL,
   PRIMARY KEY(submission_id,version,attestation_type)
 );
 CREATE INDEX cms_public_issuer_authority_idx
@@ -79,6 +80,6 @@ WHERE s.state='published'
     AND (issuer.active IS DISTINCT FROM true OR
          issuer.public_key_pem IS DISTINCT FROM ref.approved_public_key OR
          att.status IS DISTINCT FROM 'verified' OR
-         att.signature_base64 IS NULL)
+         att.signature_base64 IS DISTINCT FROM ref.approved_signature_base64)
  );
 COMMIT;

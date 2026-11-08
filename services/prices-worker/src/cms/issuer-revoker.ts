@@ -24,7 +24,7 @@ const invalidIssuer=String.raw`SELECT s.id,s.revision_no
      AND (auth.active IS DISTINCT FROM true OR
           auth.public_key_pem IS DISTINCT FROM dep.approved_public_key OR
           evidence.status IS DISTINCT FROM 'verified' OR
-          evidence.signature_base64 IS NULL)
+          evidence.signature_base64 IS DISTINCT FROM dep.approved_signature_base64)
  ) ORDER BY s.id LIMIT $1 FOR UPDATE OF s`;
 async function withdrawUnderLock(c:PoolClient,rows:Impact[]){
  let removed=0;

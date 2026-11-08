@@ -4,13 +4,14 @@ import { AdSlot } from "./ad-slots";
 
 export function EditorialShell({children}:{children:React.ReactNode}){
   return <>
+    <a className="skip-link" href="#main">İçeriğe geç</a>
     <header className="site-header">
       <div className="container header-inner">
         <Link className="logo-lockup" href="/" aria-label="TOPWHIZ ana sayfa">
           <span className="logo-thumb"><Image src="/brand/TopWhiz_Logo_02_KirmiziSariMavi.png" alt="" width={52} height={52}/></span>
           <span className="logo-word">TOP<span>WHIZ</span></span>
         </Link>
-        <nav className="nav-links" aria-label="Ana menü">
+        <nav className="nav-links editorial-nav" aria-label="Ana menü">
           <Link href="/haberler">Haberler</Link>
           <Link href="/telefonlar">Telefonlar</Link>
           <Link href="/#prices">Fiyatlar</Link>
@@ -19,7 +20,7 @@ export function EditorialShell({children}:{children:React.ReactNode}){
     </header>
     <AdSlot placement="top"/>
     <div className="topwhiz-with-rail">
-      <main className="topwhiz-main">{children}</main>
+      <main id="main" tabIndex={-1} className="topwhiz-main">{children}</main>
       <aside className="topwhiz-rail" aria-label="Sağ reklam yerleşimi"><AdSlot placement="right"/></aside>
     </div>
     <AdSlot placement="bottom"/>
