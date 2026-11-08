@@ -20,7 +20,7 @@ for(const [name,version] of [
  assert.ok(lock.includes("      "+label+":\n        specifier: "+version),
    name+" missing frozen lockfile spec");
 }
-assert.equal(worker.devDependencies.wrangler,"4.135.0");
+assert.ok(["4.135.0","4.158.0"].includes(worker.devDependencies.wrangler),"reviewed Wrangler pin required");
 assert.deepEqual(registry,{news:[],phones:[]});
 const wrangler=root("services/prices-worker/wrangler.toml");
 const cmsWrangler=root("services/prices-worker/wrangler.cms.toml");
