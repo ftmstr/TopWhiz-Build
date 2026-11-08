@@ -15,7 +15,9 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store, max-age=0",
+      "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+      "CDN-Cache-Control": "no-store",
+      "Cloudflare-CDN-Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer"
     }
