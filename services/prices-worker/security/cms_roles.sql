@@ -1,6 +1,6 @@
 -- TEMPLATE ONLY: replace __TOPWHIZ_SCHEMA__ with a verified schema identifier.
 -- Run as database owner, AFTER migrations, in approved nonproduction first.
--- The six NOLOGIN roles receive account-specific membership through
+-- The seven NOLOGIN roles receive account-specific membership through
 -- separate secret-managed provisioning, NOT from this repository.
 DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_intake') THEN
@@ -18,6 +18,9 @@ DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_rights_admin') THEN
    CREATE ROLE tw_cms_rights_admin NOLOGIN NOINHERIT;
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_queue_consumer') THEN
+   CREATE ROLE tw_cms_queue_consumer NOLOGIN NOINHERIT;
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_reader') THEN
    CREATE ROLE tw_cms_reader NOLOGIN NOINHERIT;
  END IF;
@@ -25,7 +28,7 @@ END $roles$;
 REVOKE ALL ON ALL TABLES IN SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
- tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,tw_cms_reader,tw_cms_rights_admin;
+ tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,tw_cms_reader,tw_cms_rights_admin,tw_cms_queue_consumer;
 
 -- Draft intake: SECURITY DEFINER minimizes exposure to other users' drafts.
 -- Owner of this function must be a restricted migrator (NOT service identity).
@@ -85,6 +88,10 @@ GRANT UPDATE(state,revision_no,updated_at) ON __TOPWHIZ_SCHEMA__.content_submiss
 GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_rights_admin;
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
  __TOPWHIZ_SCHEMA__.cms_rights_revocations TO tw_cms_rights_admin;
+
+-- Queue consumer can only claim/complete its own receipts.
+GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts
+ TO tw_cms_queue_consumer;
 
 -- Reader cannot access submission/draft, license evidence, review tables.
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_public_pages,
