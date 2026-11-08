@@ -18,14 +18,15 @@ CREATE INDEX cms_publication_fences_state_generation_idx
 INSERT INTO cms_publication_fences(submission_id,active_version,generation,state)
 SELECT s.id,
  COALESCE(h.publication_version,latest.version),
- s.revision_no,'published'
+ (SELECT max(o.revision_no) FROM cms_delivery_outbox o WHERE o.submission_id=s.id),'published'
 FROM content_submissions s
 LEFT JOIN cms_publication_heads h ON h.submission_id=s.id
 JOIN LATERAL (
  SELECT max(v.version) AS version FROM published_content_versions v WHERE v.submission_id=s.id
 ) latest ON true
 WHERE s.state='published'
-  AND COALESCE(h.publication_version,latest.version) IS NOT NULL;
+  AND COALESCE(h.publication_version,latest.version) IS NOT NULL
+  AND EXISTS (SELECT 1 FROM cms_delivery_outbox o WHERE o.submission_id=s.id);
 
 CREATE OR REPLACE VIEW cms_public_pages WITH (security_barrier=true) AS
 SELECT s.id AS submission_id,s.content_type,s.slug,s.updated_at,
@@ -44,7 +45,7 @@ JOIN LATERAL (
       WHERE old.submission_id=s.id)
    )
 ) v ON true
-JOIN cms_publication_fences f ON f.submission_id=s.id AND f.state='published' AND f.active_version=v.version AND f.generation<=s.revision_no
+JOIN cms_publication_fences f ON f.submission_id=s.id AND f.state='published' AND f.active_version=v.version AND f.generation<=s.revision_no AND f.generation=(SELECT max(o.revision_no) FROM cms_delivery_outbox o WHERE o.submission_id=s.id)
 LEFT JOIN cms_media_assets m ON m.id=v.public_payload->>'coverMediaId'
  AND m.rights_approved=true
 WHERE s.state='published'
