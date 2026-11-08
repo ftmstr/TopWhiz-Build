@@ -23,7 +23,8 @@
     "test:mutation-guard": "tsx --test tests/tur014-mutation-guard.integration.test.ts",
     "test:legacy-recovery": "tsx --test tests/tur014-legacy-recovery.integration.test.ts",
     "test:secdef-auth": "tsx --test tests/tur015-definer-authorization.integration.test.ts",
-    "test:multi-revoke": "tsx --test tests/tur015-multi-revoke.integration.test.ts"
+    "test:multi-revoke": "tsx --test tests/tur015-multi-revoke.integration.test.ts",
+    "test:commit-ambiguity": "tsx --test tests/tur015-commit-uncertainty.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
