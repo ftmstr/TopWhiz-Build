@@ -40,6 +40,7 @@ jobs:
           node scripts/tur012-workerd-load.mjs
           node scripts/tur013-cache-policy.mjs
           node scripts/tur014-stale-cache-probes.mjs
+          node scripts/tur015-stale-http.mjs
           if ! node scripts/tur011-workerd-vinext-smoke.mjs; then
             tail -n 180 /tmp/topwhiz-tur011-vinext-workerd.log
             exit 1
