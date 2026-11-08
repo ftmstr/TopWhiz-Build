@@ -144,6 +144,16 @@ GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_issuer_adm
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_issuer_revocations,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_issuer_admin;
 
+-- Publication head and version rollback are restricted to trusted publisher.
+-- Independently authorized operator API must authenticate rollback reason
+-- outside this SQL template; public readers retain only security-barrier views.
+GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_publication_heads
+ TO tw_cms_publisher;
+GRANT INSERT,SELECT ON __TOPWHIZ_SCHEMA__.cms_publication_rollback_audit
+ TO tw_cms_publisher;
+GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_publication_heads
+ TO tw_cms_rights_admin,tw_cms_issuer_admin;
+
 -- Queue consumer sees only idempotency receipts.
 GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts
  TO tw_cms_queue_consumer;
