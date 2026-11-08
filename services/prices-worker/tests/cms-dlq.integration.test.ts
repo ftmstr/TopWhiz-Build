@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import pg from "pg";
 import {makeReceiptStore} from "../src/cms/queue-receipts.mjs";
 import {replayDeadLetters} from "../src/cms/dlq-redrive.mjs";
+import {fingerprintPurgeEvent} from "../src/cms/cloudflare-adapters.mjs";
 const uri=process.env.TEST_DATABASE_URL;
 if(!uri)throw Error("TEST_DATABASE_URL required");
 const schema="tur009_dlq_ci";
@@ -40,7 +41,7 @@ test("DLQ replay uses independent ticket, persistent receipts and audited Queue 
 
   await db.query(readFileSync(new URL("../migrations/0011_cms_queue_receipt_hash.sql",import.meta.url),"utf8"));
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
-  const final=await receipts.claim(ids.finished);
+  const final=await receipts.claim(ids.finished,await fingerprintPurgeEvent(payload(ids.finished)));
   assert.equal(final.status,"acquired");
   await receipts.complete(ids.finished,final.token);
   const busy=await receipts.claim(ids.busy);
@@ -82,7 +83,7 @@ test("DLQ replay uses independent ticket, persistent receipts and audited Queue 
     ()=>replayDeadLetters({messages:[message(payload(ids.resend))]},{}),
     /dlq_requires_authenticated_operator_and_audit/);
   // Idempotent redelivery after the main queue completes this replay.
-  const second=await receipts.claim(ids.resend);
+  const second=await receipts.claim(ids.resend,await fingerprintPurgeEvent(payload(ids.resend)));
   await receipts.complete(ids.resend,second.token);
   const another=await replayDeadLetters({messages:[message(payload(ids.resend))]},{
     verifyOperatorTicket:async()=>({
