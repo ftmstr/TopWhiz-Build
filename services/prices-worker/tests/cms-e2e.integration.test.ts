@@ -1,3 +1,4 @@
+import {makeSyntheticPng} from "./fixtures/png-factory.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -15,7 +16,7 @@ const connectionString=process.env.TEST_DATABASE_URL;
 if(!connectionString)throw Error("TEST_DATABASE_URL required; refusing silent CI skip");
 const fixedNow=new Date("2026-11-07T22:00:00Z");
 const secret="CI-SYNTHETIC-INTERNAL-INTAKE-SECRET-123456";
-const imgBytes=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+const imgBytes=makeSyntheticPng();
 const article={
   type:"news" as const,slug:"sentetik-otomatik-yayin",
   title:"Sentetik haber: güvenli otomatik yayın testi",
