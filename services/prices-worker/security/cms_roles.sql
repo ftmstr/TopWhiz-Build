@@ -30,8 +30,8 @@ REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
  tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,tw_cms_reader,tw_cms_rights_admin,tw_cms_queue_consumer;
 
--- Draft intake: SECURITY DEFINER minimizes exposure to other users' drafts.
--- Owner of this function must be a restricted migrator (NOT service identity).
+-- Draft intake: SECURITY DEFINER minimizes access to other users' drafts.
+-- Own this function as restricted migrator, NOT as a service account.
 CREATE OR REPLACE FUNCTION __TOPWHIZ_SCHEMA__.cms_ingest_draft(
  p_external_key varchar,p_type varchar,p_slug varchar,p_payload jsonb)
 RETURNS TABLE(id uuid,revision_no integer,state varchar,replay boolean)
@@ -39,7 +39,35 @@ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path=pg_catalog,__TOPWHIZ_SCHEMA__ AS $fn$
 DECLARE existing_record RECORD;
 BEGIN
- IF p_external_key IS NULL OR p_external_key !~ '^[A-Za-z0-9_.:-]{1,160}
+ IF p_external_key IS NULL OR p_external_key !~ '^[A-Za-z0-9_.:-]{1,160}$'
+   OR p_type IS NULL OR p_type NOT IN ('news','phone')
+   OR p_slug IS NULL OR p_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+   OR length(p_slug)>100 OR jsonb_typeof(p_payload)<>'object'
+   OR length(p_payload::text)>65536
+   OR p_payload->>'type' IS DISTINCT FROM p_type
+   OR p_payload->>'slug' IS DISTINCT FROM p_slug
+ THEN RAISE EXCEPTION 'invalid_submission'; END IF;
+ INSERT INTO __TOPWHIZ_SCHEMA__.content_submissions AS s
+  (external_key,content_type,slug,payload,state)
+ VALUES(p_external_key,p_type,p_slug,p_payload,'pending_review')
+ ON CONFLICT(external_key) DO NOTHING
+ RETURNING s.id,s.revision_no,s.state INTO existing_record;
+ IF FOUND THEN
+   id:=existing_record.id;revision_no:=existing_record.revision_no;
+   state:=existing_record.state;replay:=false;RETURN NEXT;RETURN;
+ END IF;
+ SELECT s.id,s.revision_no,s.state,s.payload
+  INTO existing_record FROM __TOPWHIZ_SCHEMA__.content_submissions s
+  WHERE s.external_key=p_external_key FOR UPDATE;
+ IF NOT FOUND OR existing_record.payload IS DISTINCT FROM p_payload
+ THEN RAISE EXCEPTION 'external_key_conflict'; END IF;
+ id:=existing_record.id;revision_no:=existing_record.revision_no;
+ state:=existing_record.state;replay:=true;RETURN NEXT;
+END $fn$;
+REVOKE ALL ON FUNCTION __TOPWHIZ_SCHEMA__.cms_ingest_draft(
+ varchar,varchar,varchar,jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION __TOPWHIZ_SCHEMA__.cms_ingest_draft(
+ varchar,varchar,varchar,jsonb) TO tw_cms_intake;
 
 -- External authority can submit attestations, but cannot issue review grants.
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_review_authorities TO tw_cms_attestor;
