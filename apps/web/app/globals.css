@@ -209,3 +209,13 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .hero-visual { overflow: hidden; }
   .hero { min-width: 0; }
 }
+
+
+/* TUR011 exact 768px tablet: header navigation and CTA compete for 720px.
+   Keep destinations visible; omit redundant CTA, wrap nav and avoid clipping
+   keyboard-focused links. */
+@media (min-width: 761px) and (max-width: 1000px) {
+  .site-header .header-action { display: none; }
+  .site-header .nav-links { flex-wrap: wrap; gap: 9px 12px; min-width: 0; }
+  .site-header .header-inner { gap: 12px; }
+}
