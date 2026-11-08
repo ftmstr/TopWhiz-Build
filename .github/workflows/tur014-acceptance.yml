@@ -39,6 +39,7 @@ jobs:
           trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
           node scripts/tur012-workerd-load.mjs
           node scripts/tur013-cache-policy.mjs
+          node scripts/tur014-stale-cache-probes.mjs
           if ! node scripts/tur011-workerd-vinext-smoke.mjs; then
             tail -n 180 /tmp/topwhiz-tur011-vinext-workerd.log
             exit 1
