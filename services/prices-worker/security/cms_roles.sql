@@ -25,6 +25,9 @@ DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_legacy_recovery') THEN
    CREATE ROLE tw_cms_legacy_recovery NOLOGIN NOINHERIT;
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_recovery_authorizer') THEN
+   CREATE ROLE tw_cms_recovery_authorizer NOLOGIN NOINHERIT;
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_reader') THEN
    CREATE ROLE tw_cms_reader NOLOGIN NOINHERIT;
  END IF;
@@ -34,7 +37,7 @@ REVOKE ALL ON ALL TABLES IN SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
  tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,
- tw_cms_rights_admin,tw_cms_issuer_admin,tw_cms_queue_consumer,tw_cms_reader,tw_cms_legacy_recovery;
+ tw_cms_rights_admin,tw_cms_issuer_admin,tw_cms_queue_consumer,tw_cms_reader,tw_cms_legacy_recovery,tw_cms_recovery_authorizer;
 
 -- Security definer draft submission, scoped to an immutable external key.
 -- NOT a generic arbitrary SQL execution bridge; qualified schema and
@@ -190,6 +193,23 @@ DO $legacy$ BEGIN
      TO tw_cms_legacy_recovery;
  END IF;
 END $legacy$;
+
+-- TUR015 independent authorization role can INSERT one immutable,
+-- expiring authorization for an existing original durable outbox event;
+-- legacy broker has no INSERT/UPDATE permissions on this table.
+-- Tests preceding TUR015 create the role template without the table,
+-- therefore grant only if the migration is actually installed.
+DO $grant_tur015$ BEGIN
+ IF to_regclass('__TOPWHIZ_SCHEMA__.cms_legacy_recovery_authorizations')
+  IS NOT NULL THEN
+   GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_legacy_recovery_authorizations
+    TO tw_cms_recovery_authorizer;
+   GRANT SELECT(id,submission_id,revision_no,event_kind,routes)
+    ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox
+    TO tw_cms_recovery_authorizer;
+ END IF;
+END $grant_tur015$;
+REVOKE CREATE ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 
 -- No service role has LOGIN, CREATE, SUPERUSER or BYPASSRLS.
 -- Per-environment account membership and schema ownership are operator-owned.
