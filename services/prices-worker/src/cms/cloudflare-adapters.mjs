@@ -14,7 +14,10 @@ export function validatePurgeEvent(event){
      !Array.isArray(event.routes)||event.routes.length>10||
      event.routes.some(route=>typeof route!=="string"||route.length>255||!SAFE_ROUTES.test(route)))
     throw Error("invalid_cache_event");
-  return {...event,routes:[...new Set(event.routes)]};
+  // Contract-only redelivery: never forward forged "approved", "ticket",
+  // arbitrary token or path fields from untrusted Queue/DLQ payloads.
+  return {eventId:event.eventId,submissionId:event.submissionId,
+    revision:event.revision,kind:event.kind,routes:[...new Set(event.routes)]};
 }
 /** Mark delivered ONLY after Queue accepted event; failed sends remain pending. */
 export async function dispatchCmsOutbox(repository,queue,limit=20){

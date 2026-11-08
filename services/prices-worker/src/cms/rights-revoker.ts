@@ -16,17 +16,6 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
  const client=await pool.connect();
  try{
   await client.query("BEGIN");
-  const affected=(await client.query<Impact>(
-   `SELECT s.id,s.revision_no FROM content_submissions s
-    JOIN LATERAL (
-      SELECT v.version FROM published_content_versions v
-      WHERE v.submission_id=s.id ORDER BY v.version DESC LIMIT 1
-    ) v ON true
-    WHERE s.state='published' AND EXISTS (
-       SELECT 1 FROM cms_public_dependencies d
-       WHERE d.submission_id=s.id AND d.version=v.version
-         AND d.resource_kind=$1 AND d.resource_id=$2
-    ) ORDER BY s.id FOR UPDATE`,[kind,id])).rows;
   const table=kind==="source"?"cms_trusted_sources":"cms_media_assets";
   const modified=await client.query(
     "UPDATE "+table+" SET rights_approved=false WHERE id=$1 AND rights_approved=true RETURNING id",[id]);
@@ -34,6 +23,20 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
    const known=await client.query("SELECT 1 FROM "+table+" WHERE id=$1",[id]);
    if(!known.rowCount)throw Error("rights_resource_not_found");
   }
+  // Revoke and lock the authoritative license FIRST. Historical HEAD
+  // rollback acquires a source share lock before its submission row lock;
+  // the common ordering prevents restore-then-revoke missing cache events.
+  const affected=(await client.query<Impact>(
+   `SELECT s.id,s.revision_no FROM content_submissions s
+    JOIN LATERAL (
+      SELECT v.version FROM published_content_versions v
+      WHERE v.submission_id=s.id AND v.version=COALESCE((SELECT h.publication_version FROM cms_publication_heads h WHERE h.submission_id=s.id),(SELECT max(p.version) FROM published_content_versions p WHERE p.submission_id=s.id)) LIMIT 1
+    ) v ON true
+    WHERE s.state='published' AND EXISTS (
+       SELECT 1 FROM cms_public_dependencies d
+       WHERE d.submission_id=s.id AND d.version=v.version
+         AND d.resource_kind=$1 AND d.resource_id=$2
+    ) ORDER BY s.id FOR UPDATE`,[kind,id])).rows;
   let withdrawn=0;
   for(const row of affected){
    const removed=(await client.query<{public_path:string}>(
