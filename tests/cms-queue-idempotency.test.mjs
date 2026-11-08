@@ -12,6 +12,7 @@ test("durable receipt gate acks already completed without purging twice",async()
   const outcome=[];
   const claims=["acquired","completed"];
   const receipts={
+    async verifyEvent(){return true}, // unit-only fake durable outbox
     async claim(){return {status:claims.shift(),token:"33333333-3333-4333-8333-333333333333"}},
     async complete(){outcome.push("completed")},
     async release(){outcome.push("released")}
@@ -28,6 +29,7 @@ test("durable receipt gate acks already completed without purging twice",async()
 test("busy event retries; failed global purge releases claim for re-delivery and DLQ",async()=>{
   const outcome=[];
   const receipt={
+    async verifyEvent(){return true}, // unit-only fake durable outbox
     async claim(){return {status:"busy"}},
     async complete(){throw Error("must-not-complete")},
     async release(){throw Error("must-not-release")}
@@ -36,6 +38,7 @@ test("busy event retries; failed global purge releases claim for re-delivery and
   await consumeCmsPurgeBatch({messages:[msg]},async()=>{},receipt);
   assert.deepEqual(outcome,[30]);
   const broken={
+    async verifyEvent(){return true}, // unit-only fake durable outbox
     async claim(){return {status:"acquired",token:"33333333-3333-4333-8333-333333333333"}},
     async complete(){throw Error("failure")},
     async release(){outcome.push("released")}

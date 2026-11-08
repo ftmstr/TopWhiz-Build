@@ -99,6 +99,9 @@ export async function rollbackPublishedVersion(pool:Pool,{
     [submissionId,targetVersion]);
   await c.query("UPDATE content_submissions SET revision_no=$2,updated_at=now() WHERE id=$1",[submissionId,revision]);
   await c.query(
+    "INSERT INTO cms_publication_fences(submission_id,active_version,generation,state) VALUES($1,$2,$3,'published') ON CONFLICT(submission_id) DO UPDATE SET active_version=EXCLUDED.active_version,generation=EXCLUDED.generation,state='published',updated_at=now() WHERE cms_publication_fences.generation<EXCLUDED.generation",
+    [submissionId,targetVersion,revision]);
+  await c.query(
     "INSERT INTO cms_publication_rollback_audit(submission_id,from_version,to_version,resulting_revision,reason_ref,actor) VALUES($1,$2,$3,$4,$5,$6)",
     [submissionId,expectedPublicVersion,targetVersion,revision,reasonRef.trim(),actor.trim()]);
   const outbox=(await c.query<{id:string}>(

@@ -192,6 +192,9 @@ export class CmsRepository{
         await c.query("INSERT INTO content_rights_audit(submission_id,evidence_ref,evidence_type,verification_actor) VALUES($1,$2,$3,$4)",
           [id,rightsRef,rightsRef===authorization.mediaRightsRef?"image":"source",authorization.reviewer]);
       await c.query("UPDATE content_submissions SET state='published',quarantine_reasons='[]'::jsonb,updated_at=now() WHERE id=$1",[id]);
+      await c.query(
+        "INSERT INTO cms_publication_fences(submission_id,active_version,generation,state) VALUES($1,$2,$3,'published') ON CONFLICT(submission_id) DO UPDATE SET active_version=EXCLUDED.active_version,generation=EXCLUDED.generation,state='published',updated_at=now() WHERE cms_publication_fences.generation<EXCLUDED.generation",
+        [id,expectedRevision,row.revision_no]);
       const routes=[...new Set([...prior,...checked.destinations])];
       const event=(await c.query<Outbox>(
         "INSERT INTO cms_delivery_outbox(submission_id,revision_no,event_kind,routes) VALUES($1,$2,'published',$3::jsonb) RETURNING *",
@@ -208,6 +211,7 @@ export class CmsRepository{
         .rows.map(x=>x.public_path);
       const next=expectedRevision+1;
       await c.query("UPDATE content_submissions SET state='withdrawn',revision_no=$2,updated_at=now() WHERE id=$1",[id,next]);
+      await c.query("UPDATE cms_publication_fences SET state='withdrawn',generation=$2,updated_at=now() WHERE submission_id=$1 AND generation<$2",[id,next]);
       await c.query("DELETE FROM published_route_bindings WHERE submission_id=$1",[id]);
       const event=(await c.query<Outbox>(
         "INSERT INTO cms_delivery_outbox(submission_id,revision_no,event_kind,routes) VALUES($1,$2,'withdrawn',$3::jsonb) RETURNING *",

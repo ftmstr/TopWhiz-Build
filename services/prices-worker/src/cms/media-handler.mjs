@@ -9,7 +9,7 @@ const HASH=/^[a-f0-9]{64}$/;
 const MIME_EXT=new Map([["image/png","png"],["image/jpeg","jpg"],["image/webp","webp"]]);
 function answer(status){
   return new Response(null,{status,headers:{
-    "Cache-Control":"no-store","X-Content-Type-Options":"nosniff",
+    "Cache-Control":"no-store","CDN-Cache-Control":"no-store","Cloudflare-CDN-Cache-Control":"no-store","X-Content-Type-Options":"nosniff",
     "Referrer-Policy":"no-referrer"
   }});
 }
@@ -69,10 +69,20 @@ export async function handleCmsMedia(request,{findApprovedAsset,bucket}={}){
     // R2 metadata is NOT proof that object bytes were not tampered with.
     // Read with strict size cap, validate signature and re-hash all bytes.
     const verified=await verifiedBytes(image.body,asset.bytes,asset.sha256Hex,asset.contentType);
+    // Narrow TOCTOU window: rights or public usage may be revoked while an
+    // R2 stream is being verified. Re-query the security-barrier media view
+    // before sending ANY bytes. The final response remains no-store.
+    const latest=await findApprovedAsset(match[1]);
+    if(!latest||latest.rightsApproved!==true||
+       latest.key!==asset.key||latest.sha256Hex!==asset.sha256Hex||
+       latest.contentType!==asset.contentType||latest.bytes!==asset.bytes)
+       return answer(404);
     const headers={
       "Content-Type":asset.contentType,
       "Content-Length":String(image.size),
       "Cache-Control":"no-store",
+      "CDN-Cache-Control":"no-store",
+      "Cloudflare-CDN-Cache-Control":"no-store",
       "Content-Disposition":"inline",
       "X-Content-Type-Options":"nosniff",
       "Referrer-Policy":"no-referrer",

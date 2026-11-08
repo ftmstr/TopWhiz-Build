@@ -20,7 +20,10 @@ export default defineConfig({
         main:"./workerd-entry.ts",
         compatibility_date:"2026-09-25",
         compatibility_flags:["nodejs_compat"],
-        workers_dev:false
+        workers_dev:false,
+        // Cloudflare Worker pre-handler cache must be explicitly disabled:
+        // a stale edge HIT can bypass ALL revocation code.
+        cache:{enabled:false}
       }
     })
   ],

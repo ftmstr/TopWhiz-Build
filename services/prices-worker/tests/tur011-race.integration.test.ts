@@ -34,7 +34,7 @@ test("transactional rights/issuer revocation races, idempotent receipts and R2 i
   for(const file of [
     "0003_content_cms.sql","0004_cms_delivery.sql",
     "0005_cms_trusted_attestations.sql","0006_cms_security.sql",
-    "0007_cms_queue_receipts.sql","0008_cms_issuer_lifecycle.sql","0009_cms_publication_rollback.sql"
+    "0007_cms_queue_receipts.sql","0011_cms_queue_receipt_hash.sql","0008_cms_issuer_lifecycle.sql","0009_cms_publication_rollback.sql","0010_cms_cache_fences.sql"
   ])await db.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
   await db.query(
     "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by,reviewed_at) VALUES($1,'manufacturer','SYNTHETIC_RIGHTS_ONLY','CI synthetic source','https://example.org/synthetic-ci-license',true,'Independent CI Reviewer',$2)",
@@ -94,10 +94,13 @@ test("transactional rights/issuer revocation races, idempotent receipts and R2 i
   // Thirty-two concurrent deliveries compete for the SAME durable receipt:
   // successful external purge is never reported by more than one claimant.
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
+  const durable=(await db.query(
+    "SELECT id,submission_id,revision_no,event_kind,routes FROM cms_delivery_outbox WHERE submission_id=$1 AND event_kind='withdrawn'",
+    [records[0]])).rows[0];
+  assert.ok(durable,"Queue cannot process synthetic event without outbox row");
   const event={
-    eventId:"11111111-1111-4111-8111-111111111111",
-    submissionId:records[0],revision:2,kind:"withdrawn",
-    routes:["/haberler/ci-tur011-race-0","/haberler","/"]
+    eventId:durable.id,submissionId:durable.submission_id,
+    revision:durable.revision_no,kind:durable.event_kind,routes:durable.routes
   };
   let purgeCount=0,ackCount=0,retryCount=0;
   await Promise.all(Array.from({length:32},(_,i)=>{

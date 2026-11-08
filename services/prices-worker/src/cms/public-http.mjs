@@ -6,7 +6,10 @@ const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 function json(body,status=200){
   return new Response(JSON.stringify(body),{status,headers:{
     "Content-Type":"application/json; charset=utf-8",
-    "Cache-Control":"no-store",
+    "Cache-Control":"private, no-store, max-age=0, must-revalidate",
+    "CDN-Cache-Control":"no-store",
+    "Cloudflare-CDN-Cache-Control":"no-store",
+    "Vary":"Accept",
     "X-Content-Type-Options":"nosniff",
     "Referrer-Policy":"no-referrer"
   }});

@@ -48,6 +48,7 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
    await client.query(
      "UPDATE content_submissions SET state='withdrawn',revision_no=$2,updated_at=now() WHERE id=$1",
      [row.id,next]);
+   await client.query("UPDATE cms_publication_fences SET state='withdrawn',generation=$2,updated_at=now() WHERE submission_id=$1 AND generation<$2",[row.id,next]);
    await client.query(
      `INSERT INTO cms_delivery_outbox(submission_id,revision_no,event_kind,routes)
        VALUES($1,$2,'withdrawn',$3::jsonb)`,

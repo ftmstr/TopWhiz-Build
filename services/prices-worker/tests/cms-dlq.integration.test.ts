@@ -15,16 +15,30 @@ const ids={
   invalid:"55555555-5555-4555-8555-555555555555",
   offline:"66666666-6666-4666-8666-666666666666"
 };
+const numbered=new Map(Object.values(ids).map((value,i)=>[value,i+1]));
 const payload=(eventId,route="/haberler/ci-only-test")=>({
   eventId,submissionId:"77777777-7777-4777-8777-777777777777",
-  revision:1,kind:"withdrawn",routes:[route,"/haberler","/"]
+  revision:numbered.get(eventId),kind:"withdrawn",routes:[route,"/haberler","/"]
 });
 test("DLQ replay uses independent ticket, persistent receipts and audited Queue acceptance",async()=>{
  const admin=new pg.Pool({connectionString:uri,max:1});
  await admin.query("CREATE SCHEMA IF NOT EXISTS "+schema);
  const db=new pg.Pool({connectionString:uri,options:"-c search_path="+schema,max:2});
  try{
+  for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql"])
+    await db.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
   await db.query(readFileSync(new URL("../migrations/0007_cms_queue_receipts.sql",import.meta.url),"utf8"));
+  await db.query(
+    "INSERT INTO content_submissions(id,external_key,content_type,slug,payload,state) VALUES($1,'ci-dlq','news','ci-dlq','{}'::jsonb,'pending_review')",
+    ["77777777-7777-4777-8777-777777777777"]);
+  for(const id of Object.values(ids)){
+    const event=payload(id,id===ids.invalid?"/../../../secrets":"/haberler/ci-only-test");
+    await db.query(
+      "INSERT INTO cms_delivery_outbox(id,submission_id,revision_no,event_kind,routes) VALUES($1,$2,$3,$4,$5::jsonb)",
+      [event.eventId,event.submissionId,event.revision,event.kind,JSON.stringify(event.routes)]);
+  }
+
+  await db.query(readFileSync(new URL("../migrations/0011_cms_queue_receipt_hash.sql",import.meta.url),"utf8"));
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
   const final=await receipts.claim(ids.finished);
   assert.equal(final.status,"acquired");
