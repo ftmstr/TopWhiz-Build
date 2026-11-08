@@ -7,3 +7,8 @@ workers_dev = false
 
 [observability]
 enabled = false
+
+# TUR013: disable Workers pre-fetch cache, including heuristic 200/404 TTL.
+# A legacy cached response could otherwise bypass live license/issuer checks.
+[cache]
+enabled = false
