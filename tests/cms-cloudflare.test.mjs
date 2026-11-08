@@ -1,3 +1,4 @@
+import {makeSyntheticPng} from "../services/prices-worker/tests/fixtures/png-factory.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -75,7 +76,7 @@ test("Cloudflare purge is globally scoped by verified origin and safe routes",as
 test("R2 stages only signed-off PNG/JPEG/WebP by digest and cannot publish image",async()=>{
   const objects=[];
   const bucket={async put(key,bytes,meta){objects.push({key,bytes,meta})}};
-  const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const png=makeSyntheticPng();
   await assert.rejects(()=>stageLicensedMedia(bucket,"image-01",png,{rightsApproved:false,evidenceRef:"source-ref",reviewer:"Test Reviewer"}));
   const receipt=await stageLicensedMedia(bucket,"image-01",png,{
     rightsApproved:true,evidenceRef:"source-rights-test",reviewer:"Test Reviewer"
