@@ -1,0 +1,39 @@
+name: TUR009 one-time frozen lockfile regeneration (isolated branch only)
+on:
+  push:
+    branches:
+      - feat/tur009-issuer-revocation-real-roles-dlq-wrangler-20261108
+    paths:
+      - services/prices-worker/package.json
+permissions:
+  contents: write
+jobs:
+  regenerate-lockfile:
+    if: github.repository == 'ftmstr/TopWhiz-Build' && github.ref == 'refs/heads/feat/tur009-issuer-revocation-real-roles-dlq-wrangler-20261108'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/tur009-issuer-revocation-real-roles-dlq-wrangler-20261108
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve lockfile without running package scripts
+        run: pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile
+      - name: Ensure only the lockfile changed before commit
+        run: |
+          git diff --exit-code -- package.json services/prices-worker/package.json apps/web/package.json
+          git diff --name-only | grep -Ex 'pnpm-lock.yaml'
+          test "$(git diff --name-only | wc -l)" = "1"
+      - name: Commit lockfile to TUR009 branch, never main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore(tur009): resolve Wrangler 4.135.0 pnpm lockfile with no scripts"
+          git push origin HEAD:refs/heads/feat/tur009-issuer-revocation-real-roles-dlq-wrangler-20261108
