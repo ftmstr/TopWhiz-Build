@@ -58,7 +58,10 @@ test("monotonic publication fence and durable outbox deny stale/forged head and 
    assert.equal((await db.query(publicCmsDetailSql,["news",target.slug])).rows[0].fenceGeneration,"2");
    // Bypass roles in this CI-only fixture to simulate a bug or compromised
    // owner tampering with the generation. A security-barrier read MUST deny.
-   await db.query("UPDATE cms_publication_fences SET generation=1 WHERE submission_id=$1",[id]);
+   await assert.rejects(
+     ()=>db.query("UPDATE cms_publication_fences SET generation=1 WHERE submission_id=$1",[id]),
+     /check constraint/,"generation cannot drop below active publication version");
+   await db.query("UPDATE cms_publication_fences SET generation=3 WHERE submission_id=$1",[id]);
    assert.equal((await db.query(publicCmsDetailSql,["news",target.slug])).rowCount,0);
    await db.query("UPDATE cms_publication_fences SET generation=2 WHERE submission_id=$1",[id]);
    assert.equal((await db.query(publicCmsDetailSql,["news",target.slug])).rowCount,1);
