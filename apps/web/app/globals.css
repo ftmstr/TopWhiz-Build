@@ -201,3 +201,11 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .hero-visual { overflow: hidden; }
   .hero-orbit { pointer-events: none; }
 }
+
+
+/* TUR011 Chromium 768px regression: decorative hero orbit must not
+   expand layout at tablet breakpoint; preserve desktop visual above 1000px. */
+@media (min-width: 761px) and (max-width: 1000px) {
+  .hero-visual { overflow: hidden; }
+  .hero { min-width: 0; }
+}
