@@ -32,6 +32,30 @@ BEGIN
  -- A revoked identity/licence is NOT re-approved by toggling a flag.
  -- New identity, independent approval and fresh publisher review required.
  IF TG_TABLE_NAME IN ('cms_trusted_sources','cms_media_assets') THEN
+   -- A reviewed license entry or content-addressed binary must retain
+   -- its original evidence, origin, reviewer, and digest forever.
+   -- A changed licence or asset is a NEW id and requires new review.
+   IF TG_TABLE_NAME='cms_trusted_sources' THEN
+     IF OLD.rights_ref IS DISTINCT FROM NEW.rights_ref
+        OR OLD.source_url IS DISTINCT FROM NEW.source_url
+        OR OLD.source_label IS DISTINCT FROM NEW.source_label
+        OR OLD.source_type IS DISTINCT FROM NEW.source_type
+        OR OLD.reviewed_by IS DISTINCT FROM NEW.reviewed_by
+        OR OLD.reviewed_at IS DISTINCT FROM NEW.reviewed_at THEN
+       RAISE EXCEPTION 'cms_source_evidence_is_immutable';
+     END IF;
+   ELSE
+     IF OLD.r2_key IS DISTINCT FROM NEW.r2_key
+        OR OLD.content_type IS DISTINCT FROM NEW.content_type
+        OR OLD.bytes IS DISTINCT FROM NEW.bytes
+        OR OLD.sha256_hex IS DISTINCT FROM NEW.sha256_hex
+        OR OLD.alt_text IS DISTINCT FROM NEW.alt_text
+        OR OLD.license_evidence_ref IS DISTINCT FROM NEW.license_evidence_ref
+        OR OLD.reviewed_by IS DISTINCT FROM NEW.reviewed_by
+        OR OLD.reviewed_at IS DISTINCT FROM NEW.reviewed_at THEN
+       RAISE EXCEPTION 'cms_media_license_or_digest_is_immutable';
+     END IF;
+   END IF;
    IF OLD.rights_approved IS NOT DISTINCT FROM NEW.rights_approved THEN
       RETURN NEW;
    END IF;
@@ -60,6 +84,10 @@ BEGIN
    WHERE s.state='published' AND dep.resource_kind=impacted_kind
      AND dep.resource_id=impacted_id;
  ELSIF TG_TABLE_NAME='cms_review_authorities' THEN
+   IF OLD.reviewer_class IS DISTINCT FROM NEW.reviewer_class
+     OR OLD.id IS DISTINCT FROM NEW.id THEN
+     RAISE EXCEPTION 'cms_issuer_identity_metadata_immutable';
+   END IF;
    IF OLD.active IS NOT DISTINCT FROM NEW.active
       AND OLD.public_key_pem IS NOT DISTINCT FROM NEW.public_key_pem THEN
       RETURN NEW;
@@ -87,6 +115,13 @@ BEGIN
      ON dep.submission_id=s.id AND dep.version=pub.version
    WHERE s.state='published' AND dep.authority_id=impacted_id;
  ELSIF TG_TABLE_NAME='cms_external_attestations' THEN
+   IF OLD.authority_id IS DISTINCT FROM NEW.authority_id
+      OR OLD.submission_id IS DISTINCT FROM NEW.submission_id
+      OR OLD.revision_no IS DISTINCT FROM NEW.revision_no
+      OR OLD.attestation_type IS DISTINCT FROM NEW.attestation_type
+      OR OLD.evidence_ref IS DISTINCT FROM NEW.evidence_ref THEN
+     RAISE EXCEPTION 'cms_attestation_binding_immutable';
+   END IF;
    IF OLD.status IS NOT DISTINCT FROM NEW.status
       AND OLD.signature_base64 IS NOT DISTINCT FROM NEW.signature_base64
       AND OLD.verified_at IS NOT DISTINCT FROM NEW.verified_at
@@ -155,13 +190,13 @@ CREATE CONSTRAINT TRIGGER cms_mutation_commit_guard
 
 -- Capture the dependent public rows when the sensitive row changes,
 -- BEFORE the caller has a chance to withdraw them. Audit is immutable.
-CREATE TRIGGER cms_source_guard AFTER UPDATE OF rights_approved ON cms_trusted_sources
+CREATE TRIGGER cms_source_guard AFTER UPDATE OF rights_approved,rights_ref,source_url,source_label,source_type,reviewed_by,reviewed_at ON cms_trusted_sources
  FOR EACH ROW EXECUTE FUNCTION cms_capture_sensitive_mutation();
-CREATE TRIGGER cms_media_guard AFTER UPDATE OF rights_approved ON cms_media_assets
+CREATE TRIGGER cms_media_guard AFTER UPDATE OF rights_approved,r2_key,content_type,bytes,sha256_hex,alt_text,license_evidence_ref,reviewed_by,reviewed_at ON cms_media_assets
  FOR EACH ROW EXECUTE FUNCTION cms_capture_sensitive_mutation();
-CREATE TRIGGER cms_issuer_guard AFTER UPDATE OF active,public_key_pem ON cms_review_authorities
+CREATE TRIGGER cms_issuer_guard AFTER UPDATE OF active,public_key_pem,reviewer_class ON cms_review_authorities
  FOR EACH ROW EXECUTE FUNCTION cms_capture_sensitive_mutation();
-CREATE TRIGGER cms_evidence_guard AFTER UPDATE OF status,signature_base64,verified_at,credited_author
+CREATE TRIGGER cms_evidence_guard AFTER UPDATE OF status,signature_base64,verified_at,credited_author,evidence_ref,authority_id,attestation_type,revision_no,submission_id
  ON cms_external_attestations
  FOR EACH ROW EXECUTE FUNCTION cms_capture_sensitive_mutation();
 
