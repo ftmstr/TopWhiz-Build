@@ -1,3 +1,4 @@
+import {makeSyntheticPng} from "./png-factory.mjs";
 /**
  * CI-only, synthetic database setup for Next.js -> actual PostgreSQL API
  * contract -> local TLS-free fetch shim. No production changes or real offers.
@@ -23,7 +24,7 @@ try{
     await db.query(readFileSync(new URL("../../migrations/"+name,import.meta.url),"utf8"));
   await db.query(
     "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by,reviewed_at) VALUES('ci-ssr-source','manufacturer','SYNTHETIC_CI_SOURCE_LICENSE','Synthetic API Source','https://example.org/nonreal-device',true,'CI Independent Reviewer',$1)",[now]);
-  const image=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const image=makeSyntheticPng();
   const receipt=await stageLicensedMedia({async put() {}},"ci-ssr-hero",image,{
     rightsApproved:true,evidenceRef:"SYNTHETIC_CI_MEDIA_LICENSE",reviewer:"CI Independent Reviewer"});
   await db.query(
