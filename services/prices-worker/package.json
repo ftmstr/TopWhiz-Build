@@ -19,7 +19,9 @@
     "test:rollback-race": "tsx --test tests/tur012-revoke-race.integration.test.ts",
     "test:dlq-stress": "tsx --test tests/tur012-dlq.integration.test.ts",
     "test:fences": "tsx --test tests/tur013-fences.integration.test.ts",
-    "test:queue-ack": "tsx --test tests/tur013-queue-ack.integration.test.ts"
+    "test:queue-ack": "tsx --test tests/tur013-queue-ack.integration.test.ts",
+    "test:mutation-guard": "tsx --test tests/tur014-mutation-guard.integration.test.ts",
+    "test:legacy-recovery": "tsx --test tests/tur014-legacy-recovery.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
