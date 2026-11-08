@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION __TOPWHIZ_SCHEMA__.cms_ingest_draft(
  p_external_key varchar,p_type varchar,p_slug varchar,p_payload jsonb)
 RETURNS TABLE(id uuid,revision_no integer,state varchar,replay boolean)
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path=pg_catalog,__TOPWHIZ_SCHEMA__ AS $fn$
+SET search_path=pg_catalog,__TOPWHIZ_SCHEMA__,pg_temp AS $fn$
 DECLARE existing_record RECORD;
 BEGIN
  IF p_external_key IS NULL OR p_external_key !~ '^[A-Za-z0-9_.:-]{1,160}$'
