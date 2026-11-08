@@ -154,6 +154,13 @@ GRANT INSERT,SELECT ON __TOPWHIZ_SCHEMA__.cms_publication_rollback_audit
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_publication_heads
  TO tw_cms_rights_admin,tw_cms_issuer_admin;
 
+-- Only publisher/independent rights or issuer takedown roles can advance
+-- the public-generation fence. A public reader sees it ONLY through
+-- security-barrier cms_public_pages; never grant raw UPDATE or SELECT.
+GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_publication_fences TO tw_cms_publisher;
+GRANT SELECT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_publication_fences
+ TO tw_cms_rights_admin,tw_cms_issuer_admin;
+
 -- Queue consumer sees only idempotency receipts.
 GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts
  TO tw_cms_queue_consumer;
