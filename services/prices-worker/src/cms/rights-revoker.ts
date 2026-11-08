@@ -16,6 +16,16 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
  const client=await pool.connect();
  try{
   await client.query("BEGIN");
+  const table=kind==="source"?"cms_trusted_sources":"cms_media_assets";
+  const modified=await client.query(
+    "UPDATE "+table+" SET rights_approved=false WHERE id=$1 AND rights_approved=true RETURNING id",[id]);
+  if(!modified.rowCount){
+   const known=await client.query("SELECT 1 FROM "+table+" WHERE id=$1",[id]);
+   if(!known.rowCount)throw Error("rights_resource_not_found");
+  }
+  // Revoke and lock the authoritative license FIRST. Historical HEAD
+  // rollback acquires a source share lock before its submission row lock;
+  // the common ordering prevents restore-then-revoke missing cache events.
   const affected=(await client.query<Impact>(
    `SELECT s.id,s.revision_no FROM content_submissions s
     JOIN LATERAL (
@@ -27,13 +37,6 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
        WHERE d.submission_id=s.id AND d.version=v.version
          AND d.resource_kind=$1 AND d.resource_id=$2
     ) ORDER BY s.id FOR UPDATE`,[kind,id])).rows;
-  const table=kind==="source"?"cms_trusted_sources":"cms_media_assets";
-  const modified=await client.query(
-    "UPDATE "+table+" SET rights_approved=false WHERE id=$1 AND rights_approved=true RETURNING id",[id]);
-  if(!modified.rowCount){
-   const known=await client.query("SELECT 1 FROM "+table+" WHERE id=$1",[id]);
-   if(!known.rowCount)throw Error("rights_resource_not_found");
-  }
   let withdrawn=0;
   for(const row of affected){
    const removed=(await client.query<{public_path:string}>(
