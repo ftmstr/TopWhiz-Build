@@ -48,7 +48,8 @@ test("license and signed-issuer rollback races never leave hidden invalid public
         submissionId:created.id,revision:1,type,authorityId,privateKey:key.privateKey,verifiedAt:now
        });
      }
-     assert.equal((await pipeline.process(created.id,1)).state,"published");
+     const approval=await pipeline.process(created.id,1);
+     assert.equal(approval.state,"published",JSON.stringify(approval));
    }else{
      await review(created.id,1);
      assert.equal((await repo.publish(created.id,1)).state,"published");
