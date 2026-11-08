@@ -5,6 +5,7 @@
  */
 import type { Pool } from "pg";
 import { assessPublishableContent } from "../../../content/publish-policy.mjs";
+import { verifyTrustedAttestation } from "./attestation-signature.mjs";
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function fail(reason:string){return {approved:false,reason} as const}
@@ -22,13 +23,18 @@ export async function independentlyAuthorizeRevision(pool:Pool,id:string,revisio
     }
     const evidence=(await conn.query<{
       attestation_type:string;status:string;credited_author:string;verified_at:Date;
-      authority_id:string;active:boolean;reviewer_class:string
+      authority_id:string;active:boolean;reviewer_class:string;
+      evidence_ref:string;signature_base64:string;public_key_pem:string;issuer_id:string
     }>(
-      "SELECT a.attestation_type,a.status,a.credited_author,a.verified_at,a.authority_id,r.active,r.reviewer_class FROM cms_external_attestations a JOIN cms_review_authorities r ON r.id=a.authority_id WHERE a.submission_id=$1 AND a.revision_no=$2",
+      "SELECT a.attestation_type,a.status,a.credited_author,a.verified_at,a.authority_id,a.evidence_ref,a.signature_base64,r.id AS issuer_id,r.public_key_pem,r.active,r.reviewer_class FROM cms_external_attestations a JOIN cms_review_authorities r ON r.id=a.authority_id WHERE a.submission_id=$1 AND a.revision_no=$2",
       [id,revision])).rows;
     const expected=row.payload.type==="phone"?["editorial","originality","specifications"]:["editorial","originality"];
     if(expected.some(kind=>!evidence.some(v=>v.attestation_type===kind &&
-      v.active && v.status==="verified" && now.getTime()-new Date(v.verified_at).getTime()>=-300000 &&
+      v.active && v.status==="verified" &&
+      verifyTrustedAttestation({...v,submission_id:id,revision_no:revision},{
+        id:v.issuer_id,active:v.active,reviewer_class:v.reviewer_class,public_key_pem:v.public_key_pem
+      }) &&
+      now.getTime()-new Date(v.verified_at).getTime()>=-300000 &&
       now.getTime()-new Date(v.verified_at).getTime()<=30*86400000))){
       await conn.query("ROLLBACK");return fail("independent_attestations_missing");
     }
