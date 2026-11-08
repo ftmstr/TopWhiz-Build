@@ -17,7 +17,7 @@ export async function independentlyAuthorizeRevision(pool:Pool,id:string,revisio
   try{
     await conn.query("BEGIN");
     const row=(await conn.query<{id:string;state:string;revision_no:number;payload:any}>(
-      "SELECT id,state,revision_no,payload FROM content_submissions WHERE id=$1 FOR UPDATE",[id])).rows[0];
+      "SELECT id,state,revision_no,payload FROM content_submissions WHERE id=$1 FOR SHARE",[id])).rows[0];
     if(!row||row.revision_no!==revision||row.state==="withdrawn"){
       await conn.query("ROLLBACK");return fail("missing_or_wrong_revision");
     }
