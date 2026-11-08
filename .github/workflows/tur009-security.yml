@@ -90,3 +90,26 @@ jobs:
       - name: Attempt local vinext App Router build (NO Preview or deploy)
         run: |
           pnpm --filter @topwhiz/web exec vinext build
+      - name: Local vinext HTTP smoke, no Cloudflare/remote resources
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web exec vinext start --port 3112 > /tmp/topwhiz-vinext-ci.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ok=0
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3112/haberler > /tmp/vinext-haberler.html 2>/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ok" -ne 1 ]; then
+            cat /tmp/topwhiz-vinext-ci.log
+            exit 1
+          fi
+          grep -q 'TOPWHIZ' /tmp/vinext-haberler.html
+          grep -q 'REKLAM ALANI' /tmp/vinext-haberler.html
+          ! grep -q 'adsbygoogle.js' /tmp/vinext-haberler.html
+          curl --fail --silent http://127.0.0.1:3112/telefonlar | grep -q 'TOPWHIZ'
+          echo "local vinext HTTP smoke PASS; no remote Worker or real ads."
