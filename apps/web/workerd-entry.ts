@@ -6,7 +6,16 @@
 import handler from "vinext/server/fetch-handler";
 export default {
   async fetch(request:Request,env:any,ctx:any){
-    const result=await handler.fetch(request,env,ctx);
+    // Conditional GETs must not revive a browser/CDN copy of a revoked
+    // article with a 304. No production caching is enabled here.
+    const cleanHeaders=new Headers(request.headers);
+    if(request.method==="GET"||request.method==="HEAD"){
+      cleanHeaders.delete("if-none-match");
+      cleanHeaders.delete("if-modified-since");
+      cleanHeaders.delete("if-range");
+    }
+    const fresh=new Request(request,{headers:cleanHeaders});
+    const result=await handler.fetch(fresh,env,ctx);
     // The RSC/SSR HTML must not be stored by browsers or an intermediary.
     // A cached HIT could bypass the rights/revocation security barriers.
     // Cloudflare Worker pre-handler cache is independently disabled in
