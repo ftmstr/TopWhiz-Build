@@ -9,6 +9,7 @@ import { handlePublicCmsRequest } from "../src/cms/public-http.mjs";
 import { publicCmsListSql, publicCmsDetailSql, publicMediaAssetSql } from "../src/cms/public-sql.mjs";
 import { handleCmsMedia } from "../src/cms/media-handler.mjs";
 import { stageLicensedMedia,consumeCmsPurgeBatch } from "../src/cms/cloudflare-adapters.mjs";
+import {temporaryCiIssuer,addVerifiedAttestation} from "./fixtures/ci-issuer";
 
 const connectionString=process.env.TEST_DATABASE_URL;
 if(!connectionString)throw Error("TEST_DATABASE_URL required; refusing silent CI skip");
@@ -36,6 +37,7 @@ test("SINGLE ENTRY → trusted evidence → real PostgreSQL publish → public H
   await admin.query("CREATE SCHEMA IF NOT EXISTS tur007_e2e_ci");
   const db=new pg.Pool({connectionString,options:"-c search_path=tur007_e2e_ci",max:4});
   const publisher=new CmsRepository(db);
+  const issuer=temporaryCiIssuer();
   let sendFails=true;
   const sent:any[]=[];
   const queue={async send(value:any){if(sendFails)throw Error("synthetic_queue_offline");sent.push(value)}};
@@ -59,9 +61,8 @@ test("SINGLE ENTRY → trusted evidence → real PostgreSQL publish → public H
   const findAsset=async(id:string)=>(await db.query(publicMediaAssetSql,[id])).rows[0]??null;
   async function grantEvidence(contentId:string,revision:number,types:string[]){
     for(const type of types){
-      await db.query(
-        "INSERT INTO cms_external_attestations(submission_id,revision_no,attestation_type,authority_id,evidence_ref,status,credited_author,verified_at) VALUES($1,$2,$3,'ci-trusted-authority',$4,'verified','CI Synthetic Author',$5)",
-        [contentId,revision,type,"SYNTHETIC_ATTESTATION_"+type,fixedNow]);
+      await addVerifiedAttestation(db,{submissionId:contentId,revision,type,
+        authorityId:"ci-trusted-authority",privateKey:issuer.privateKey,verifiedAt:fixedNow});
     }
   }
   async function ingest(externalKey:string,content:unknown){
@@ -77,7 +78,7 @@ test("SINGLE ENTRY → trusted evidence → real PostgreSQL publish → public H
     return {status:res.status,payload:await res.json()};
   }
   try{
-    for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql"]){
+    for(const file of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql","0006_cms_security.sql"]){
       const source=readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8");
       await db.query(source);
     }
@@ -100,7 +101,7 @@ test("SINGLE ENTRY → trusted evidence → real PostgreSQL publish → public H
       "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by,reviewed_at) VALUES('ci-source-01','manufacturer','CI_SYNTHETIC_SOURCE_RIGHTS','CI Synthetic Source','https://example.org/ci-test-document',true,'CI Independent Reviewer',$1)",
       [fixedNow]);
     await db.query(
-      "INSERT INTO cms_review_authorities(id,active,reviewer_class) VALUES('ci-trusted-authority',true,'licensed_verifier')");
+      "INSERT INTO cms_review_authorities(id,active,reviewer_class,public_key_pem) VALUES('ci-trusted-authority',true,'licensed_verifier',$1)",[issuer.publicPem]);
     await grantEvidence(staged.id,1,["editorial","originality"]);
 
     const published=await pipeline.process(staged.id,1);
