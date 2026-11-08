@@ -70,11 +70,14 @@ COMPLETED SUCCESS at an earlier TUR009 commit:
   production build; both Wrangler --dry-run workers; vinext check PASS.
 - Existing synthetic only. No real phone/merchant/news/media.
 
-**The final feature HEAD after this report must be verified separately.
-A local vinext exploratory job may fail because React 19.2.0 in the canonical
-Next app is below vinext 1.4.4's React >=19.3.1 requirement. The experimental
-CI can provision temporary peer dependencies but does not persist them.
-This is deliberately NOT treated as a successful Cloudflare workerd runtime.**
+**The final feature HEAD after this report must be verified separately.**
+The isolated vinext exploratory CI (run 42465786472, separate job) achieved
+a successful vinext build and local HTTP rendering for /haberler and
+/telefonlar with ad placeholders and NO AdSense, by temporarily installing
+@vitejs/plugin-rsc 0.5.39 and React/react-dom/react-server-dom-webpack 19.3.1
+in the disposable runner. The committed Next app remains on React 19.2.0;
+NO equivalent frozen production vinext runtime build is claimed.
+This is NOT Cloudflare workerd runtime or public Preview acceptance.
 
 ## Mandatory no-go
 
