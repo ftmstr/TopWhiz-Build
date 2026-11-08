@@ -165,7 +165,7 @@ test("TUR017 canonical SQL outbox hash, post-install schema ACL drift, parallel 
   // A processing lease is never a completed old receipt and may not be
   // force-reset merely because a valid independent grant exists.
   await db.query(
-   "UPDATE cms_purge_receipts SET status='processing',event_sha256=$2,lease_until=now()+interval '2 minutes' WHERE event_id=$1",
+   "UPDATE cms_purge_receipts SET status='processing',completed_at=NULL,event_sha256=$2,lease_until=now()+interval '2 minutes' WHERE event_id=$1",
    [active.event.eventId,active.digest]);
   await as("tw_ci017_authorizer",insert,
    [active.event.eventId,active.digest,actor,ticket]);
