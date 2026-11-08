@@ -36,6 +36,7 @@ async function withdrawUnderLock(c:PoolClient,rows:Impact[]){
    const next=revision_no+1;
    await c.query(
      "UPDATE content_submissions SET state='withdrawn',revision_no=$2,updated_at=now() WHERE id=$1",[id,next]);
+   await c.query("UPDATE cms_publication_fences SET state='withdrawn',generation=$2,updated_at=now() WHERE submission_id=$1 AND generation<$2",[id,next]);
    await c.query(
      "INSERT INTO cms_delivery_outbox(submission_id,revision_no,event_kind,routes) VALUES($1,$2,'withdrawn',$3::jsonb)",
      [id,next,JSON.stringify([...new Set(routes)])]);
