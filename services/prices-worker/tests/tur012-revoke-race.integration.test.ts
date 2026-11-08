@@ -15,7 +15,7 @@ const now=new Date();
 const payload=(slug:string,sources:string[])=>({
   type:"news" as const,slug,title:"Completely invented historical rights race "+slug,
   summary:"Synthetic test record created only for bounded concurrency analysis.",
-  body:"A fabricated test-only document without any real news, company, phone, product, merchant, pricing, personal information or third-party image.",
+  body:"This entirely invented and original test-only paragraph exists solely in an ephemeral CI PostgreSQL database. It does not describe any real event, company, phone, product, merchant, offer, location, person, price, rights grant or photograph. Its only purpose is to validate signed review concurrency and rollback consistency.",
   language:"tr",observedAt:"2026-11-08T07:00:00Z",sources
 });
 test("license and signed-issuer rollback races never leave hidden invalid publication without purge event",async()=>{
