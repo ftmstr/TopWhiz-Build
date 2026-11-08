@@ -94,10 +94,13 @@ test("transactional rights/issuer revocation races, idempotent receipts and R2 i
   // Thirty-two concurrent deliveries compete for the SAME durable receipt:
   // successful external purge is never reported by more than one claimant.
   const receipts=makeReceiptStore(async(sql,args)=>(await db.query(sql,args)).rows);
+  const durable=(await db.query(
+    "SELECT id,submission_id,revision_no,event_kind,routes FROM cms_delivery_outbox WHERE submission_id=$1 AND event_kind='withdrawn'",
+    [records[0]])).rows[0];
+  assert.ok(durable,"Queue cannot process synthetic event without outbox row");
   const event={
-    eventId:"11111111-1111-4111-8111-111111111111",
-    submissionId:records[0],revision:2,kind:"withdrawn",
-    routes:["/haberler/ci-tur011-race-0","/haberler","/"]
+    eventId:durable.id,submissionId:durable.submission_id,
+    revision:durable.revision_no,kind:durable.event_kind,routes:durable.routes
   };
   let purgeCount=0,ackCount=0,retryCount=0;
   await Promise.all(Array.from({length:32},(_,i)=>{
