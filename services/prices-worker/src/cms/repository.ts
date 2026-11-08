@@ -4,6 +4,7 @@
  */
 import type { Pool, PoolClient } from "pg";
 import { assessPublishableContent } from "../../../content/publish-policy.mjs";
+import { verifyTrustedAttestation } from "./attestation-signature.mjs";
 
 type Payload={type:"news"|"phone";slug:string;title:string;sources:string[];coverMediaId?:string|null;[key:string]:unknown};
 type Submission={id:string;external_key:string;content_type:string;slug:string;payload:Payload;state:string;revision_no:number};
@@ -61,6 +62,41 @@ async function trusted(c:PoolClient,row:Submission,now:Date){
     }):[]
   };
 }
+type SignedIssuerRow={
+ attestation_type:string;authority_id:string;evidence_ref:string;status:string;
+ credited_author:string;verified_at:Date;signature_base64:string;
+ active:boolean;reviewer_class:string;public_key_pem:string
+};
+/** The approval grant is NOT sufficient when an issuer key or evidence has
+ * since been revoked. Revalidate every required signature INSIDE the writer
+ * transaction, then record the exact approved public keys per version.
+ */
+async function publicationIssuers(c:PoolClient,row:Submission,reviewer:string|null,now:Date){
+ if(!reviewer?.startsWith("auto-gate:"))return [];
+ const authorityId=reviewer.slice("auto-gate:".length);
+ const expected=row.content_type==="phone"
+    ? ["editorial","originality","specifications"]:["editorial","originality"];
+ const records=(await c.query<SignedIssuerRow>(
+   "SELECT e.attestation_type,e.authority_id,e.evidence_ref,e.status,e.credited_author,e.verified_at,e.signature_base64,a.active,a.reviewer_class,a.public_key_pem FROM cms_external_attestations e JOIN cms_review_authorities a ON a.id=e.authority_id WHERE e.submission_id=$1 AND e.revision_no=$2",
+   [row.id,row.revision_no])).rows;
+ if(!records.some(r=>r.attestation_type==="editorial"&&r.authority_id===authorityId))
+   throw Error("auto_issuer_identity_mismatch");
+ const chosen:SignedIssuerRow[]=[];
+ for(const kind of expected){
+   const r=records.find(x=>x.attestation_type===kind);
+   if(!r || !r.active || r.status!=="verified" ||
+      now.getTime()-new Date(r.verified_at).getTime()>30*86400000 ||
+      now.getTime()-new Date(r.verified_at).getTime() < -300000 ||
+      !verifyTrustedAttestation({
+        ...r,submission_id:row.id,revision_no:row.revision_no
+      },{
+        id:r.authority_id,active:r.active,reviewer_class:r.reviewer_class,
+        public_key_pem:r.public_key_pem
+      }))throw Error("auto_issuer_evidence_invalid");
+   chosen.push(r);
+ }
+ return chosen;
+}
 export class CmsRepository{
   constructor(private readonly pool:Pool){}
   async submit(externalKey:string,payload:Payload){
@@ -100,6 +136,7 @@ export class CmsRepository{
       const earlier=await c.query("SELECT 1 FROM published_content_versions WHERE submission_id=$1 AND version=$2",[id,expectedRevision]);
       if(earlier.rowCount)return {id,state:"published",version:expectedRevision,replay:true};
       const authorization=await trusted(c,row,now);
+      const issuerDeps=await publicationIssuers(c,row,authorization.reviewer,now);
       const checked=assessPublishableContent(row.payload,authorization,now);
       if(checked.status!=="ready_for_auto_publish"){
         const persistent=row.state==="published"?"published":"quarantined";
@@ -138,6 +175,11 @@ export class CmsRepository{
         await c.query(
           "INSERT INTO cms_public_dependencies(submission_id,version,resource_kind,resource_id) VALUES($1,$2,'media',$3)",
           [id,expectedRevision,safe.coverMediaId]);
+      }
+      for(const issuer of issuerDeps){
+        await c.query(
+          "INSERT INTO cms_public_issuer_dependencies(submission_id,version,attestation_type,authority_id,approved_public_key) VALUES($1,$2,$3,$4,$5)",
+          [id,expectedRevision,issuer.attestation_type,issuer.authority_id,issuer.public_key_pem]);
       }
       await c.query("DELETE FROM published_route_bindings WHERE submission_id=$1",[id]);
       for(const route of checked.destinations)

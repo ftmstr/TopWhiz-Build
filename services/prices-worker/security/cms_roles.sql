@@ -19,6 +19,9 @@ DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_queue_consumer') THEN
    CREATE ROLE tw_cms_queue_consumer NOLOGIN NOINHERIT;
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_issuer_admin') THEN
+   CREATE ROLE tw_cms_issuer_admin NOLOGIN NOINHERIT;
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_reader') THEN
    CREATE ROLE tw_cms_reader NOLOGIN NOINHERIT;
  END IF;
@@ -28,7 +31,7 @@ REVOKE ALL ON ALL TABLES IN SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
  tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,
- tw_cms_rights_admin,tw_cms_queue_consumer,tw_cms_reader;
+ tw_cms_rights_admin,tw_cms_issuer_admin,tw_cms_queue_consumer,tw_cms_reader;
 
 -- Security definer draft submission, scoped to an immutable external key.
 -- NOT a generic arbitrary SQL execution bridge; qualified schema and
@@ -96,14 +99,18 @@ GRANT SELECT ON __TOPWHIZ_SCHEMA__.content_submissions,
  __TOPWHIZ_SCHEMA__.published_content_versions,
  __TOPWHIZ_SCHEMA__.published_route_bindings,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
- __TOPWHIZ_SCHEMA__.cms_public_dependencies TO tw_cms_publisher;
+ __TOPWHIZ_SCHEMA__.cms_public_dependencies,
+ __TOPWHIZ_SCHEMA__.cms_review_authorities,
+ __TOPWHIZ_SCHEMA__.cms_external_attestations,
+ __TOPWHIZ_SCHEMA__.cms_public_issuer_dependencies TO tw_cms_publisher;
 GRANT UPDATE ON __TOPWHIZ_SCHEMA__.content_submissions,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_publisher;
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.published_content_versions,
  __TOPWHIZ_SCHEMA__.published_route_bindings,
  __TOPWHIZ_SCHEMA__.content_rights_audit,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
- __TOPWHIZ_SCHEMA__.cms_public_dependencies TO tw_cms_publisher;
+ __TOPWHIZ_SCHEMA__.cms_public_dependencies,
+ __TOPWHIZ_SCHEMA__.cms_public_issuer_dependencies TO tw_cms_publisher;
 GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_publisher;
 
 -- Separately authorized takedown role; cannot forge reviewer approvals.
@@ -120,6 +127,22 @@ GRANT UPDATE(state,revision_no,updated_at) ON __TOPWHIZ_SCHEMA__.content_submiss
 GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_rights_admin;
 GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
  __TOPWHIZ_SCHEMA__.cms_rights_revocations TO tw_cms_rights_admin;
+
+-- Revoked signing identity may retract previously approved publications,
+-- but cannot alter source licenses, issue new signed evidence or approvals.
+GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_review_authorities,
+ __TOPWHIZ_SCHEMA__.cms_external_attestations,
+ __TOPWHIZ_SCHEMA__.cms_public_issuer_dependencies,
+ __TOPWHIZ_SCHEMA__.content_submissions,
+ __TOPWHIZ_SCHEMA__.published_content_versions,
+ __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_issuer_admin;
+GRANT UPDATE(active) ON __TOPWHIZ_SCHEMA__.cms_review_authorities
+ TO tw_cms_issuer_admin;
+GRANT UPDATE(state,revision_no,updated_at) ON __TOPWHIZ_SCHEMA__.content_submissions
+ TO tw_cms_issuer_admin;
+GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_issuer_admin;
+GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_issuer_revocations,
+ __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_issuer_admin;
 
 -- Queue consumer sees only idempotency receipts.
 GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts

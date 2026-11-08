@@ -1,0 +1,115 @@
+name: TUR009 issuer revocation, isolated service logins, DLQ and Wrangler lock
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/tur009-issuer-revocation-real-roles-dlq-wrangler-20261108
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@localhost:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen pnpm install; verify Wrangler resolution
+        run: |
+          test -s pnpm-lock.yaml
+          pnpm install --frozen-lockfile
+          pnpm --filter @topwhiz/prices-worker exec wrangler --version
+          node scripts/tur008-preview-preflight.mjs static
+      - name: All unit tests including real-image/Queue policy
+        run: pnpm test
+      - name: Existing PostgreSQL merchant staging
+        run: pnpm --filter @topwhiz/prices-worker test:pg
+      - name: Existing CMS PostgreSQL lifecycle
+        run: pnpm --filter @topwhiz/prices-worker test:cms
+      - name: Existing single-entry CMS to API to R2 to Queue
+        run: pnpm --filter @topwhiz/prices-worker test:cms-e2e
+      - name: Existing database ACL, rights revocation and receipts
+        run: pnpm --filter @topwhiz/prices-worker test:security
+      - name: TUR009 signing authority revocation, key rotation, evidence invalidation
+        run: pnpm --filter @topwhiz/prices-worker test:issuer-revocation
+      - name: TUR009 genuine PostgreSQL login-role separation (no SET ROLE simulation)
+        run: pnpm --filter @topwhiz/prices-worker test:service-sessions
+      - name: TUR009 PostgreSQL-backed DLQ replay and operator authorization
+        run: pnpm --filter @topwhiz/prices-worker test:dlq
+      - name: TypeScript strict check
+        run: pnpm typecheck
+      - name: Next.js production build
+        run: pnpm build
+      - name: Public CMS Worker bundle, absolutely NO deploy
+        run: pnpm worker:check
+      - name: Queue Worker bundle, absolutely NO deploy
+        run: pnpm cms:dry-run
+      - name: Static vinext compatibility
+        run: pnpm --filter @topwhiz/web compat:check
+
+  vinext-local-exploratory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Probe optional App Router RSC plugin in disposable runner only
+        run: |
+          pnpm --filter @topwhiz/web add -D @vitejs/plugin-rsc@0.5.39 --ignore-scripts
+          pnpm --filter @topwhiz/web add react@19.3.1 react-dom@19.3.1 react-server-dom-webpack@19.3.1 --ignore-scripts
+          test "$(git show HEAD:apps/web/package.json | grep -c vinext)" -ge 1
+      - name: Attempt local vinext App Router build (NO Preview or deploy)
+        run: |
+          pnpm --filter @topwhiz/web exec vinext build
+      - name: Local vinext HTTP smoke, no Cloudflare/remote resources
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web exec vinext start --port 3112 > /tmp/topwhiz-vinext-ci.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ok=0
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3112/haberler > /tmp/vinext-haberler.html 2>/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ok" -ne 1 ]; then
+            cat /tmp/topwhiz-vinext-ci.log
+            exit 1
+          fi
+          grep -q 'TOPWHIZ' /tmp/vinext-haberler.html
+          grep -q 'REKLAM ALANI' /tmp/vinext-haberler.html
+          ! grep -q 'adsbygoogle.js' /tmp/vinext-haberler.html
+          curl --fail --silent http://127.0.0.1:3112/telefonlar | grep -q 'TOPWHIZ'
+          echo "local vinext HTTP smoke PASS; no remote Worker or real ads."

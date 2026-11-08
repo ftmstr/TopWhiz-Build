@@ -20,6 +20,11 @@ export const releaseReceiptSql=String.raw`UPDATE cms_purge_receipts SET lease_un
 export function makeReceiptStore(query){
   if(typeof query!=="function")throw Error("receipt_database_required");
   return {
+    async status(eventId){
+      if(!UUID.test(eventId??""))throw Error("invalid_event_id");
+      const saved=await query(receiptStatusSql,[eventId]);
+      return saved[0]?.status??"missing";
+    },
     async claim(eventId){
       if(!UUID.test(eventId??""))throw Error("invalid_event_id");
       const token=crypto.randomUUID();

@@ -10,7 +10,10 @@
     "test:cms": "tsx --test tests/cms.integration.test.ts",
     "cms:dry-run": "wrangler deploy --dry-run --config wrangler.cms.toml --outdir dist-cms",
     "test:cms-e2e": "tsx --test tests/cms-e2e.integration.test.ts",
-    "test:security": "tsx --test tests/cms-security.integration.test.ts"
+    "test:security": "tsx --test tests/cms-security.integration.test.ts",
+    "test:issuer-revocation": "tsx --test tests/cms-issuer.integration.test.ts",
+    "test:service-sessions": "tsx --test tests/cms-service-sessions.integration.test.ts",
+    "test:dlq": "tsx --test tests/cms-dlq.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
@@ -18,7 +21,7 @@
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "wrangler": "4.131.0",
+    "wrangler": "4.135.0",
     "pg": "8.16.3",
     "@types/pg": "8.15.5",
     "tsx": "4.20.5"

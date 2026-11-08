@@ -1,3 +1,4 @@
+import {makeSyntheticPng} from "../services/prices-worker/tests/fixtures/png-factory.mjs";
 /**
  * CI ONLY: intercept exact fake HTTPS CMS hostname and answer through actual
  * PostgreSQL 16 queries and the production-shaped HTTP handlers.
@@ -28,7 +29,7 @@ if(process.env.TOPWHIZ_SYNTHETIC_API==="1"){
     return slug===undefined?rows:rows[0]??null;
   };
   const findAsset=async(id)=>(await pool.query(publicMediaAssetSql,[id])).rows[0]??null;
-  const png=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const png=makeSyntheticPng();
   const bucket={
     async get(key){
       if(!/^media\/reviewed\/ci-ssr-hero\/[a-f0-9]{64}\.png$/.test(key))return null;

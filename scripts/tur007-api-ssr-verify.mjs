@@ -29,7 +29,7 @@ const picture=await fetch(origin+"/media/cms/ci-ssr-hero");
 assert.equal(picture.status,200,"Approved media did not reach Next.js local proxy");
 assert.equal(picture.headers.get("content-type"),"image/png");
 assert.equal(picture.headers.get("cache-control"),"no-store");
-assert.equal((await picture.arrayBuffer()).byteLength,12);
+assert.ok((await picture.arrayBuffer()).byteLength>70,"complete licensed synthetic PNG expected");
 const notFound=await fetch(origin+"/haberler/no-such-approved-story");
 assert.equal(notFound.status,404);
 process.stdout.write("CI verified: Real PostgreSQL approved news + phone -> injected CMS HTTP contract -> actual Next.js SSR (5 pages), R2-shaped image and 404; all local-only.\n");

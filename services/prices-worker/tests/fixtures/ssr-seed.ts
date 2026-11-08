@@ -1,3 +1,4 @@
+import {makeSyntheticPng} from "./png-factory.mjs";
 /**
  * CI-only, synthetic database setup for Next.js -> actual PostgreSQL API
  * contract -> local TLS-free fetch shim. No production changes or real offers.
@@ -19,11 +20,11 @@ const admin=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,max:1});
 await admin.query("CREATE SCHEMA IF NOT EXISTS tur007_ssr_ci");
 const db=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL,options:"-c search_path=tur007_ssr_ci",max:2});
 try{
-  for(const name of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql","0006_cms_security.sql"])
+  for(const name of ["0003_content_cms.sql","0004_cms_delivery.sql","0005_cms_trusted_attestations.sql","0006_cms_security.sql","0007_cms_queue_receipts.sql","0008_cms_issuer_lifecycle.sql"])
     await db.query(readFileSync(new URL("../../migrations/"+name,import.meta.url),"utf8"));
   await db.query(
     "INSERT INTO cms_trusted_sources(id,source_type,rights_ref,source_label,source_url,rights_approved,reviewed_by,reviewed_at) VALUES('ci-ssr-source','manufacturer','SYNTHETIC_CI_SOURCE_LICENSE','Synthetic API Source','https://example.org/nonreal-device',true,'CI Independent Reviewer',$1)",[now]);
-  const image=new Uint8Array([137,80,78,71,13,10,26,10,0,0,0,0]);
+  const image=makeSyntheticPng();
   const receipt=await stageLicensedMedia({async put() {}},"ci-ssr-hero",image,{
     rightsApproved:true,evidenceRef:"SYNTHETIC_CI_MEDIA_LICENSE",reviewer:"CI Independent Reviewer"});
   await db.query(

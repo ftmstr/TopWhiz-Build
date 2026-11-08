@@ -45,7 +45,7 @@ test("PostgreSQL roles, signed-public view, revision-safe source/media revoke an
     for(const file of [
       "0003_content_cms.sql","0004_cms_delivery.sql",
       "0005_cms_trusted_attestations.sql","0006_cms_security.sql",
-      "0007_cms_queue_receipts.sql"
+      "0007_cms_queue_receipts.sql","0008_cms_issuer_lifecycle.sql"
     ])await db.query(readFileSync(new URL("../migrations/"+file,import.meta.url),"utf8"));
     const script=readFileSync(new URL("../security/cms_roles.sql",import.meta.url),"utf8")
       .replaceAll("__TOPWHIZ_SCHEMA__",schema);
@@ -53,7 +53,7 @@ test("PostgreSQL roles, signed-public view, revision-safe source/media revoke an
 
     const roles=await admin.query(
       "SELECT rolname,rolcanlogin,rolsuper FROM pg_roles WHERE rolname LIKE 'tw_cms_%' ORDER BY rolname");
-    assert.equal(roles.rows.length,7);
+    assert.equal(roles.rows.length,8);
     assert.ok(roles.rows.every(r=>r.rolcanlogin===false&&r.rolsuper===false));
     const draft=await asRole("tw_cms_intake",
       "SELECT * FROM cms_ingest_draft($1::varchar,$2::varchar,$3::varchar,$4::jsonb)",
