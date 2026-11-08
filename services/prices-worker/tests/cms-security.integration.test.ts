@@ -53,7 +53,7 @@ test("PostgreSQL roles, signed-public view, revision-safe source/media revoke an
 
     const roles=await admin.query(
       "SELECT rolname,rolcanlogin,rolsuper FROM pg_roles WHERE rolname LIKE 'tw_cms_%' ORDER BY rolname");
-    assert.equal(roles.rows.length,9,"TUR014 introduces separately authorized NOLOGIN legacy-recovery broker");
+    assert.equal(roles.rows.length,10,"TUR015 separates recovery grant issuer from Queue receipt broker");
     assert.ok(roles.rows.some(r=>r.rolname==="tw_cms_legacy_recovery"));
     assert.ok(roles.rows.every(r=>r.rolcanlogin===false&&r.rolsuper===false));
     const draft=await asRole("tw_cms_intake",
