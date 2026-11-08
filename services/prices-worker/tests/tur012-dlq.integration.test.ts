@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {randomUUID} from "node:crypto";
 import pg from "pg";
 import {replayDeadLetters} from "../src/cms/dlq-redrive.mjs";
+import {fingerprintPurgeEvent} from "../src/cms/cloudflare-adapters.mjs";
 import {makeReceiptStore} from "../src/cms/queue-receipts.mjs";
 
 const connectionString=process.env.TEST_DATABASE_URL;
@@ -72,7 +73,7 @@ test("60 synthetic DLQ messages, audit/Queue outages, replay and completed idemp
   assert.deepEqual(new Set(acked),delivered);
   for(const eventId of delivered){
     assert.ok(audited.has(eventId),"operator audit must precede enqueue");
-    const claim=await receipts.claim(eventId);
+    const claim=await receipts.claim(eventId,await fingerprintPurgeEvent(items[idToIndex.get(eventId)!]));
     assert.equal(claim.status,"acquired");
     await receipts.complete(eventId,claim.token);
   }

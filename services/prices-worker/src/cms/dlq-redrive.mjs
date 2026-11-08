@@ -3,7 +3,7 @@
  * Requires an external independently verified operator ticket on each item.
  * At-least-once original Queue redelivery stays protected by durable receipts.
  */
-import {validatePurgeEvent} from "./cloudflare-adapters.mjs";
+import {validatePurgeEvent,fingerprintPurgeEvent} from "./cloudflare-adapters.mjs";
 export async function replayDeadLetters(batch,{
   verifyOperatorTicket,originQueue,receipts,auditReplay
 }={}){
@@ -38,7 +38,8 @@ export async function replayDeadLetters(batch,{
          typeof approval.ticket!=="string"||approval.ticket.length<8 ||
          typeof approval.operator!=="string"||approval.operator.length<3)
         throw Error("dlq_operator_ticket_denied");
-      const state=await receipts.status(event.eventId);
+      const digest=await fingerprintPurgeEvent(event);
+      const state=await receipts.status(event.eventId,digest);
       if(state==="completed"){
         await auditReplay({eventId:event.eventId,ticket:approval.ticket,
           operator:approval.operator,outcome:"already_completed"});

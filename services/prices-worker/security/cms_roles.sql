@@ -22,6 +22,9 @@ DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_issuer_admin') THEN
    CREATE ROLE tw_cms_issuer_admin NOLOGIN NOINHERIT;
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_legacy_recovery') THEN
+   CREATE ROLE tw_cms_legacy_recovery NOLOGIN NOINHERIT;
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_reader') THEN
    CREATE ROLE tw_cms_reader NOLOGIN NOINHERIT;
  END IF;
@@ -31,7 +34,7 @@ REVOKE ALL ON ALL TABLES IN SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
  tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,
- tw_cms_rights_admin,tw_cms_issuer_admin,tw_cms_queue_consumer,tw_cms_reader;
+ tw_cms_rights_admin,tw_cms_issuer_admin,tw_cms_queue_consumer,tw_cms_reader,tw_cms_legacy_recovery;
 
 -- Security definer draft submission, scoped to an immutable external key.
 -- NOT a generic arbitrary SQL execution bridge; qualified schema and
@@ -173,6 +176,20 @@ GRANT SELECT,INSERT,UPDATE ON __TOPWHIZ_SCHEMA__.cms_purge_receipts
 -- The PUBLIC API has NO raw draft, reviewer or rights-table access.
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_public_pages,
  __TOPWHIZ_SCHEMA__.cms_public_media TO tw_cms_reader;
+
+-- Legacy recovery broker has no raw receipt DELETE permission.
+-- Grant only a constrained audited one-time claim, and read-only
+-- outbox metadata. Conditional because TUR008–TUR013 CI role tests
+-- intentionally install the role template without TUR014 migrations.
+GRANT SELECT(id,submission_id,revision_no,event_kind,routes)
+ ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_legacy_recovery;
+DO $legacy$ BEGIN
+ IF to_regprocedure('__TOPWHIZ_SCHEMA__.cms_claim_legacy_redrive(uuid,varchar,varchar,varchar)')
+   IS NOT NULL THEN
+   GRANT EXECUTE ON FUNCTION __TOPWHIZ_SCHEMA__.cms_claim_legacy_redrive(uuid,varchar,varchar,varchar)
+     TO tw_cms_legacy_recovery;
+ END IF;
+END $legacy$;
 
 -- No service role has LOGIN, CREATE, SUPERUSER or BYPASSRLS.
 -- Per-environment account membership and schema ownership are operator-owned.
