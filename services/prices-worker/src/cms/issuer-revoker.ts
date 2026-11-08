@@ -68,7 +68,6 @@ export async function revokeIssuerAuthority(pool:Pool,id:string,reasonRef:string
    if(row.active){
      await c.query("UPDATE cms_review_authorities SET active=false WHERE id=$1",[id]);
    }
-   const affected=(await c.query<Impact>(invalidIssuer,[200])).rows;
    const matching=(await c.query<Impact>(
      `SELECT s.id,s.revision_no
       FROM content_submissions s
@@ -85,7 +84,7 @@ export async function revokeIssuerAuthority(pool:Pool,id:string,reasonRef:string
      "INSERT INTO cms_issuer_revocations(authority_id,reason_ref,verification_actor,affected_count) VALUES($1,$2,$3,$4)",
      [id,reasonRef.trim(),actor.trim(),withdrawn]);
    await c.query("COMMIT");
-   return {issuerId:id,withdrawn,alreadyInactive:!row.active,needsReconciliation:affected.length===200};
+   return {issuerId:id,withdrawn,alreadyInactive:!row.active};
  }catch(e){await c.query("ROLLBACK");throw e}
  finally{c.release()}
 }
