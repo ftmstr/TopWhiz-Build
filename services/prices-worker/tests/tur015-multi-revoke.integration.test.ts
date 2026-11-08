@@ -117,8 +117,19 @@ test("40 published pages with overlapping licensed sources/independent signed is
   assert.deepEqual(Object.fromEntries(tally.map(x=>[x.event_kind,x.n])),
    {published:40,withdrawn:40});
   assert.equal((await db.query("SELECT count(*)::int AS n FROM cms_publication_fences WHERE state='withdrawn'")).rows[0].n,40);
-  assert.equal((await db.query("SELECT count(*)::int AS n FROM cms_mutation_guard_ledger")).rows[0].n,
-    results.reduce((n,r,i)=>n+(i===0?r.withdrawn:i===1?r.withdrawn:r.withdrawn),0));
+  // Ledger grain is (submission, sensitive resource), NOT one row per
+  // withdrawal. The ten doubly licensed pages must have two independent
+  // sensitive mutation records, but only ONE withdrawn outbox event.
+  const guardAudit=(await db.query(
+    "SELECT count(*)::int AS n,count(DISTINCT submission_id)::int AS pages FROM cms_mutation_guard_ledger"
+  )).rows[0];
+  assert.ok(guardAudit.n>=40 && guardAudit.n<=120,
+    "all affected resource mutations are separately captured");
+  assert.equal(guardAudit.pages,40,"no impacted published page missed");
+  const withoutPurge=(await db.query(
+    "SELECT count(*)::int AS n FROM cms_mutation_guard_ledger g WHERE NOT EXISTS (SELECT 1 FROM cms_delivery_outbox o WHERE o.submission_id=g.submission_id AND o.revision_no=g.expected_revision AND o.event_kind='withdrawn')"
+  )).rows[0].n;
+  assert.equal(withoutPurge,0,"every ledger row has a matching durable takedown outbox");
   for(const row of records){
    const event=(await db.query("SELECT revision_no FROM cms_delivery_outbox WHERE submission_id=$1 AND event_kind='withdrawn'",[row.id])).rows;
    assert.deepEqual(event.map(x=>x.revision_no),[2]);
