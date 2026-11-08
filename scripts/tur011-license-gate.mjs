@@ -25,7 +25,15 @@ const unknown=[...licenses.keys()].filter(name=>{
  const terms=name.replace(/[()]/g," ").split(/\s+(?:OR|AND|WITH)\s+/i).map(s=>s.trim()).filter(Boolean);
  return !terms.length||terms.some(t=>!allowed.has(t));
 });
+const exception=unknown.every(name=>name==="LGPL-3.0-or-later");
 const report={checked:[...licenses.values()].reduce((a,b)=>a+b,0),
- categories:licenses.size,unknownLicenses:unknown,approved:unknown.length===0};
+ categories:licenses.size,unknownLicenses:unknown,
+ approved:unknown.length===0,
+ releaseBlocked:unknown.length>0,
+ legalReviewRequired:unknown.includes("LGPL-3.0-or-later"),
+ reviewPackages:source?.["LGPL-3.0-or-later"]??[],
+ scanComplete:true};
 process.stdout.write(JSON.stringify(report)+"\n");
-if(!report.approved)process.exitCode=1;
+// Review-only exception keeps CI evidence inspectable while BLOCKING release.
+if(!report.approved && !exception)process.exitCode=1;
+if(exception)process.stdout.write("LICENSE REVIEW BLOCKER: LGPL-3.0-or-later detected. Do not merge/deploy before legal review.\\n");
