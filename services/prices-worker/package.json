@@ -14,7 +14,10 @@
     "test:issuer-revocation": "tsx --test tests/cms-issuer.integration.test.ts",
     "test:service-sessions": "tsx --test tests/cms-service-sessions.integration.test.ts",
     "test:dlq": "tsx --test tests/cms-dlq.integration.test.ts",
-    "test:race": "tsx --test tests/tur011-race.integration.test.ts"
+    "test:race": "tsx --test tests/tur011-race.integration.test.ts",
+    "test:rollback": "tsx --test tests/tur012-rollback.integration.test.ts",
+    "test:rollback-race": "tsx --test tests/tur012-revoke-race.integration.test.ts",
+    "test:dlq-stress": "tsx --test tests/tur012-dlq.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
