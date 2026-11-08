@@ -20,7 +20,7 @@ export async function revokeLicensedResource(pool:Pool,kind:Kind,id:string,reaso
    `SELECT s.id,s.revision_no FROM content_submissions s
     JOIN LATERAL (
       SELECT v.version FROM published_content_versions v
-      WHERE v.submission_id=s.id ORDER BY v.version DESC LIMIT 1
+      WHERE v.submission_id=s.id AND v.version=COALESCE((SELECT h.publication_version FROM cms_publication_heads h WHERE h.submission_id=s.id),(SELECT max(p.version) FROM published_content_versions p WHERE p.submission_id=s.id)) LIMIT 1
     ) v ON true
     WHERE s.state='published' AND EXISTS (
        SELECT 1 FROM cms_public_dependencies d
