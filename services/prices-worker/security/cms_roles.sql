@@ -15,6 +15,9 @@ DO $roles$ BEGIN
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_publisher') THEN
    CREATE ROLE tw_cms_publisher NOLOGIN NOINHERIT;
  END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_rights_admin') THEN
+   CREATE ROLE tw_cms_rights_admin NOLOGIN NOINHERIT;
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='tw_cms_reader') THEN
    CREATE ROLE tw_cms_reader NOLOGIN NOINHERIT;
  END IF;
@@ -22,7 +25,7 @@ END $roles$;
 REVOKE ALL ON ALL TABLES IN SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 REVOKE ALL ON SCHEMA __TOPWHIZ_SCHEMA__ FROM PUBLIC;
 GRANT USAGE ON SCHEMA __TOPWHIZ_SCHEMA__ TO
- tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,tw_cms_reader;
+ tw_cms_intake,tw_cms_attestor,tw_cms_reviewer,tw_cms_publisher,tw_cms_reader,tw_cms_rights_admin;
 
 -- Draft intake: no ability to change authorization, public versions or routes.
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.content_submissions TO tw_cms_intake;
@@ -59,6 +62,20 @@ GRANT INSERT ON __TOPWHIZ_SCHEMA__.published_content_versions,
  __TOPWHIZ_SCHEMA__.content_rights_audit,
  __TOPWHIZ_SCHEMA__.cms_delivery_outbox TO tw_cms_publisher;
 GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_publisher;
+
+-- Rights authority cannot forge a reviewer signature or publish a new page.
+GRANT SELECT ON __TOPWHIZ_SCHEMA__.content_submissions,
+ __TOPWHIZ_SCHEMA__.cms_trusted_sources,
+ __TOPWHIZ_SCHEMA__.cms_media_assets,
+ __TOPWHIZ_SCHEMA__.published_route_bindings
+ TO tw_cms_rights_admin;
+GRANT UPDATE(rights_approved) ON __TOPWHIZ_SCHEMA__.cms_trusted_sources,
+ __TOPWHIZ_SCHEMA__.cms_media_assets TO tw_cms_rights_admin;
+GRANT UPDATE(state,revision_no,updated_at) ON __TOPWHIZ_SCHEMA__.content_submissions
+ TO tw_cms_rights_admin;
+GRANT DELETE ON __TOPWHIZ_SCHEMA__.published_route_bindings TO tw_cms_rights_admin;
+GRANT INSERT ON __TOPWHIZ_SCHEMA__.cms_delivery_outbox,
+ __TOPWHIZ_SCHEMA__.cms_rights_revocations TO tw_cms_rights_admin;
 
 -- Reader cannot access submission/draft, license evidence, review tables.
 GRANT SELECT ON __TOPWHIZ_SCHEMA__.cms_public_pages,
