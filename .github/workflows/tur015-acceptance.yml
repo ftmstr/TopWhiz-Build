@@ -103,6 +103,7 @@ jobs:
         run: |
           pnpm --filter @topwhiz/prices-worker test:secdef-auth
           pnpm --filter @topwhiz/prices-worker test:multi-revoke
+          pnpm --filter @topwhiz/prices-worker test:commit-ambiguity
       - name: Next.js, TypeScript, vinext and both API Workers — NO deployment
         run: |
           pnpm typecheck
