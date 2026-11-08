@@ -20,6 +20,18 @@ CREATE TABLE cms_rights_revocations (
 );
 CREATE INDEX cms_rights_revocations_idx ON cms_rights_revocations(asset_type,asset_id,revoked_at);
 
+-- Binds source and media rights to the ACTUAL latest PUBLIC version,
+-- independent of unapproved/current private draft payload.
+CREATE TABLE cms_public_dependencies (
+  submission_id uuid NOT NULL REFERENCES content_submissions(id),
+  version integer NOT NULL CHECK(version>0),
+  resource_kind varchar(8) NOT NULL CHECK(resource_kind IN ('source','media')),
+  resource_id varchar(160) NOT NULL,
+  PRIMARY KEY(submission_id,version,resource_kind,resource_id)
+);
+CREATE INDEX cms_public_dependencies_resource_idx
+ ON cms_public_dependencies(resource_kind,resource_id,submission_id);
+
 -- A currently public page is projected via an owner's security-barrier view:
 -- public DB role receives SELECT on the view, NOT access to drafts/review tables.
 CREATE VIEW cms_public_pages WITH (security_barrier=true) AS
@@ -35,15 +47,24 @@ JOIN LATERAL (
 LEFT JOIN cms_media_assets m ON m.id=v.public_payload->>'coverMediaId'
  AND m.rights_approved=true
 WHERE s.state='published'
- -- Any revoked source makes the page invisible, even during delayed CDN purge.
- AND jsonb_typeof(s.payload->'sources')='array'
- AND jsonb_array_length(s.payload->'sources')>0
- AND NOT EXISTS (
-   SELECT 1 FROM jsonb_array_elements_text(s.payload->'sources') AS dep(source_id)
-   LEFT JOIN cms_trusted_sources src ON src.id=dep.source_id
-   WHERE src.rights_approved IS DISTINCT FROM true
+ AND EXISTS (
+   SELECT 1 FROM cms_public_dependencies d
+   WHERE d.submission_id=s.id AND d.version=v.version
+     AND d.resource_kind='source'
  )
- AND (s.payload->>'coverMediaId' IS NULL OR m.id IS NOT NULL);
+ AND NOT EXISTS (
+   SELECT 1 FROM cms_public_dependencies d
+   LEFT JOIN cms_trusted_sources src ON d.resource_kind='source'
+     AND src.id=d.resource_id
+   LEFT JOIN cms_media_assets media ON d.resource_kind='media'
+     AND media.id=d.resource_id
+   WHERE d.submission_id=s.id AND d.version=v.version
+     AND (
+       (d.resource_kind='source' AND src.rights_approved IS DISTINCT FROM true)
+       OR (d.resource_kind='media' AND media.rights_approved IS DISTINCT FROM true)
+     )
+ )
+ AND (v.public_payload->>'coverMediaId' IS NULL OR m.id IS NOT NULL);
 
 CREATE VIEW cms_public_media WITH (security_barrier=true) AS
 SELECT m.id,m.r2_key AS key,m.content_type AS "contentType",
