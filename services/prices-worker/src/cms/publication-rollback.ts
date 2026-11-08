@@ -28,24 +28,22 @@ export async function rollbackPublishedVersion(pool:Pool,{
  const c=await pool.connect();
  try{
   await c.query("BEGIN");
-  const current=(await c.query<RecordState>(
-    "SELECT revision_no,state,slug,content_type FROM content_submissions WHERE id=$1 FOR UPDATE",
+  // Phase 1: inspect historical immutable data without locking submissions.
+  // Resource/issuer shared locks MUST come before submission FOR UPDATE:
+  // rights revokers and issuer revokers use the same resource->submission order.
+  const observed=(await c.query<{content_type:string}>(
+    "SELECT content_type FROM content_submissions WHERE id=$1",
     [submissionId])).rows[0];
-  if(!current||current.state!=="published")throw Error("rollback_current_publication_required");
-  if(current.revision_no!==expectedRevision)throw Error("revision_conflict");
-  const active=(await c.query<{version:number}>(
-    "SELECT COALESCE((SELECT publication_version FROM cms_publication_heads WHERE submission_id=$1),(SELECT max(version) FROM published_content_versions WHERE submission_id=$1)) AS version",
-    [submissionId])).rows[0]?.version;
-  if(active!==expectedPublicVersion)throw Error("active_public_version_conflict");
+  if(!observed)throw Error("rollback_submission_missing");
   const snap=(await c.query<{public_payload:any}>(
     "SELECT public_payload FROM published_content_versions WHERE submission_id=$1 AND version=$2",
     [submissionId,targetVersion])).rows[0];
   if(!snap)throw Error("rollback_target_not_published");
   const grant=(await c.query<Grant>(
-    "SELECT approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at FROM cms_review_grants WHERE submission_id=$1 AND revision_no=$2",
+    "SELECT approved,editorial_verified,originality_verified,specifications_verified,verified_by,verified_at FROM cms_review_grants WHERE submission_id=$1 AND revision_no=$2 FOR SHARE",
     [submissionId,targetVersion])).rows[0];
   if(!grant?.approved||!grant.editorial_verified||!grant.originality_verified||
-     (current.content_type==="phone"&&!grant.specifications_verified)||!recent(grant.verified_at,now))
+     (observed.content_type==="phone"&&!grant.specifications_verified)||!recent(grant.verified_at,now))
      throw Error("rollback_review_expired_or_revoked");
   const deps=(await c.query<{resource_kind:string;resource_id:string}>(
     "SELECT resource_kind,resource_id FROM cms_public_dependencies WHERE submission_id=$1 AND version=$2",
@@ -61,10 +59,15 @@ export async function rollbackPublishedVersion(pool:Pool,{
   if(cover!=null&&!deps.some(d=>d.resource_kind==="media"&&d.resource_id===cover))
     throw Error("rollback_missing_media_dependency");
   const issuerDeps=(await c.query<Ref>(
-    "SELECT ref.attestation_type,ref.authority_id,ref.approved_public_key,ref.approved_signature_base64,a.public_key_pem,a.active,a.reviewer_class,att.status,att.verified_at,att.signature_base64,att.evidence_ref,att.credited_author FROM cms_public_issuer_dependencies ref LEFT JOIN cms_review_authorities a ON a.id=ref.authority_id LEFT JOIN cms_external_attestations att ON att.submission_id=ref.submission_id AND att.revision_no=ref.version AND att.attestation_type=ref.attestation_type AND att.authority_id=ref.authority_id WHERE ref.submission_id=$1 AND ref.version=$2",
+    "SELECT ref.attestation_type,ref.authority_id,ref.approved_public_key,ref.approved_signature_base64,a.public_key_pem,a.active,a.reviewer_class,att.status,att.verified_at,att.signature_base64,att.evidence_ref,att.credited_author FROM cms_public_issuer_dependencies ref JOIN cms_review_authorities a ON a.id=ref.authority_id JOIN cms_external_attestations att ON att.submission_id=ref.submission_id AND att.revision_no=ref.version AND att.attestation_type=ref.attestation_type AND att.authority_id=ref.authority_id WHERE ref.submission_id=$1 AND ref.version=$2 FOR SHARE OF a,att",
     [submissionId,targetVersion])).rows;
+  // Inner joins must not silently discard missing issuer/evidence references.
+  const expectedRefs=(await c.query<{n:number}>(
+    "SELECT count(*)::int AS n FROM cms_public_issuer_dependencies WHERE submission_id=$1 AND version=$2",
+    [submissionId,targetVersion])).rows[0].n;
+  if(issuerDeps.length!==expectedRefs)throw Error("rollback_issuer_evidence_missing");
   if(grant.verified_by.startsWith("auto-gate:")&&
-     issuerDeps.length!==(current.content_type==="phone"?3:2))
+     issuerDeps.length!==(observed.content_type==="phone"?3:2))
     throw Error("rollback_missing_issuer_evidence");
   for(const ref of issuerDeps){
     if(ref.active!==true||ref.public_key_pem!==ref.approved_public_key||
@@ -74,6 +77,16 @@ export async function rollbackPublishedVersion(pool:Pool,{
         {id:ref.authority_id,active:ref.active,reviewer_class:ref.reviewer_class,public_key_pem:ref.public_key_pem}))
         throw Error("rollback_issuer_revoked");
   }
+  // Phase 2: lock mutable publication HEAD after all rights and issuer rows.
+  const current=(await c.query<RecordState>(
+    "SELECT revision_no,state,slug,content_type FROM content_submissions WHERE id=$1 FOR UPDATE",
+    [submissionId])).rows[0];
+  if(!current||current.state!=="published")throw Error("rollback_current_publication_required");
+  if(current.revision_no!==expectedRevision)throw Error("revision_conflict");
+  const active=(await c.query<{version:number}>(
+    "SELECT COALESCE((SELECT publication_version FROM cms_publication_heads WHERE submission_id=$1),(SELECT max(version) FROM published_content_versions WHERE submission_id=$1)) AS version",
+    [submissionId])).rows[0]?.version;
+  if(active!==expectedPublicVersion)throw Error("active_public_version_conflict");
   const routes=(await c.query<{public_path:string}>(
     "SELECT public_path FROM published_route_bindings WHERE submission_id=$1",
     [submissionId])).rows.map(x=>x.public_path);
