@@ -11,7 +11,7 @@ const invalidIssuer=String.raw`SELECT s.id,s.revision_no
  FROM content_submissions s
  JOIN LATERAL(
    SELECT v.version FROM published_content_versions v
-   WHERE v.submission_id=s.id ORDER BY v.version DESC LIMIT 1
+   WHERE v.submission_id=s.id AND v.version=COALESCE((SELECT h.publication_version FROM cms_publication_heads h WHERE h.submission_id=s.id),(SELECT max(p.version) FROM published_content_versions p WHERE p.submission_id=s.id)) LIMIT 1
  ) pub ON true
  WHERE s.state='published' AND EXISTS(
    SELECT 1 FROM cms_public_issuer_dependencies dep
@@ -73,7 +73,7 @@ export async function revokeIssuerAuthority(pool:Pool,id:string,reasonRef:string
       FROM content_submissions s
       JOIN LATERAL (
         SELECT v.version FROM published_content_versions v
-        WHERE v.submission_id=s.id ORDER BY v.version DESC LIMIT 1
+        WHERE v.submission_id=s.id AND v.version=COALESCE((SELECT h.publication_version FROM cms_publication_heads h WHERE h.submission_id=s.id),(SELECT max(p.version) FROM published_content_versions p WHERE p.submission_id=s.id)) LIMIT 1
       ) pub ON true
       WHERE s.state='published' AND EXISTS(
         SELECT 1 FROM cms_public_issuer_dependencies dep
