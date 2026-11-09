@@ -1,0 +1,20 @@
+name: TUR026 synthetic ACK provenance negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur026-ack-provenance-negative.test.mjs'
+      - '.github/workflows/tur026-ack-provenance-negative.yml'
+      - 'docs/tur026/**'
+  workflow_dispatch:
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic ACK provenance negative regression
+        run: node --test tests/tur026-ack-provenance-negative.test.mjs
