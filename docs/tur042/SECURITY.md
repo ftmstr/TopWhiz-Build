@@ -1,0 +1,4 @@
+# TUR042 security report — RELEASE NO-GO
+The CI-only preload is a test transport and must reject unsafe configuration before opening any database or running app code. Seven configuration rejection cases added; this is defense of the test harness, NOT production media authorization.
+Issue #22 remains OPEN. TUR018 12 synthetic interleavings and 99,276 fictional unsafe bytes and TUR019 cross-isolate bypass remain adverse evidence. TUR041 real Next HTTP + disposable PG16 shows already admitted bytes after durable revocation.
+No final network-byte ACK, CDN invalidation, R2 cross-isolate fence, independent schema-owner/operator IAM or external security approval. SECURITY DEFINER, CREATE ACL and schema owner threat models remain NO-GO. TOPWHIZ/TOPWIZ trademark and rights approval outstanding.
