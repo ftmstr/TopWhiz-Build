@@ -46,7 +46,7 @@ jobs:
         run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
       - name: Local Next build only
         env:
-          NODE_OPTIONS: "${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
         run: pnpm build
       - name: Inherited real Next HTTP PG16 revocation
         run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur041-next-server-pg16.integration.test.ts
