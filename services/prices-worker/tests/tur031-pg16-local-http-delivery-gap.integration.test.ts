@@ -23,9 +23,9 @@ test('TUR031: real PG16 revocation COMMIT cannot retract locally delivered HTTP 
   let markLastRead = () => {};
   let markBufferedWrite = () => {};
   let resumeReceiver = () => {};
-  const lastRead = new Promise<void>(resolve => { markLastRead = resolve; });
-  const postCommitGate = new Promise<void>(resolve => { releaseAfterCommit = resolve; });
-  const bufferedWritten = new Promise<void>(resolve => { markBufferedWrite = resolve; });
+  const lastRead = new Promise<void>(resolve => { markLastRead = () => resolve(); });
+  const postCommitGate = new Promise<void>(resolve => { releaseAfterCommit = () => resolve(); });
+  const bufferedWritten = new Promise<void>(resolve => { markBufferedWrite = () => resolve(); });
   try {
     await admin.connect();
     for (let i = 0; i < roleNames.length; i++)
@@ -39,7 +39,7 @@ test('TUR031: real PG16 revocation COMMIT cannot retract locally delivered HTTP 
     for (const role of roleNames)
       await admin.query('GRANT USAGE ON SCHEMA ' + schema + ' TO ' + role);
     await admin.query('GRANT SELECT ON ' + schema + '.rights TO ' + roleNames[0]);
-    await admin.query('GRANT SELECT(id), UPDATE(approved,generation) ON ' + schema + '.rights TO ' + roleNames[1]);
+    await admin.query('GRANT SELECT(id,approved), UPDATE(approved,generation) ON ' + schema + '.rights TO ' + roleNames[1]);
     for (let i = 0; i < roleNames.length; i++) {
       const url = new URL(URI);
       url.username = roleNames[i];
@@ -123,7 +123,7 @@ test('TUR031: real PG16 revocation COMMIT cannot retract locally delivered HTTP 
     // This second result is about paused *receiver consumption* after COMMIT;
     // it does NOT establish when the last network byte crossed the wire.
     let markHeaders = () => {};
-    const headersSeen = new Promise<void>(resolve => { markHeaders = resolve; });
+    const headersSeen = new Promise<void>(resolve => { markHeaders = () => resolve(); });
     const delayedReceiver = new Promise<{ status: number | undefined; data: Buffer }>((resolve, reject) => {
       const req = request({ hostname: '127.0.0.1', port, path: '/buffered' }, res => {
         const chunks: Buffer[] = [];
