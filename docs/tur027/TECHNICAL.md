@@ -1,0 +1,3 @@
+# TUR027 technical report — synthetic receipt replay
+Parent: TUR026 HEAD f4f2368156b2bae55bf7f72769364d060c2bdf64 (Draft PR #30).
+Adds five Node native test groups covering 64 stale generations, 64 matching-receipt buffered-delivery cases, cross-publisher bypass, 64 revoked admissions and positive model control. CI-only, fictional data. TUR018 12 cases / 99,276 fictional bytes, TUR019 cross-isolate and TUR020 last-byte negative evidence remain inherited and unchanged. These are deliberately negative counterexamples; a passing test is not a distributed fence or end-client receipt proof. Exact final-HEAD GitHub Actions verification is required.
