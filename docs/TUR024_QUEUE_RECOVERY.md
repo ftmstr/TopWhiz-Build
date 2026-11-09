@@ -1,0 +1,2 @@
+# TUR024 Queue recovery
+No Queue, DLQ, broker, outbox, schema, migration or lease code changed. Preserve inherited parallel broker/Queue/DLQ uncertain COMMIT, duplicate receipt, canonical original outbox SHA, route allowlist, idempotency and lease crash-recovery tests. Synthetic transport PASS cannot establish exactly-once delivery or Queue correctness. All inherited CI requires exact final commit verification.
