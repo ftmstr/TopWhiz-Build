@@ -1,0 +1,5 @@
+# TUR034 security — fail-closed release NO-GO
+
+The test directly exercises the real CMS handler AND the real Next App Router GET using two separately authenticated PostgreSQL16 LOGIN sessions, fictional verified PNG and local HTTP. After final approved SQL SELECT, independent revocation COMMIT can precede transmission of a preapproved Response; fresh GETs fail closed with 404. A separately held Next Response after construction can likewise deliver previously authorized bytes after COMMIT. Thus a database COMMIT, final lookup and no-store cannot prove end-to-end revocation.
+
+This test imports Next GET but does NOT start a full Next.js HTTP server; all Cloudflare R2/CDN, actual global cache purge, last network byte, receiver ACK and independent operator IAM remain NOT_RUN/NOT_PROVEN. SQL security-barrier production Neon view is NOT exercised. TUR018's **12/12 unsafe fictional interleavings and 99,276 bytes** remain negative evidence; TUR019 cross-isolate counterexample, TUR021/029/030 owner/superuser CAS bypass remain unresolved. The prior duplicate TUR033 PR #38 was closed, canonical TUR033 #37 retained. Issue #22 OPEN. Strict NO-GO.
