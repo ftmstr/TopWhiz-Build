@@ -27,7 +27,7 @@ for(const [width,height] of [[390,844],[1366,768]]){
 test("TUR019 fictional revoked article and phone have no indexable content",async({request})=>{
  const urls=["/haberler/ci-tur019-withdrawn","/telefonlar/ci-tur019-unlicensed"];
  const results=await Promise.all(Array.from({length:24},(_,i)=>request.get(urls[i%2])));
- assertNoAds(results);
+ await assertNoAds(results);
  async function assertNoAds(rs){
   for(const response of rs){
    expect(response.status()).toBe(404);
