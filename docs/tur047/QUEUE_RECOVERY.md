@@ -1,0 +1,3 @@
+# TUR047 Queue recovery report — NO-GO
+The test models ACK scope only, not durable Queue processing. ACK replay, issuer substitution, cross-publisher claim, generation mismatch, duplicate delivery and uncertain COMMIT must not be promoted to success without authoritative reconciliation.
+Retain parallel broker/Queue/DLQ lease and idempotency controls and original outbox canonical SHA/route allowlist checks. Real broker, database crash recovery, remote receipt, distributed fencing and power-loss tests: NOT_RUN in this turn. Existing inherited checks require independent final-HEAD CI verification.

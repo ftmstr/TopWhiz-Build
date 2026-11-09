@@ -1,0 +1,5 @@
+# TUR047 security report — NO-GO
+Issue #22 remains a release blocker. A matching local ACK is not an independently authenticated receiver proof; final network byte delivery, in-flight revocation and independent publisher coordination remain unproven.
+Preserve TUR018 12 synthetic interleavings / 99,276 fictional bytes and TUR019 cross-isolate bypass. This change adds only claim-context negative tests; it does not close the vulnerability.
+Maintain PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL, original outbox canonical SHA and route allowlist, media license revocation, local stale-cache and fail-closed requirements.
+No live Cloudflare Preview/R2/CDN/Queue/cache purge, Neon, DNS, real assets or merchant/AdSense actions. TOPWHIZ/TOPWIZ clearance, legal source rights, independent IAM and external security approval remain required.

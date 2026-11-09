@@ -1,0 +1,21 @@
+name: TUR047 ACK claim scope negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur047-ack-claim-scope-negative.test.mjs'
+      - '.github/workflows/tur047-ack-claim-scope-negative.yml'
+      - 'docs/tur047/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-ack-claims:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run synthetic negative evidence
+        run: node --test tests/tur047-ack-claim-scope-negative.test.mjs
