@@ -1,0 +1,2 @@
+# TUR048 Queue recovery — NO-GO
+A delimiter-colliding local ACK identifier must never authorize replay, original-outbox consumption, lease release, Queue acceptance or DLQ retirement. This tur adds only synthetic scope-collision tests. Original outbox canonical SHA and route allowlist, parallel brokers, uncertain COMMIT ACK, retries, DLQ and lease race acceptance remain inherited gates; no new real PostgreSQL/Queue integration evidence is claimed. Fail closed on uncertain delivery.
