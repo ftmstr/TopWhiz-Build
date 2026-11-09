@@ -1,0 +1,3 @@
+# TUR038 Technical
+
+Base: TUR037 exact HEAD `6e455508170cd9a427b28c1b621a7a580ac5ab48`, 19/19 visible PR-triggered Actions SUCCESS (first page only). The actual Next GET media proxy is exercised using a synthetic stream whose advertised Content-Length is 12 while the delivered body is four bytes, plus a stream that errors after response construction. The tests document negative evidence, not a fix. Dedicated CI includes inherited TUR037/036/035, real disposable PG16, original outbox and frozen dependency checks. Exact final report-commit CI acceptance must be checked separately. No production code changed.
