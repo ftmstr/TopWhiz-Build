@@ -1,0 +1,57 @@
+name: TUR034 real CMS plus Next GET proxy and PG16 HTTP negative NO-GO
+on:
+  push:
+    branches: [feat/tur034-cms-next-proxy-pg16-distributed-gap-20261109]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur034-next-proxy-pg16.integration.test.ts'
+      - '.github/workflows/tur034-next-proxy-pg16.yml'
+      - 'docs/tur034/**'
+permissions:
+  contents: read
+jobs:
+  actual-cms-next-proxy-pg16:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Real CMS handler and actual Next Route GET with PG16 independent LOGIN
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur034-next-proxy-pg16.integration.test.ts
+      - name: Inherited real PG16 and local HTTP negative evidence
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur032-cms-handler-pg16-http.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur031-pg16-local-http-delivery-gap.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur021-durable-media-fence.integration.test.ts
+      - name: Original immutable Queue SHA, route allowlist and parallel DLQ replay
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Node negative test suite, static typecheck and frozen legal release holds
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
