@@ -1,0 +1,3 @@
+# TUR036 Queue and DLQ recovery
+
+No Queue, broker, outbox, lease, database schema or recovery production logic changed. CI replays original outbox canonical SHA/route allowlist and recovery suites plus disposable PG16 tests. Parallel broker/Queue/DLQ ACK uncertainty, COMMIT transport loss, lease expiry, retry and restart remain separate safety boundaries. Database COMMIT and broker ACK do not establish a receiver's last wire byte. Real Cloudflare Queue, DLQ, production restart and Neon: NOT_RUN. Publication NO-GO.
