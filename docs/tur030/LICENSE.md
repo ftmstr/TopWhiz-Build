@@ -1,0 +1,2 @@
+# TUR030 license and distribution HOLD
+No dependency, lockfile or runtime publication changes. TUR002 pnpm --frozen-lockfile (pnpm 10.18.3), AGPL-3.0, LGPL/libvips supplier provenance, relinking and redistribution approvals remain mandatory. TOPWHIZ/TOPWIZ trademark clearance, licensed media/source rights and independent operator IAM signoff are outstanding. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/purge, Neon/prod, DNS/domain, real media/content/merchant prices/feeds or AdSense. RELEASE NO-GO.
