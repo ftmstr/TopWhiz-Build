@@ -46,11 +46,11 @@ test("TUR018 canonical SHA respects JS safe-route limits, old forged outbox deni
   )).rows[0].id;
   let rev=1;
   async function make(routes:any){
-   rev++;
+   const revision=++rev;
    const eventRow=(await db.query(
     "INSERT INTO cms_delivery_outbox(submission_id,revision_no,event_kind,routes) VALUES($1,$2,'withdrawn',$3::jsonb) RETURNING *",
-    [submission,rev,JSON.stringify(routes)])).rows[0];
-   return {eventId:eventRow.id,submissionId:submission,revision:rev,
+    [submission,revision,JSON.stringify(routes)])).rows[0];
+   return {eventId:eventRow.id,submissionId:submission,revision,
     kind:"withdrawn",routes};
   }
   const good=[
