@@ -1,0 +1,2 @@
+# TUR024 security — release NO-GO
+Local cancellation, stream EOF, PostgreSQL COMMIT, lease release and error handling do not retract queued bytes or invalidate external CDN caches. The new tests deliberately show unsafe transport replay. No last TCP/CDN byte proof or linearizable global publication fence. Retain inherited PostgreSQL SECURITY DEFINER, trusted search_path, schema-owner/CREATE ACL and original outbox canonical SHA/route allowlist gates. Issue #22 remains OPEN; no production or external IAM verification.

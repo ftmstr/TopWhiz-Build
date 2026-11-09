@@ -1,0 +1,21 @@
+name: TUR024 cancellation replay negative evidence NO-GO
+on:
+  push:
+    branches:
+      - feat/tur024-transport-cancel-replay-negative-20261109
+  pull_request:
+    paths:
+      - 'tests/tur024-cancel-replay-negative.test.mjs'
+      - '.github/workflows/tur024-negative-boundary.yml'
+      - 'docs/TUR024_*'
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur024-cancel-replay-negative.test.mjs

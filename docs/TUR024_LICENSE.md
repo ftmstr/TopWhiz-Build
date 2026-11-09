@@ -1,0 +1,2 @@
+# TUR024 licensing and release HOLD
+No dependency, lockfile, supplier binary or real media change. Retain TUR002 frozen pnpm and AGPL-3.0/LGPL native libvips provenance/distribution review HOLD. TOPWHIZ/TOPWIZ mark, media/source licenses and independent operator IAM approval unresolved. No main merge, Cloudflare live Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod, DNS/domain, merchant feeds, actual content/prices/media or AdSense.
