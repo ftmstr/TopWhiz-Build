@@ -1,0 +1,3 @@
+# TUR036 licensing / provenance / release HOLD
+
+All new test data is fictional and generated locally; no real images, merchant offers, prices, feed or advertisement. No package, lockfile or production dependency changes. Frozen pnpm including TUR002, AGPL obligations, libvips/Sharp LGPL provenance and third-party media rights remain independent legal release gates. TOPWHIZ/TOPWIZ mark review and operator IAM approval are absent. A green CI does not constitute licensing or publication approval. Never merge main or operate live Cloudflare Preview/deploy/R2/Queue/CDN/purge, Neon/prod, DNS/domain, real content or AdSense. Issue #22 OPEN, release NO-GO.
