@@ -1,0 +1,2 @@
+# TUR028 license and distribution HOLD
+No dependency or lockfile changes. TUR002 frozen pnpm, AGPL-3.0, LGPL/libvips and supplier provenance/relinking obligations remain mandatory gates. TOPWHIZ/TOPWIZ trademark review, independent source/media rights and operator IAM signoff remain outstanding. Do not merge main, publish Cloudflare Preview/Queue/R2/CDN, use Neon/prod, DNS/domain, real media/content/merchant feeds/prices or AdSense.
