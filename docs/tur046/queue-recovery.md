@@ -1,0 +1,2 @@
+# TUR046 Queue recovery — NO-GO
+ACK replay and cross-publisher confusion are negative transport models only, not broker tests. Preserve original outbox canonical SHA, route allowlist, lease ownership, ambiguous COMMIT, concurrent Queue/DLQ delivery, idempotency and retry fences. No claim of real broker delivery, recovery or last-byte guarantee. Existing checks must remain enabled.
