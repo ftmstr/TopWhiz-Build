@@ -1,0 +1,2 @@
+# TUR024 technical — synthetic cancellation and stale replay
+Parent TUR023 Draft PR #27 HEAD 9b7a6e31b0370c3987c94d8c38b09d884a1e0a1c; exact parent PR-triggered first-page 20/20 completed SUCCESS, not exhaustive for other triggers. Three deterministic tests model 1..64 fictional bytes after local cancel/error and independent stale replay. Expected counterexamples, NOT a distributed fix. Inherited TUR018 12 cases / 99,276 fictional bytes and TUR019 cross-isolate bypass remain. No real Chromium or live network is claimed by this new workflow. Issue #22 OPEN, release NO-GO.
