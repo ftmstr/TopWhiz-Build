@@ -1,4 +1,4 @@
-import {test,expect} from "@playwright/test";
+import {test,expect,type APIResponse} from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 /** Only localhost synthetic Next/PG fixtures; not live Cloudflare, WCAG
@@ -28,7 +28,7 @@ test("TUR019 fictional revoked article and phone have no indexable content",asyn
  const urls=["/haberler/ci-tur019-withdrawn","/telefonlar/ci-tur019-unlicensed"];
  const results=await Promise.all(Array.from({length:24},(_,i)=>request.get(urls[i%2])));
  await assertNoAds(results);
- async function assertNoAds(rs){
+ async function assertNoAds(rs:APIResponse[]){
   for(const response of rs){
    expect(response.status()).toBe(404);
    expect(response.headers()["x-robots-tag"]).toMatch(/noindex/i);
