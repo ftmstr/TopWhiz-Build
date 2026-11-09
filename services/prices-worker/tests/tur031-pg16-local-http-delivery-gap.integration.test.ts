@@ -39,7 +39,7 @@ test('TUR031: real PG16 revocation COMMIT cannot retract locally delivered HTTP 
     for (const role of roleNames)
       await admin.query('GRANT USAGE ON SCHEMA ' + schema + ' TO ' + role);
     await admin.query('GRANT SELECT ON ' + schema + '.rights TO ' + roleNames[0]);
-    await admin.query('GRANT SELECT(id,approved), UPDATE(approved,generation) ON ' + schema + '.rights TO ' + roleNames[1]);
+    await admin.query('GRANT SELECT(id,approved,generation), UPDATE(approved,generation) ON ' + schema + '.rights TO ' + roleNames[1]);
     for (let i = 0; i < roleNames.length; i++) {
       const url = new URL(URI);
       url.username = roleNames[i];
