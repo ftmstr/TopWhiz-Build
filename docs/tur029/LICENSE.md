@@ -1,0 +1,2 @@
+# TUR029 license and release HOLD
+No new dependencies or lockfile changes. Frozen pnpm 10.18.3; AGPL-3.0 and LGPL/libvips provenance/relinking, supplier inventory and legal clearance remain required. TOPWHIZ/TOPWIZ trademark, independent media/source rights and operator IAM approvals are outstanding. No main merge, real Cloudflare/Neon, CDN, DNS, media, merchant prices, AdSense or publication. NO-GO.
