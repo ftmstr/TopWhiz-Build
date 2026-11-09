@@ -1,0 +1,3 @@
+# TUR044 Security / NO-GO
+
+Issue #22 remains OPEN. Synthetic TUR018: 12 interleavings and 99,276 fictional bytes after withdrawal; TUR019 cross-isolate bypass and TUR041 real Next HTTP / disposable PG16 post-COMMIT admission are NEGATIVE evidence, not a pass. TUR044 explicitly demonstrates a local abort cannot revoke another independent admitted producer. No global delivery fence, CDN cache invalidation, independent operator IAM, source licenses, trademark TOPWHIZ/TOPWIZ, or last-byte ACK proven. Preserve PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL threats, canonical outbox SHA/route allowlist and TUR002 frozen pnpm/AGPL-LGPL/libvips release blocks. **NO-GO**; no main merge or live services.

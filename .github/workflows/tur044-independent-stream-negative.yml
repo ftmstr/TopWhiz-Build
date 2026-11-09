@@ -1,0 +1,22 @@
+name: TUR044 independent admitted stream revocation negative NO-GO
+on:
+  push:
+    branches:
+      - feat/tur044-media-stream-revoke-invariant-20261109
+  pull_request:
+    paths:
+      - 'tests/tur044-independent-stream-revoke-negative.test.mjs'
+      - '.github/workflows/tur044-independent-stream-negative.yml'
+      - 'docs/tur044/**'
+permissions:
+  contents: read
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node version
+        run: node --version
+      - name: Deterministic negative evidence
+        run: node --test tests/tur044-independent-stream-revoke-negative.test.mjs
