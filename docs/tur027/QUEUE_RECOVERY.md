@@ -1,0 +1,2 @@
+# TUR027 Queue/DLQ recovery
+No Queue, DLQ, outbox, lease or PostgreSQL production code modified. Original immutable outbox canonical SHA, route allowlist, idempotent retries, independent broker and issuer, concurrent DLQ, lease fencing, ambiguous COMMIT quarantine and restart reconciliation remain inherited release gates. A modeled receipt is not broker ACK, COMMIT ACK or actual HTTP delivery. Reverify inherited checks at final HEAD; mark any unavailable live/independent test NOT_RUN.
