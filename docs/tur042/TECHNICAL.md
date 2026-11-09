@@ -1,0 +1,5 @@
+# TUR042 technical report — 2026-11-09
+Base: TUR041 Draft PR #46 HEAD 7e64372bcb14c155cf104c6812e28c606e6c8d0e (19 visible PR-triggered SUCCESS; non-exhaustive).
+New isolated Node child-process regression tests the actual TUR041 preload's configuration rejection: CI=false, external DB, HTTP CMS origin, unexpected host, malformed schema, wrong reader role and malformed password. Seven negative cases, each requires nonzero exit, refusal diagnostic and no application entry execution.
+CI workflow runs frozen pnpm, disposable PG16, actual Next production HTTP TUR041 negative test, original outbox/owner checks and release gates. New tests do NOT assert a distributed fix. Exact final commit CI must be checked after this report commit.
+No live network, production DB, domain, media, pricing or deployment.
