@@ -1,0 +1,2 @@
+# TUR048 license and publication gates
+Node built-in test runner only; no new runtime dependencies. Preserve TUR002 frozen pnpm, AGPL-3.0 and LGPL/libvips source/publication review, licensed media provenance, TOPWHIZ/TOPWIZ trademark clearance and independent operator IAM signoff. Preserve local vinext/workerd stale-cache and real local Chromium accessibility/SEO/performance checks. All live Cloudflare, Neon, domain, media, merchant feeds, pricing, AdSense, deploy and main merge prohibited. NO-GO.

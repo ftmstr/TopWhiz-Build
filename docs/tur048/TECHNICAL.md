@@ -1,0 +1,2 @@
+# TUR048 technical — 2026-11-10
+Parent TUR047 exact HEAD: 07fac7f8a83c2bfec22361d5b6a356e4b5f7e246. Five new synthetic tests expose colon-delimited ACK scope key collisions and compare length-prefix encoding. The safe encoding is a test oracle only; no production fix is asserted. Workflow runs TUR046/047/048 tests. CI for final report commit must be verified independently. Estimated engineering work-package progress 75% (not production readiness).
