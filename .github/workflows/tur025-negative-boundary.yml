@@ -1,0 +1,21 @@
+name: TUR025 remote acknowledgement negative boundary NO-GO
+on:
+  push:
+    branches:
+      - feat/tur025-remote-ack-negative-20261109
+  pull_request:
+    paths:
+      - 'tests/tur025-ack-fence-negative.test.mjs'
+      - '.github/workflows/tur025-negative-boundary.yml'
+      - 'docs/TUR025_*'
+permissions:
+  contents: read
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur025-ack-fence-negative.test.mjs

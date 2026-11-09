@@ -1,0 +1,2 @@
+# TUR025 Queue recovery
+No Queue, broker, DLQ, outbox, schema, lease or production path modified. Three local acknowledgement booleans in the test are intentionally insufficient for exactly-once, uncertain COMMIT, parallel broker delivery or crash recovery. Retain inherited idempotent retry, canonical original outbox digest, lease fencing, concurrent DLQ and uncertain COMMIT CI gates; require exact final SHA results before acceptance.
