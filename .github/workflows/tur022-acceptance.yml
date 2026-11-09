@@ -1,0 +1,20 @@
+name: TUR022 transport boundary negative evidence
+on:
+  push:
+    branches: [feat/tur022-media-transport-adversarial-20261109]
+  pull_request:
+    paths:
+      - 'tests/tur022-transport-boundary-negative.test.mjs'
+      - '.github/workflows/tur022-acceptance.yml'
+      - 'docs/TUR022_*.md'
+jobs:
+  negative-evidence:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur022-transport-boundary-negative.test.mjs
