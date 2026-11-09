@@ -1,0 +1,2 @@
+# TUR046 License and release — NO-GO
+Preserve TUR002 frozen pnpm, AGPL-3.0 compatibility and LGPL/libvips source and distribution review gates. No dependency added in TUR046. Local vinext/workerd stale-cache and actual Chromium a11y/SEO/performance acceptance remain required and are not proven by this new workflow. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon production, DNS/domain, real content/media/prices/merchant feed or AdSense.
