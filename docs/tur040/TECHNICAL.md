@@ -1,0 +1,3 @@
+# TUR040 Technical
+
+Base: TUR039 exact HEAD `321dbb5eb41543f7cb99e75212c564e0f42a7163`. Its 19 visible PR-triggered workflow runs were SUCCESS, first page only; this is not exhaustive push/check-run coverage. New regression imports the actual Next App Router GET, creates two independent accepted synthetic upstream streams, simulates revocation, verifies fresh GET rejection and 16 additional fictional bytes on the already accepted streams. This is NEGATIVE evidence, not mitigation. No actual PostgreSQL COMMIT in the new test; inherited PG16 suites remain in dedicated CI. Final report-commit SHA and exact-SHA Actions must be checked after these commits. Issue #22 OPEN, release NO-GO.
