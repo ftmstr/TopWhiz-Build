@@ -1,0 +1,2 @@
+# TUR023 security and publication NO-GO
+Preserve TUR018 12 scenarios / 99,276 fictional PNG bytes after rights revocation and TUR019 cross-isolate bypass. A local JS fence cannot control external publishers, stale CDN, transport buffers or prove final TCP byte. New negative controls deliberately demonstrate residual risk, not mitigation. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and original outbox canonical SHA/route allowlist remain inherited release gates; no production changes. Issue #22 OPEN. Independent global purge, IAM and media rights review absent.
