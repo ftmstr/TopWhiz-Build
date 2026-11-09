@@ -1,0 +1,2 @@
+# TUR025 licensing and publication HOLD
+No dependency, lockfile, binary or real media change. Preserve TUR002 and inherited frozen pnpm CI; AGPL-3.0 and LGPL/native libvips source, provenance, linking and distribution review remain unresolved. TOPWHIZ/TOPWIZ mark, third-party media rights and independent operator IAM approval remain HOLD. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod, DNS/domain, actual content/images/prices/merchant feed or AdSense.
