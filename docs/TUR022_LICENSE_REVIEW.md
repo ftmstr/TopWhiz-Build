@@ -1,0 +1,2 @@
+# TUR022 licensing and publication hold
+No dependency, package or lockfile changes. Inherited TUR002 frozen pnpm, AGPL-3.0 obligations, native libvips LGPL licensing/provenance review remain hard publication blockers. TOPWHIZ/TOPWIZ clearance, media/source rights and independent operator IAM approvals are not evidenced. Do not merge main or deploy Cloudflare/Neon, domain, content, media, price feeds or AdSense.
