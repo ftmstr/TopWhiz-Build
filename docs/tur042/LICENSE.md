@@ -1,0 +1,3 @@
+# TUR042 license and publication report — NO-GO
+No new third-party runtime package or media asset added. Node built-ins and existing tsx/pg dependency graph only; pnpm --frozen-lockfile, TUR002 provenance and inherited license/release gates remain mandatory.
+AGPL/LGPL/libvips redistribution and source obligations are not independently cleared. No claim of license clearance. Real rights, trademark TOPWHIZ/TOPWIZ, operator IAM and independent approval remain blockers. Do not merge main or deploy.

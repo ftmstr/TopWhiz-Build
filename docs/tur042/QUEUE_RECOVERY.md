@@ -1,0 +1,3 @@
+# TUR042 Queue and recovery report — NO-GO
+No Queue/DLQ, lease, original outbox canonical SHA, route allowlist, broker or transaction COMMIT implementation changed. TUR018 original outbox and TUR019 ACL tests inherited in TUR042 workflow; earlier concurrency, ACK uncertainty, broker parallelism and restart evidence must remain independently reviewed.
+Do not infer cross-broker delivery correctness or last-byte revocation from preload tests. No production Queue, R2, CDN, cache purge or Neon access. Inherited CI status must be read from exact final HEAD.
