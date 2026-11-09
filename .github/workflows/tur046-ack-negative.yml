@@ -1,0 +1,21 @@
+name: TUR046 receiver ACK replay and cross-publisher negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur046-ack-replay-cross-publisher-negative.test.mjs'
+      - '.github/workflows/tur046-ack-negative.yml'
+      - 'docs/tur046/**'
+  workflow_dispatch:
+jobs:
+  negative-model:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run TUR045 and TUR046 negative models
+        run: |
+          node --test tests/tur045-receiver-ack-boundary-negative.test.mjs tests/tur046-ack-replay-cross-publisher-negative.test.mjs
