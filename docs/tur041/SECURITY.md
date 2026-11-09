@@ -1,0 +1,7 @@
+# TUR041 security — genuine Next HTTP + PG16 negative / NO-GO
+
+Original TopWhiz media handler, Next.js production server and App Router media endpoint are tested over loopback TCP with an isolated PostgreSQL16 database and independent LOGIN identities. Original rights-safe synthetic PNG only. Outbound CMS fetch is intercepted **only** for `cms.ci.invalid`, with CI=true, local-only TEST_DATABASE_URL, fixed test schema and strict origin checks; no live Cloudflare credential or R2 accessed.
+
+Two parallel requests observe a final approved SQL read before the independent revoker COMMITs the rights withdrawal and generation bump; they can still deliver bytes afterward. Fresh GET denies. `Cache-Control: no-store` and post-stream verification do not make committed revocation linearizable with an already accepted HTTP response. This is negative evidence; Issue #22 remains OPEN.
+
+The actual production `cms_public_media` Neon security-barrier projection is NOT used, real Cloudflare R2/CDN and global edge invalidation are NOT_RUN, and the actual final NIC/network delivery time and remote receiver ACK remain NOT_PROVEN. TUR021/029/030 schema-owner and superuser direct generation rewrite risk persists. Independently controlled IAM, migration ownership, revocation/final-byte protocol, global receipt and legal source rights remain NOT_IMPLEMENTED. Historical TUR018 12 interleavings and 99,276 fictional unsafe bytes and TUR019 cross-isolate cases are retained. RELEASE NO-GO: never claim a mitigation, merge or live deploy.
