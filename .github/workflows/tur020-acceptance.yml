@@ -35,7 +35,7 @@ jobs:
       - name: Supply chain frozen install
         run: pnpm install --frozen-lockfile
       - name: PG16 SECURITY DEFINER schema group CREATE and trusted temp namespace
-        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur020-schema-acl-shadow.integration.test.ts
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
       - name: Inherited canonical outbox SHA / actor and route deny regression
         run: |
           pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
