@@ -1,0 +1,2 @@
+# TUR046 Technical — 2026-11-10
+Parent TUR045 exact HEAD: 836b46017192457abe812933da0eabb310a637f9. Four deterministic Node negative scenarios cover generation ACK replay, cross-publisher ACK confusion, local ACK vs remote receipt, and duplicate ACK with outstanding bytes. These are illustrative model assertions, not a fix, receiver attestation or real network acceptance. CI acceptance must be checked on final report commit.
