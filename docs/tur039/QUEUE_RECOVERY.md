@@ -1,0 +1,2 @@
+# TUR039 Queue Recovery
+No broker or Queue/DLQ mutation performed. Parallel broker ACK, uncertain COMMIT, recovery lease/fence, stale receipt replay, idempotency and crash/restart remain required controls. Inherited PG16 and outbox/Queue tests are referenced by dedicated CI, but do not attest to real distributed broker failures. Actual live broker and final-byte delivery NOT_RUN. Do not infer Queue recovery correctness from synthetic Next GET test.
