@@ -1,0 +1,2 @@
+# TUR039 License and Release Holds
+No third-party dependency or external image added. Frozen pnpm installation and TUR002/TUR018 gate are required in CI. AGPL/LGPL and libvips provenance/release review remain blocking; this report is not an independent legal clearance. TOPWHIZ/TOPWIZ trademark clearance, media rights and independent operator IAM approvals remain outstanding. No main merge, Cloudflare preview/deploy/Queue/R2/CDN/cache purge, Neon production, DNS/domain, real merchant feeds/content/prices/images, or AdSense. NO-GO.
