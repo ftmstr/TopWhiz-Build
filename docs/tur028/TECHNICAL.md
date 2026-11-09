@@ -1,0 +1,3 @@
+# TUR028 technical — receipt identity collision counterexamples
+Parent TUR027 Draft PR #31 exact HEAD de6d72189bd49bc3a64c572ba0619ce8d9f7679c.
+Five new synthetic Node test groups: 64 cross-asset receipt collisions, 64 cross-publisher collisions, 64 nonce replays, 64 matching-receipt buffered deliveries after revoke, and one positive strict-model control. The inherited TUR027 test is also invoked. This adds no production middleware, remote receiver attestation or globally serialized revocation. TUR018 12 cases / 99,276 fictional bytes and TUR019 cross-isolate bypass remain inherited. All exact final HEAD CI conclusions must be checked independently.
