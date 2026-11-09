@@ -1,0 +1,2 @@
+# TUR027 license and release HOLD
+No package or lockfile changes and no new third-party runtime dependency. TUR002 frozen pnpm, AGPL-3.0, LGPL/libvips provenance and distribution obligations remain mandatory independent gates, not established by this isolated Node workflow. TOPWHIZ/TOPWIZ trademark clearance, media rights and independent operator IAM approval remain absent. No main merge, live Cloudflare/Neon, domain, CDN, real media, prices, merchant feed or AdSense.
