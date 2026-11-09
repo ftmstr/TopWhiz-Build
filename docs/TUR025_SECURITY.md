@@ -1,0 +1,2 @@
+# TUR025 security — OPEN NO-GO
+Issue #22 remains OPEN. Local stream EOF, broker ACK and database COMMIT cannot certify the last remote HTTP/TCP/CDN byte or invalidate independent stale caches. Synthetic tests are negative evidence, not a global fence. Preserve PostgreSQL SECURITY DEFINER trusted search_path, schema-owner and CREATE ACL drift controls; original outbox canonical SHA and route allowlist. No independent real-world operator IAM, legal rights or distributed revocation proof; release NO-GO.
