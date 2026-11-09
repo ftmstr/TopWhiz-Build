@@ -1,0 +1,2 @@
+# TUR022 security review — RELEASE NO-GO
+A local stream EOF, PostgreSQL transaction COMMIT, permit release, HTTP Response construction or local queue flush cannot establish the last HTTP/TCP/CDN byte has reached a client. Negative test demonstrates buffered post-revocation delivery and independent publisher bypass. No global linearizable admission-to-delivery fence, verified cache invalidation, network-level acknowledgement or owner/superuser exclusion exists. Preserve TUR018/TUR019/TUR020/TUR021 counterexamples. Issue #22 remains OPEN. No live Cloudflare, R2, CDN or purge.
