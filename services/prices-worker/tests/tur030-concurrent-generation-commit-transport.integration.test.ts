@@ -64,6 +64,10 @@ test('TUR030: real COMMIT sent then client transport destroyed; outcome reconcil
     await admin.query('CREATE SCHEMA ' + schema);
     await admin.query('CREATE TABLE ' + schema + '.receipts (token text PRIMARY KEY, generation bigint NOT NULL)');
     writer = new pg.Client({connectionString: URI});
+    // Expected async socket error from intentional transport destruction must be observed,
+    // not reported as an unrelated uncaught test-runner exception.
+    const transportErrors: string[] = [];
+    writer.on('error', err => { transportErrors.push(err.message); });
     await writer.connect();
     const token = randomBytes(16).toString('hex');
     await writer.query('BEGIN');
