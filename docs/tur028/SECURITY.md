@@ -1,0 +1,2 @@
+# TUR028 security — RELEASE NO-GO
+Issue #22 remains OPEN. Even a receipt bound to asset, publisher, generation and request nonce is fictional, unsigned and not proof of delivery of the final HTTP/TCP/CDN byte. Existing buffered bytes cannot be recalled. No actual Cloudflare/R2 or distributed fence tested. Preserve inherited PostgreSQL SECURITY DEFINER fixed search_path, schema-owner mutation bypass, CREATE ACL drift, canonical original outbox SHA and route allowlist; these are not revalidated by the new isolated Node job. No publication approval.

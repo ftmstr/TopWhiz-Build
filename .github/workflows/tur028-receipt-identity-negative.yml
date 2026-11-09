@@ -1,0 +1,20 @@
+name: TUR028 synthetic receipt identity collision NO-GO
+on:
+  push:
+    branches: [feat/tur028-receipt-identity-collision-negative-20261109]
+  pull_request:
+    paths:
+      - 'tests/tur028-receipt-identity-collision-negative.test.mjs'
+      - '.github/workflows/tur028-receipt-identity-negative.yml'
+      - 'docs/tur028/**'
+permissions:
+  contents: read
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur027-receipt-replay-transport-negative.test.mjs tests/tur028-receipt-identity-collision-negative.test.mjs
