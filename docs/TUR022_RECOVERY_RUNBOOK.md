@@ -1,0 +1,2 @@
+# TUR022 Queue recovery and consistency review
+No Queue, DLQ, outbox or database production code changed. Preserve canonical original outbox SHA and exact route allowlist, separate issuer and broker, SECURITY DEFINER trusted search_path, schema-owner and CREATE ACL checks, ambiguous COMMIT quarantine, active lease and parallel broker/DLQ recovery tests. Do not interpret Node transport counterexample PASS as Queue exactly-once or release authorization. All inherited checks require exact final SHA CI verification.
