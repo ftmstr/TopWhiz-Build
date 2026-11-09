@@ -1,0 +1,4 @@
+# TUR022 technical report — CI-only transport boundary
+Parent: TUR021 PR #25 report HEAD e43b3ba1b5775d96f82b8166cbe96dbb64f64af8. Independent parent workflow listing returned 19 completed SUCCESS runs; the PR narrative reports 20 including push, which this single API listing does not independently enumerate. No deployment or merge.
+Adds Node native tests for buffered fictional bytes after local stream EOF and after rights revocation, sizes 1–64 and cross-publisher bypass. These are deliberately expected negative counterexamples, not a mitigation. Issue #22 stays OPEN. TUR018 12 synthetic races/99,276 fictional PNG bytes and TUR019 cross-isolate bypass are preserved unchanged.
+CI workflow executes only local Node tests. Existing inherited PG16, Queue/DLQ, workerd, Chromium and frozen pnpm workflows must independently pass on final report HEAD; no claims before results.
