@@ -1,0 +1,3 @@
+# TUR040 Security — release NO-GO
+
+Two concurrently admitted synthetic Next GET streams can still deliver 8 bytes each after simulated rights withdrawal, even when a fresh GET is rejected and responses carry `no-store`. This proves neither global CDN invalidation nor last-byte-on-wire safety. Retain TUR018 12 scenarios / 99,276 fictional unsafe bytes and TUR019 cross-isolate bypass as negative evidence. PostgreSQL SECURITY DEFINER, schema-owner/CREATE ACL and privileged IAM bypass remain independently unapproved. No live Cloudflare R2/CDN, global purge, production IAM, licensed media or external security approval was run. Issue #22 remains OPEN and release NO-GO; never interpret this test as a fix.
