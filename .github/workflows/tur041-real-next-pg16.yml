@@ -1,0 +1,66 @@
+name: TUR041 real Next production HTTP + CMS PG16 revocation negative NO-GO
+on:
+  push:
+    branches: [feat/tur041-real-next-http-pg16-revoke-20261109]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur041-next-server-pg16.integration.test.ts'
+      - 'scripts/tur041-next-pg16-preload.mjs'
+      - '.github/workflows/tur041-real-next-pg16.yml'
+      - 'docs/tur041/**'
+permissions:
+  contents: read
+jobs:
+  full-next-production-http-pg16:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Independent PG16 fictional SSR fixtures for actual Next production build
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Actual Next production build, NO live deploy
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Real Next production HTTP listener and actual CMS vs separate PG16 rights COMMIT
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur041-next-server-pg16.integration.test.ts
+      - name: Inherited PG16 and Next regression evidence
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur040-next-parallel-inflight-revoke-negative.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur034-next-proxy-pg16.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+      - name: Original outbox SHA and DLQ gates
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen license and publication NO-GO holds
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
