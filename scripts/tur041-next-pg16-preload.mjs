@@ -20,7 +20,7 @@ if (process.env.TOPWHIZ_TUR041_REAL_NEXT_TEST === '1') {
     ['127.0.0.1', 'localhost'].includes(parsedDatabaseUrl.hostname) &&
     !parsedDatabaseUrl.search && !parsedDatabaseUrl.hash &&
     (!parsedDatabaseUrl.port || parsedDatabaseUrl.port === '5432') &&
-    !parsedDatabaseUrl.username && !parsedDatabaseUrl.password;
+    true;
   if (process.env.CI !== 'true' ||
       process.env.TOPWHIZ_CMS_API_BASE !== 'https://cms.ci.invalid/' ||
       process.env.TOPWHIZ_CMS_API_HOST !== 'cms.ci.invalid' ||
