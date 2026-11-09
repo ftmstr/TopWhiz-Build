@@ -14,10 +14,17 @@ if (process.env.TOPWHIZ_TUR041_REAL_NEXT_TEST === '1') {
   const schema = process.env.TOPWHIZ_TUR041_SCHEMA;
   const username = process.env.TOPWHIZ_TUR041_READER;
   const password = process.env.TOPWHIZ_TUR041_PASSWORD;
+  let parsedDatabaseUrl;
+  try { parsedDatabaseUrl = new URL(databaseUrl); } catch { /* reject below */ }
+  const safeDatabaseUrl = parsedDatabaseUrl?.protocol === 'postgresql:' &&
+    ['127.0.0.1', 'localhost'].includes(parsedDatabaseUrl.hostname) &&
+    !parsedDatabaseUrl.search && !parsedDatabaseUrl.hash &&
+    (!parsedDatabaseUrl.port || parsedDatabaseUrl.port === '5432') &&
+    !parsedDatabaseUrl.username && !parsedDatabaseUrl.password;
   if (process.env.CI !== 'true' ||
       process.env.TOPWHIZ_CMS_API_BASE !== 'https://cms.ci.invalid/' ||
       process.env.TOPWHIZ_CMS_API_HOST !== 'cms.ci.invalid' ||
-      !databaseUrl || !['127.0.0.1','localhost'].includes(new URL(databaseUrl).hostname) ||
+      !safeDatabaseUrl ||
       !/^tw041_[a-f0-9]{10}$/.test(schema ?? '') ||
       !/^tw041_[a-f0-9]{10}_reader$/.test(username ?? '') ||
       !/^[a-f0-9]{36}$/.test(password ?? ''))
