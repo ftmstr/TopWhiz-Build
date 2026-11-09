@@ -1,0 +1,58 @@
+name: TUR032 actual CMS handler PG16 HTTP revocation negative NO-GO
+on:
+  push:
+    branches: [feat/tur032-real-cms-handler-pg16-delivery-gap-20261109]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur032-cms-handler-pg16-http.integration.test.ts'
+      - '.github/workflows/tur032-real-cms-handler-pg16.yml'
+      - 'docs/tur032/**'
+permissions:
+  contents: read
+jobs:
+  disposable-pg16-real-handler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen lockfile; no dependency changes
+        run: pnpm install --frozen-lockfile
+      - name: Actual CMS handler, original PNG, independent PG16 LOGIN and local TCP
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur032-cms-handler-pg16-http.integration.test.ts
+      - name: Preserve TUR031 real PG16 and loopback HTTP counterexample
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur031-pg16-local-http-delivery-gap.integration.test.ts
+      - name: Keep TUR030/029/021 durable role and generation negative cases
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur021-durable-media-fence.integration.test.ts
+      - name: Original outbox SHA and parallel DLQ/lease negative checks
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen dependencies, historic release holds and TypeScript
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
