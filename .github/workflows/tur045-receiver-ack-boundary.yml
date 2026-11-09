@@ -1,0 +1,20 @@
+name: TUR045 receiver ACK boundary negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur045-receiver-ack-boundary-negative.test.mjs'
+      - 'docs/tur045/**'
+      - '.github/workflows/tur045-receiver-ack-boundary.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic negative regression; NOT a release gate pass
+        run: node --test tests/tur045-receiver-ack-boundary-negative.test.mjs
