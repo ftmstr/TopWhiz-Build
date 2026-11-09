@@ -56,3 +56,5 @@ private/disabled rather than downgrade the security claim.
 
 No real Cloudflare, Durable Object, Neon, Queue or R2 operations
 in this work. Local tests ≠ pen test or independent WCAG audit.
+
+**Release decision: NO-GO until globally coordinated revocation and real HTTP/cache proofs.**
