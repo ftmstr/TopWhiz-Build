@@ -1,0 +1,8 @@
+# TUR033 security evidence / still NO-GO
+
+- ACTUAL IMPORTED CODE: original CMS `handleCmsMedia` with full synthetic PNG verification; original Next.js App Router `GET` media proxy. Real localhost TCP output and two separate PostgreSQL16 LOGIN identities.
+- SYNTHETIC/ISOLATED: fake non-routable origin `cms.ci.invalid`, intercepted outbound fetch, in-memory R2 substitute, minimal isolated rights schema. The full Next.js server, production Worker binding, Neon security-barrier view, true remote network transport and Cloudflare R2/CDN were NOT_RUN.
+- NEGATIVE RESULT: an independent rights COMMIT does not retract authorized CMS/Next responses already admitted; an approved SQL result delayed across COMMIT or a constructed Next proxy Response delayed before local HTTP write still permits 200. Fresh requests fail closed with 404; malformed asset ID produces 404 with no upstream fetch.
+- CONTRAINDICATION: `no-store` cannot revoke bytes held in application, HTTP, CDN or client buffers. Do not mistake local readback time for last network-byte delivery/ACK.
+- INHERITED EVIDENCE: TUR018 12 interleavings and **99,276 fictional bytes** after revocation; TUR019 cross-isolate; TUR021/029/030 SECURITY DEFINER/schema owner/superuser generation/rights bypass; TUR031/032 real PG16 local HTTP tests. New test is not a mitigation.
+- UNKNOWN/BLOCKED: independent operator IAM and schema ownership separation, revocation linearization for distributed readers, receipt semantics and CDN-wide invalidation/last-byte proof, global failure recovery, legal media permissions. Issue #22 OPEN. Do not merge or deploy. RELEASE NO-GO.
