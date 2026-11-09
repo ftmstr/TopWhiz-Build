@@ -1,0 +1,11 @@
+# TOPWHIZ TUR031 — technical report — 2026-11-09
+
+Parent: TUR030 stacked Draft PR #34 exact HEAD `3262e3ea6ff9cdaa9b3f0681c0c70031ca45b7c0`. This turn adds **no production media handler, dependencies, licensing assets or network integrations**. Added a disposable **real PostgreSQL 16 + real loopback HTTP** integration test, intentionally distinct from TUR018's fully synthetic interleavings.
+
+The first scenario uses two separate password-authenticated LOGIN roles and a real transaction COMMIT. A local illustrative HTTP handler has already observed approved rights and is paused immediately after its final DB lookup. A separate revoker commits `approved=false, generation=2`, yet the previous admitted request still receives 200 and all fictional bytes. A new request correctly gets 403: a last DB read protects new admissions but does not revoke pre-existing local/remote response paths.
+
+The second scenario explicitly pauses the Node HTTP receiver after headers, lets the server flush the complete fictional payload, commits revocation in PostgreSQL, then resumes the receiver. All bytes are consumed after revocation. **Receiver consumption time must not be misrepresented as network transmission time**; this is not a proof of last-wire-byte delivery after COMMIT. Both scenarios use `cache-control: no-store`, underscoring that this header cannot retract already admitted/buffered data.
+
+Run: `pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur031-pg16-local-http-delivery-gap.integration.test.ts` with an explicitly local `TEST_DATABASE_URL` for disposable PostgreSQL 16. Inherited TUR019/021/029/030 real database and TUR018 negative regressions remain required. Exact final-HEAD CI results must be read from GitHub; until then STATUS=NOT_VERIFIED. No real Cloudflare R2/CDN, real production HTTP handler or global purge used.
+
+Engineering work-package progress: **59/100 (estimated, non-release metric)** under the currently assumed weighting: architecture 14/15, interface 12/20, backend 17/25, security 6/20, CI 10/10, production/legal approvals 0/10 = 59. These subjective planning values are NOT test pass rates, completed features, percent of production readiness, or guaranteed schedule. Release remains NO-GO.

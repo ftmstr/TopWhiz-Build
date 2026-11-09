@@ -1,0 +1,169 @@
+name: TUR031 real PG16 and loopback HTTP post-revocation negative NO-GO
+on:
+  push:
+    branches: [feat/tur031-pg16-local-http-delivery-cut-20261109]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur031-pg16-local-http-delivery-gap.integration.test.ts'
+      - '.github/workflows/tur031-pg16-local-http-negative.yml'
+      - 'docs/tur031/**'
+permissions:
+  contents: read
+jobs:
+  real-pg16-loopback-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Reproduce real PG16 COMMIT and loopback HTTP delivery gap
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur031-pg16-local-http-delivery-gap.integration.test.ts
+      - name: Preserve independent PG16 role and uncertain COMMIT evidence
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur021-durable-media-fence.integration.test.ts
+      - name: Frozen supplier and release blockers
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+      - name: Inherited original outbox SHA / Queue recovery, Node tests and TypeScript
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+          pnpm test
+          pnpm typecheck
+          node scripts/tur010-dependency-gate.mjs
+
+  local-workerd-stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      CI: 'true'
+      TOPWHIZ_CMS_API_BASE: ''
+      TOPWHIZ_CMS_API_HOST: ''
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Local Cloudflare Vite/vinext build and native provenance
+        run: |
+          node scripts/tur011-workerd-config-gate.mjs
+          pnpm --filter @topwhiz/web build:workerd
+          node scripts/tur012-sharp-provenance.mjs
+      - name: 160 no-store stale-cache conditional/range probes on LOCALHOST
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web preview:workerd > /tmp/tur021-local-workerd.log 2>&1 &
+          workerd_pid=$!
+          trap 'kill "$workerd_pid" 2>/dev/null || true' EXIT
+          node scripts/tur021-workerd-stale.mjs
+
+  chromium-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Load fictional rights-approved originals only
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Local Next.js build with CI-only preview fixtures
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: True Chromium tests with additional keyboard, 404/noindex, responsive and inert adverts
+        shell: bash
+        run: |
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm --filter @topwhiz/web exec next start -p 3109 > /tmp/tur021-next.log 2>&1 &
+          next_pid=$!
+          trap 'kill "$next_pid" 2>/dev/null || true' EXIT
+          if ! pnpm --filter @topwhiz/web test:browser; then
+            tail -n 150 /tmp/tur021-next.log
+            exit 1
+          fi
+      - name: Synthetic-only artifacts, no private data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tur031-inherited-local-chromium-evidence
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 7
+          if-no-files-found: warn
+
+  frozen-and-license-no-go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen install without postinstall code
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: High/critical production dependency advisory gate
+        run: pnpm audit --prod --audit-level high --json > /tmp/tur021-audit.json
+      - name: AGPL/LGPL native inventory; legal review remains BLOCKED
+        run: |
+          pnpm licenses list --json > /tmp/tur021-licenses.json
+          node scripts/tur011-license-gate.mjs /tmp/tur021-licenses.json
+          node scripts/tur012-sharp-provenance.mjs
+      - name: No real secrets, media release or lockfile drift
+        run: |
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur010-dependency-gate.mjs
+          test ! -f .env.production
+          test ! -f .env.local
+          test ! -f .dev.vars
