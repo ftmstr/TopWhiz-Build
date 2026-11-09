@@ -1,0 +1,2 @@
+# TUR028 Queue/DLQ recovery
+No broker, Queue, DLQ, PostgreSQL, lease, original outbox or runtime changes. Preserve immutable original outbox canonical SHA, route allowlist, idempotent retry, parallel broker/DLQ and lease fences, unknown COMMIT response quarantine and reconciliation. Synthetic receipt identity is not a broker ACK, SQL COMMIT or end-client delivery receipt. All inherited CI and independent failure tests require exact final HEAD verification; unrun live tests remain NOT_RUN.
