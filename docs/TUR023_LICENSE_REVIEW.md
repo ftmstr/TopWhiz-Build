@@ -1,0 +1,2 @@
+# TUR023 licensing and release HOLD
+No package, lockfile, dependencies or supplier binaries modified. Retain TUR002 --frozen-lockfile and AGPL-3.0 / LGPL native libvips provenance and distribution obligations as unresolved legal gates. TOPWHIZ/TOPWIZ mark, licensed content/media and independent operator IAM remain unapproved. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod, DNS, real prices/media/merchant feed or AdSense.

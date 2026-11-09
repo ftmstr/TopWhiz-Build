@@ -1,0 +1,2 @@
+# TUR023 technical acceptance
+Parent TUR022 exact HEAD `0c7a74eac35a92b46a950e9c1caad9254fcba254`; new stacked Draft PR. Added Node built-in test covering 64 revoke cut points, 64*cut local positive controls, stale CDN synthetic counterexample, and EOF != network ACK. All are synthetic only. No Cloudflare deployment or real browser execution is asserted for this new test. Inherited PG16, workerd, Chromium and frozen pnpm CI must be evaluated at final report HEAD. Issue #22 remains OPEN/NO-GO.

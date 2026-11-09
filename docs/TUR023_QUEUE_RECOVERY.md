@@ -1,0 +1,2 @@
+# TUR023 Queue recovery review
+No changes to Queue/DLQ/outbox or PostgreSQL schema. Inherited tests for canonical original SHA, exact route allowlist, parallel broker/Queue/DLQ ambiguous COMMIT, idempotency, lease expiry and restart must remain green at final HEAD. This tour does not claim fresh independent broker or live account validation. NO-GO until distributed delivery and rollback risks are independently resolved.

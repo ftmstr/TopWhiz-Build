@@ -1,0 +1,21 @@
+name: TUR023 synthetic media delivery boundary NO-GO
+on:
+  push:
+    branches:
+      - feat/tur023-revocation-delivery-evidence-20261109
+  pull_request:
+    paths:
+      - 'tests/tur023-revocation-delivery-boundary.test.mjs'
+      - '.github/workflows/tur023-negative-boundary.yml'
+      - 'docs/TUR023_*'
+jobs:
+  negative-evidence:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur023-revocation-delivery-boundary.test.mjs
