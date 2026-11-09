@@ -1,0 +1,63 @@
+name: TUR043 strict local PG URL and inherited NO-GO
+on:
+  push:
+    branches: [feat/tur043-preload-db-url-failclosed-20261109]
+  pull_request:
+    paths:
+      - 'scripts/tur041-next-pg16-preload.mjs'
+      - 'services/prices-worker/tests/tur043-preload-db-url-failclosed.test.ts'
+      - '.github/workflows/tur043-preload-db-url-failclosed.yml'
+      - 'docs/tur043/**'
+permissions:
+  contents: read
+jobs:
+  strict-url:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: TUR043 strict PG URL negatives
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur043-preload-db-url-failclosed.test.ts
+      - name: Inherited TUR042 preload negatives
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur042-preload-failclosed.test.ts
+      - name: Disposable PG16 SSR fixtures
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Local Next build only
+        env:
+          NODE_OPTIONS: "${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Inherited real Next HTTP PG16 revocation
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur041-next-server-pg16.integration.test.ts
+      - name: Original outbox and schema owner
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+      - name: Frozen tests and release hold
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
