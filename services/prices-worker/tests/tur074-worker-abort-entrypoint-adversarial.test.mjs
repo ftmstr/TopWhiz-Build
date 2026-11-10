@@ -4,10 +4,11 @@ import worker from '../src/index.ts';
 
 // TUR074 adversarial Worker entrypoint checks. No live Cloudflare, Neon or R2.
 // This suite intentionally does not claim physical disconnect propagation.
-for (const [name,path] of [
-  ['simple-media','/v1/media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
-  ['encoded-media','/v1/media/%61aaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
-  ['query-media','/v1/media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa?x=1']
+for (const [name,path,expectedStatus] of [
+  ['simple-media','/v1/media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',503],
+  ['encoded-media','/v1/media/%61aaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',404],
+  ['query-media','/v1/media/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa?x=1',400],
+  ['encoded-separator','/v1/media/aaaaaaaa%2faaaa-4aaa-8aaa-aaaaaaaaaaaa',404]
 ]) {
   test('TUR074 aborted Worker '+name+' never touches DB/R2', {timeout:10000}, async()=>{
     const controller=new AbortController();
@@ -21,7 +22,7 @@ for (const [name,path] of [
         DATABASE_URL:'postgresql://ci.invalid/isolated',
         MEDIA_BUCKET:{async get(){r2++;throw Error('unexpected bucket read')}}
       });
-      assert.equal(response.status,503);
+      assert.equal(response.status,expectedStatus,'media route input validation precedes abort logic');
       assert.equal((await response.arrayBuffer()).byteLength,0);
       assert.equal(r2,0);
       assert.equal(external,0);

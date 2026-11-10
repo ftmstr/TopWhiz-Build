@@ -1,2 +1,5 @@
 # TUR074 Queue and recovery — NO-GO
 No mutation of original outbox canonical SHA, route allowlist, broker acceptance, Queue/DLQ lease, unknown COMMIT ACK or idempotent recovery. Inherited checks must remain mandatory and be reverified on final SHA. No actual Queue, R2 or Neon access. This tour cannot claim queue recovery acceptance solely from Worker abort tests.
+
+## Real guardian COMMIT vs backend SQL cancellation is NOT a Queue or receiver ACK
+The new PG16 fixture has an independently owned guardian table. Its owner commits `approved=false,generation=2` and a separately authenticated guardian reader confirms the local persisted state. SQLSTATE 57014 in a sibling media query proves only PostgreSQL statement cancellation, not message-broker acceptance, outbox SHA legitimacy, lost COMMIT ACK recovery, lease transfer, remote HTTP response drain or global CDN purge. All of those remain inherited independent tests. No R2/Queues/Neon external call or publication occurs. Issue #22 OPEN, NO-GO.
