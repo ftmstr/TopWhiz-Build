@@ -1,0 +1,2 @@
+# TUR075 technical report — 2026-11-10
+Base: TUR074 exact HEAD 980f48aa4593f764e6d87b2c1719bd5557c58f99. Separate stacked draft. Six deterministic Node built-in tests illustrate PID ABA and request lease mismatch. This is a synthetic model, NOT a live PostgreSQL PID reuse test or proof that a database cancellation fence has been implemented. Production unchanged. Exact-final-HEAD GitHub CI must be independently checked; no success claimed in advance.
