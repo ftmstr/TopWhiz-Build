@@ -94,7 +94,7 @@ test('TUR072 real CMS HTTP + independent PG16 role sessions: client abort does N
       }
       const result=await mediaReader.query(
         'SELECT id,key,sha256_hex,content_type,bytes,approved,generation,'+
-        (delayed?'pg_sleep(1.8) AS delayed_query':'NULL::void AS delayed_query')+
+        (delayed?'pg_sleep(1.8) AS delayed_query':'NULL::text AS delayed_query')+
         ' FROM '+m+'.asset WHERE id=$1 AND approved=true',[target]);
       if(delayed && signal?.aborted)abortAfterSqlDispatch=true;
       const row=result.rows[0];
