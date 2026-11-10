@@ -1,0 +1,20 @@
+name: TUR067 revocation ACK boundary negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur067-revocation-ack-boundary-negative.test.mjs'
+      - '.github/workflows/tur067-revocation-ack-negative.yml'
+      - 'docs/tur067/**'
+  workflow_dispatch:
+jobs:
+  negative-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deterministic negative boundary tests
+        run: node --test tests/tur067-revocation-ack-boundary-negative.test.mjs
