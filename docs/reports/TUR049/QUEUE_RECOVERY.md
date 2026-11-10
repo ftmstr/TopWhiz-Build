@@ -1,0 +1,2 @@
+# TUR049 Queue recovery report
+Synthetic ACK identity tests do not resolve uncertain broker/Queue/DLQ COMMIT, duplicate delivery, lease expiry, generation fencing, idempotency, or crash replay. Keep fail-closed quarantine and independent recovery evidence requirements. No real broker or database was touched in this tour.
