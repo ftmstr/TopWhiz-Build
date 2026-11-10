@@ -1,0 +1,2 @@
+# TUR075 security — release NO-GO
+TUR074 actual PG16 demonstrated same-role sibling cancellation SQLSTATE 57014. TUR075 shows why a stale PID alone cannot identify the same request after pool/PID reuse; the illustrative lease check is NOT an enforced database privilege boundary. Independent IAM, SECURITY DEFINER, schema owner, CREATE ACL, actual PG16 race, cross-process cancellation and last-byte receiver ACK remain unproven. Issue #22 OPEN. Preserve TUR018 12 scenarios/99,276 fictional bytes and TUR019 cross-isolate bypass. No Cloudflare/R2/CDN authorization guarantee.
