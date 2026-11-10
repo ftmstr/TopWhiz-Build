@@ -1,0 +1,2 @@
+# TUR072 License — hold
+No runtime dependency added. Frozen pnpm CI is configured. TUR002 frozen supply-chain controls and AGPL/LGPL/libvips review remain mandatory release blockers. No new legal approval is claimed. TOPWHIZ/TOPWIZ trademark clearance, source/image rights, independent operator IAM approval and actual Chromium mobile/desktop a11y/SEO/performance acceptance are NOT_RUN in this tour. No production publication, deployment, domain, merchant feed, AdSense or main merge.
