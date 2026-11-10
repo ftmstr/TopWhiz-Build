@@ -89,3 +89,82 @@ jobs:
           node scripts/tur018-frozen-ci-gate.mjs
           node scripts/tur021-release-hold.mjs
           node scripts/tur010-dependency-gate.mjs
+
+  local-workerd-real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      CI: 'true'
+      TOPWHIZ_CMS_API_BASE: ''
+      TOPWHIZ_CMS_API_HOST: ''
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Local vinext/workerd actual build with no live credentials
+        run: |
+          node scripts/tur011-workerd-config-gate.mjs
+          pnpm --filter @topwhiz/web build:workerd
+          node scripts/tur012-sharp-provenance.mjs
+      - name: Local-only 120 stale/conditional response probes
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web preview:workerd > /tmp/tur071-workerd.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          if ! node scripts/tur018-workerd-stale.mjs; then
+            tail -n 150 /tmp/tur071-workerd.log
+            exit 1
+          fi
+
+  chromium-real-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Install actual local Playwright Chromium
+        run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Seed fictional PostgreSQL images and content
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Build real Next production on fictional CI fixtures
+        env:
+          NODE_OPTIONS: "${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: |
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm build
+      - name: Real Chromium keyboard, mobile, desktop, axe, SEO and performance
+        shell: bash
+        run: |
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm --filter @topwhiz/web exec next start -p 3109 > /tmp/tur071-browser.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid" 2>/dev/null || true' EXIT
+          if ! pnpm --filter @topwhiz/web test:browser; then
+            tail -n 160 /tmp/tur071-browser.log
+            exit 1
+          fi
