@@ -1,0 +1,2 @@
+# TUR054 Queue / recovery
+ACK transport loss after durable local reservation is ambiguous, not a proof of remote delivery. Independent replay ledgers can both accept an identical ACK; a shared durable coordinator or independent protocol proof is not implemented. Preserve original outbox canonical SHA, allowlisted route, lease ownership, parallel broker/Queue/DLQ, idempotent retries and uncertain PostgreSQL COMMIT acceptance tests. No live Queue or DLQ used. NO-GO.
