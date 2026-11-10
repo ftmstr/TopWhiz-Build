@@ -1,0 +1,2 @@
+# TUR076 Queue recovery — 2026-11-10
+No Queue/DLQ/outbox production changes. Preserve original canonical outbox SHA and route allowlist, broker receiver ACK ambiguity, parallel lease holders, uncertain PostgreSQL COMMIT, rollback and restart recovery as inherited fail-closed gates. Application cancellation lease is not a Queue lease, not proof of durable receipt, and cannot certify final network byte. TUR018/TUR019 negative evidence and Issue #22 release hold retained. No live Queue/R2/CDN operations.
