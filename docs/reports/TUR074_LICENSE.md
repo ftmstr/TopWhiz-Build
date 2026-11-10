@@ -1,0 +1,2 @@
+# TUR074 License and publication hold
+No new runtime dependencies; test uses Node built-ins. Preserve TUR002 frozen pnpm and AGPL/LGPL/libvips release block. TOPWHIZ/TOPWIZ trademark, source licenses, third-party media rights and independent operator IAM remain unapproved. No main merge, live Cloudflare Preview/Workers/Queues/R2/CDN/cache purge, Neon, DNS, real prices/media/merchant feed, AdSense or publication. NO-GO.
