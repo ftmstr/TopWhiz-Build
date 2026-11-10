@@ -189,6 +189,8 @@ test('TUR072 real CMS HTTP + independent PG16 role sessions: client abort does N
       'No image fetch after cancelled in-flight SQL returns');
     assert.equal(guardReadCount,priorGuards,
       'No independent guardian lookup after cancelled in-flight media SQL');
+    const guardianReadsOnAbortedRequest=guardReadCount-priorGuards;
+    assert.equal(guardianReadsOnAbortedRequest,0);
     assert.equal(clientBytes,0);
 
     delayed=false;
@@ -237,7 +239,7 @@ test('TUR072 real CMS HTTP + independent PG16 role sessions: client abort does N
       newHttpAfterGuardianCommitStatus:fresh.status,
       fictionalAbortedClientDeliveredBytes:clientBytes,
       mediaBucketGetAfterAbortedSql:bodyGetCount-priorBodyGets,
-      independentGuardianReadAfterAbortedSql:guardReadCount-priorGuards,
+      independentGuardianReadAfterAbortedSql:guardianReadsOnAbortedRequest,
       guardianReaderPgCancelForbidden:cancelForbidden,
       ciAdminPgCancelWorked:adminCancelWorked,
       postgresCancelledSqlState:adminCancelSqlState,
