@@ -1,0 +1,2 @@
+# TUR072 Queue Recovery — unchanged / inherited
+This test-only tour does not alter original outbox canonical SHA, route allowlist, revocation COMMIT receipt, Queue/DLQ lease, retry idempotence or broker ACK. Concurrent broker/lease and uncertain COMMIT must continue to fail closed. No live Queue/DLQ, R2, Neon or Cloudflare calls performed. Existing integration gates remain required; they were not rerun locally in this tour. Do not infer Queue recovery from 4 local Node contract tests.
