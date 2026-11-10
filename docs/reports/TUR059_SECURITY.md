@@ -1,0 +1,3 @@
+# TUR059 security report — NO-GO
+Issue #22 stays OPEN. TUR018 demonstrated 12 synthetic interleavings / 99,276 fictional PNG bytes after revocation; TUR019 cross-isolate bypass remains required negative regression. This TUR shows local cancellation and generation recheck can block future enqueue but cannot retract previously queued bytes or attest last network byte delivered.
+Do not interpret passing negative tests as a fix. Independent Cloudflare/R2/CDN cache invalidation, remote receiver proof, issuer and operator IAM approval, publication fence and independent security review are NOT_PROVEN. PG16 SECURITY DEFINER/schema-owner/CREATE ACL owner regrant and bypass remain release blockers.

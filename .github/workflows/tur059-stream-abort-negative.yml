@@ -1,0 +1,19 @@
+name: TUR059 stream abort and revocation negative evidence
+on:
+  pull_request:
+    paths:
+      - 'tests/tur059-stream-abort-revocation-negative.test.mjs'
+      - '.github/workflows/tur059-stream-abort-negative.yml'
+      - 'docs/reports/TUR059_*'
+  workflow_dispatch:
+jobs:
+  tur059-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur059-stream-abort-revocation-negative.test.mjs

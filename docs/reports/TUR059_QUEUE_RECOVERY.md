@@ -1,0 +1,2 @@
+# TUR059 Queue and recovery report — NO-GO
+No Queue, DLQ, R2 or database writes were performed by this TUR. Preserve original canonical outbox SHA and route allowlist, immutable issuer provenance, parallel broker lease/idempotency, unknown COMMIT ACK loss and recovery safety tests. Stream enqueue/abort is not a Queue ACK, database COMMIT or receiver delivery acknowledgement. No recovery guarantee upgraded.
