@@ -1,0 +1,2 @@
+# TUR055 License and publication
+Node built-ins only; no new runtime dependencies or media assets. Existing TUR002 frozen pnpm, AGPL obligations, LGPL/libvips dynamic linking and distribution obligations remain mandatory independent release blockers. No real prices, images, merchant feeds or copyrighted content used. No live deployment or production publication authorized. Licensing audit and rights approvals not completed by this test-only turn.
