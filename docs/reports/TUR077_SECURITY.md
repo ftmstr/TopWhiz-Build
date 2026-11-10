@@ -1,0 +1,2 @@
+# TUR077 security — 2026-11-11
+Fail-closed application identity matching is NOT a database permission boundary: PostgreSQL same-role pg_cancel_backend can bypass application guards. Independent login/role, SECURITY DEFINER, schema-owner, CREATE ACL, pool ownership, PID/backend_start reuse and server cancellation remain unproven in this turn. R2 rights revocation after last authorization and last network byte, CDN stale caches and cross-isolate races remain release blockers. Issue #22 must remain OPEN. NO-GO.
