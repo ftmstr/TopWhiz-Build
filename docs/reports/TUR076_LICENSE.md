@@ -1,0 +1,2 @@
+# TUR076 license and release — 2026-11-10
+No new dependencies or imported third-party media. Preserve frozen pnpm (including TUR002), AGPL/LGPL and libvips provenance checks, source-rights/license chain, TOPWHIZ/TOPWIZ trademark clearance and independent operator IAM review. No production release or main merge. No live Cloudflare Preview, deploy, Queue, R2, CDN, purge, Neon, DNS, merchant feeds, actual content, prices, images or AdSense. NO-GO until independently cleared.
