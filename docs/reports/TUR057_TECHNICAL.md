@@ -1,0 +1,3 @@
+# TUR057 — Technical evidence
+
+Parent: TUR056 PR #61 HEAD d9034b5466c2a343b0a28b2fb928cb1705a6a8fa (19/19 first-page PR CI SUCCESS). Distinct disposable PostgreSQL16 regression tests an independent non-superuser TABLE OWNER granting SELECT to a reader after administrator REVOKE, and regranting after a second REVOKE. Assertions use actual PostgreSQL has_table_privilege. This is a negative proof: one-time ACL revocation cannot constrain a continuing owner. No application production code or package changes. CI outcome on final report SHA requires separate readback. Preserve TUR056 actual Next HTTP owner-trigger override, TUR053 HTTP disconnect, TUR018 12 interleavings / 99,276 fictional bytes, TUR019 cross-isolate bypass. Issue #22 OPEN. No production readiness claim.
