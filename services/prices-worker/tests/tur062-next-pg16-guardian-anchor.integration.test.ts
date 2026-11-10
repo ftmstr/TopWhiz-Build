@@ -222,16 +222,24 @@ test('TUR062: separate PG16 guardian revoke cannot fence real Next HTTP through 
       schema+'.media WHERE id=$1',[asset])).rows[0],
       {approved:false,generation:'2'});
 
-    // A properly scoped owner SECURITY DEFINER does not gain access to an
-    // independently owned guardian table; CREATE is later revoked as well.
+    // Media-owner SECURITY DEFINER cannot mutate a guardian-owned relation.
     await admin.query('GRANT CREATE ON SCHEMA '+schema+' TO '+roles[2]);
     await owner.query('CREATE FUNCTION '+schema+'.tamper_guardian() RETURNS integer '+
       'LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,'+schema+',pg_temp '+
-      'AS $body$ BEGIN UPDATE '+guardianSchema+
+      'AS $guard$ BEGIN UPDATE '+guardianSchema+
       ".revocation_anchor SET approved=true,generation=3 WHERE id='tur041-a'; "+
-      'RETURN 1; END $body
-    // superuser. It disables the mutation trigger, reapproves, then commits.
-    // No app-authorized review, outbox publication or IAM approval exists.
+      'RETURN 1; END $guard$');
+    await owner.query('REVOKE ALL ON FUNCTION '+schema+'.tamper_guardian() FROM PUBLIC');
+    await admin.query('REVOKE CREATE ON SCHEMA '+schema+' FROM '+roles[2]);
+    assert.equal((await admin.query('SELECT has_schema_privilege($1,$2,$3) AS allowed',
+      [roles[2],schema,'CREATE'])).rows[0].allowed,false);
+    await assert.rejects(owner.query('SELECT '+schema+'.tamper_guardian()'),
+      /permission denied for table revocation_anchor/i);
+    assert.deepEqual((await reader.query('SELECT approved,generation FROM '+
+      guardianSchema+'.revocation_anchor WHERE id=$1',[asset])).rows[0],
+      {approved:false,generation:'2'});
+
+    // The non-superuser media table owner still bypasses its own media trigger.
     await owner.query('BEGIN');
     try {
       await owner.query('ALTER TABLE '+schema+'.media DISABLE TRIGGER rights_guard');
@@ -265,7 +273,7 @@ test('TUR062: separate PG16 guardian revoke cannot fence real Next HTTP through 
       guardianOnlyRevokeHttpStatus:guardianOnlyRevokeHttp.status,
       guardianStillRevokedAfterOwnerBypass:true,
       realNextProductionServer:true,realNextHttpListener:'127.0.0.1:3131',
-      actualCmsHandler:true,independentPasswordLogins:3,
+      actualCmsHandler:true,independentPasswordLogins:4,
       ownerNoSuperuserOrCreateRoles:true,revokerCannotAlterTrigger:true,
       reapprovalTriggerBeforeOwnerChange:'ENFORCED',
       ownerDisabledTrigger:true,
