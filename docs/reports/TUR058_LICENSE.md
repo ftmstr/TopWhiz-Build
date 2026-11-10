@@ -1,0 +1,2 @@
+# TUR058 licensing and release gates
+No new runtime dependency; Node built-ins and disposable PostgreSQL 16 with `psql`. Preserve frozen pnpm including TUR002; AGPL-3.0 and LGPL/libvips source distribution and attribution gates unresolved. TOPWHIZ/TOPWIZ trademark clearance, third-party media rights, independent operator IAM and release sign-off outstanding. No real media, feed, Cloudflare, Neon, domain, ads or production publication.
