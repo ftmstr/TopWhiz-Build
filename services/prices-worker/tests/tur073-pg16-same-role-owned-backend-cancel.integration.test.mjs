@@ -197,6 +197,7 @@ test('TUR073 real PG16: HTTP disconnect cancels ONLY dedicated same-role query, 
   assert.equal(clientBytes,0);
   assert.equal(readBucketCount,beforeBucket);
   assert.equal(guardReads,beforeGuardian);
+  const postAbortGuardianReads=guardReads-beforeGuardian; // freeze BEFORE independent fresh request
   const sibling=await withLimit(siblingQuery,'sibling backend unaffected by targeted cancel');
   assert.equal(sibling.rows[0].marker,73);
   assert.equal((await mediaReader.query('SELECT 73 AS recovered')).rows[0].recovered,73);
@@ -233,9 +234,9 @@ test('TUR073 real PG16: HTTP disconnect cancels ONLY dedicated same-role query, 
     mediaOwnerCannotMutateGuardian:true,guardianOwnerIndependentCommit:true,
     cmsResultOnAbortedRequest:503,abortedClientDeliveredBytes:clientBytes,
     postAbortR2ObjectReads:readBucketCount-beforeBucket,
-    postAbortGuardianSqlReads:guardReads-beforeGuardian,
+    postAbortGuardianSqlReads:postAbortGuardianReads,
     freshHttpAfterRevocation:404,
-    originalOutboxShaLeaseAndDql:'INHERITED_CI',commitAckAmbiguity:'INHERITED_TUR030',
+    originalOutboxShaLeaseAndDlq:'INHERITED_CI',commitAckAmbiguity:'INHERITED_TUR030',
     tur072UncancelledPgSql:'INHERITED_NEGATIVE',
     realCloudflareWorkerNextPhysicalSignal:'NOT_PROVEN',
     sqlSessionPoolingAndBackendPidReuse:'NOT_PROVEN',
