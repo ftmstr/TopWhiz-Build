@@ -33,15 +33,23 @@ export function createGuardianApprovalLookup({readMedia,readGuardian}={}){
   if(typeof readMedia!=="function"||typeof readGuardian!=="function")
     throw Error("independent_guardian_required");
   let pinned=null;
-  return async function findApprovedAsset(id){
+  return async function findApprovedAsset(id,abortSignal){
+    // Optional request-scoped AbortSignal supplied by the CMS handler. The
+    // driver may still finish an already dispatched SQL statement: do NOT
+    // advertise PostgreSQL backend cancellation without an independent proof.
+    if(abortSignal?.aborted)throw Error('cms_request_aborted');
     if(typeof id!=="string"||!ID.test(id))throw Error("invalid_asset_id");
-    const media=await readMedia(id);
+    const media=await readMedia(id,abortSignal);
+    if(abortSignal?.aborted)throw Error('cms_request_aborted');
     if(!media||media.id!==id||media.rightsApproved!==true)return null;
     const mEpoch=epoch(media.generation);
     if(!mEpoch)return null; // production CMS public view currently lacks this!
-    const guard=await readGuardian(id);
+    if(abortSignal?.aborted)throw Error('cms_request_aborted');
+    const guard=await readGuardian(id,abortSignal);
+    if(abortSignal?.aborted)throw Error('cms_request_aborted');
     if(!guard||guard.approved!==true||epoch(guard.generation)!==mEpoch)return null;
     if(pinned!==null&&(pinned.id!==id||pinned.epoch!==mEpoch))return null;
+    if(abortSignal?.aborted)throw Error('cms_request_aborted');
     if(pinned===null)pinned={id,epoch:mEpoch};
     return media;
   };
