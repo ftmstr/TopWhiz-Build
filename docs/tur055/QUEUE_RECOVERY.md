@@ -1,0 +1,2 @@
+# TUR055 Queue recovery
+This change is isolated to synthetic HTTP response byte races; it does not modify original outbox canonical SHA, immutable route allowlist, publisher generation, broker lease, Queue ACK, DLQ, or recovery state. Ambiguous COMMIT, ACK loss, parallel broker retries and crash/restart remain fail-closed review gates; never equate local stream completion or an ACK with remote byte delivery. Previous tests are not replaced. No live Queue or database touched.
