@@ -56,8 +56,10 @@ test('TUR056: real Next HTTP exposes table-owner trigger removal after PG16 comm
     // reapproval (including by the trusted revoker). The separate TABLE OWNER
     // can nevertheless disable this trigger outside the application's CAS.
     await admin.query('CREATE FUNCTION ' + schema + '.deny_reapproval() RETURNS trigger ' +
-      "LANGUAGE plpgsql AS $ BEGIN IF OLD.approved IS FALSE AND NEW.approved IS TRUE " +
-      "THEN RAISE EXCEPTION 'reapproval_forbidden'; END IF; RETURN NEW; END $");
+      'LANGUAGE plpgsql AS ' + String.fromCharCode(36,36) +
+      " BEGIN IF OLD.approved IS FALSE AND NEW.approved IS TRUE " +
+      "THEN RAISE EXCEPTION 'reapproval_forbidden'; END IF; RETURN NEW; END " +
+      String.fromCharCode(36,36));
     await admin.query('CREATE TRIGGER rights_guard BEFORE UPDATE OF approved ON ' +
       schema + '.media FOR EACH ROW EXECUTE FUNCTION ' + schema + '.deny_reapproval()');
     await admin.query('ALTER TABLE ' + schema + '.media OWNER TO ' + roles[2]);
