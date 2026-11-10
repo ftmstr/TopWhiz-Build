@@ -1,0 +1,4 @@
+# TUR072 Security — NO-GO
+AbortSignal is a cooperative JavaScript control, not an independently demonstrated PostgreSQL16 server-side query cancel, backend statement timeout, revocation COMMIT fence, CDN invalidation or receiver ACK. The tests explicitly demonstrate that an already dispatched SQL statement can complete after abort, while the caller must reject its result.
+Retain TUR018 12 interleavings / 99,276 fictional bytes after rights withdrawal; TUR019 cross-isolate bypass; TUR068 8,273 bytes consumed without cancellation; TUR069 irreversible 25 bytes; TUR071 opt-in cancellation 4,136/8,273 bytes. No false security PASS.
+Independent guardian IAM and media/schema ownership, SECURITY DEFINER, CREATE ACL, schema-owner regrant, in-flight SQL cancellation and last-byte TOCTOU remain unresolved. No release or main merge. Issue #22 OPEN.
