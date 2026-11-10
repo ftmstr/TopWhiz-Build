@@ -18,4 +18,3 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --test services/prices-worker/tests/tur054-ack-loss-revocation-fence-negative.test.mjs
-      - run: node --test services/prices-worker/tests/tur052-ack-replay-ledger-atomicity-negative.test.mjs
