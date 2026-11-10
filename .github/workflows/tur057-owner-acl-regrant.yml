@@ -1,0 +1,48 @@
+name: TUR057 PG16 independent owner ACL regrant NO-GO
+on:
+  push:
+    branches: [feat/tur057-pg16-owner-acl-regrant-negative-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur057-pg16-owner-regrant.integration.test.ts'
+      - '.github/workflows/tur057-owner-acl-regrant.yml'
+      - 'docs/reports/TUR057_*'
+permissions:
+  contents: read
+jobs:
+  pg16-owner-regrant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      CI: 'true'
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Independent PG16 owner regrant regression
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur057-pg16-owner-regrant.integration.test.ts
+      - name: Preserve PG16 owner and revocation counterexamples
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+      - name: Frozen outbox and license gates
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
