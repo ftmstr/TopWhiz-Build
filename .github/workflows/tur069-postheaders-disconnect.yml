@@ -1,0 +1,32 @@
+name: TUR069 physical post-header HTTP disconnect revocation negative NO-GO
+on:
+  push:
+    branches: [feat/tur069-postheaders-physical-disconnect-negative-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur069-postheaders-physical-disconnect-negative.test.mjs'
+      - '.github/workflows/tur069-postheaders-disconnect.yml'
+      - 'docs/reports/TUR069_**'
+permissions:
+  contents: read
+jobs:
+  physical-postheaders-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate and execute real local TCP post-headers negative
+        run: |
+          node --check services/prices-worker/tests/tur069-postheaders-physical-disconnect-negative.test.mjs
+          node --test services/prices-worker/tests/tur069-postheaders-physical-disconnect-negative.test.mjs
+      - name: Retain inherited TUR018/TUR019/TUR068 security and license release holds
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
