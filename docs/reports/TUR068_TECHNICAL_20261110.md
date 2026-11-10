@@ -1,0 +1,15 @@
+# TOPWHIZ TUR068 — Real CMS handler / PostgreSQL16 / physical client TCP abort (2026-11-10)
+
+## Immutable parent and predecessor checks
+Stacked directly on TUR067 Public Draft PR #73 HEAD `396325395b5f68f2158453694451a352c15f9b22`, prior 20/20 actual GitHub Actions SUCCESS. TUR065 #71 HEAD `014ecceee16bb680011b46a69c3cee95f5169be9` had 21/21 SUCCESS; TUR066 #72 HEAD `31c97806bddaf5dc4f7beea05e545e5819cc5498` had 21/21 SUCCESS. TUR068 was absent when this branch was created. All are Draft; no main merge.
+
+## Unique adversarial work
+Run the unchanged original `handleCmsMedia`, `createGuardianApprovalLookup`, original SHA-256-verified fictional PNG, and actual Node `http` loopback socket against disposable PostgreSQL 16 with **four independently authenticated non-superuser LOGINs** and separately owned media and guardian tables. Deliver one baseline HTTP200, then hold an R2-like `ReadableStream` midway through original CMS handler verification while the real TCP client closes **before response headers**. Server observes physical disconnect; guardian owner independently COMMITs `approved=false,generation=2`. Release the delayed R2-like stream and inspect if the original handler still pulls all fictional bytes and performs a final guardian read despite the disconnected client; fresh HTTP must deny HTTP404/zero bytes. This distinguishes **server-side upstream cancellation** from earlier tests about already queued HTTP bytes/ACK. The CMS handler has no request AbortSignal propagated to its body reader. Negative evidence: no implied automatic cancellation or receiver ACK even when the client's TCP socket drops.
+
+Do not invent a remote ACK: actual HTTP consumer receipt and Cloudflare edge/cache delivery are **not instrumented**. Local PG16 COMMIT ACK is unambiguous; unknown transport-cut COMMIT is inherited from actual TUR030 test and must not be described as new proof. Database roles prove only SQL credential separation in a CI container; external Cloudflare/Neon IAM and schema-owner governance need independent audit.
+
+## CI
+New dedicated `.github/workflows/tur068-real-cms-http-abort-pg16.yml` uses PostgreSQL16 service, frozen pnpm, Next.js production *build without deploy*, original handler, TUR064 real PG16 post-check HTTP negative, TUR063 real Next guardian, TUR062 unguarded Next negative, TUR060 SECDEF/CREATE ACL, TUR053 abort, TUR030 uncertain COMMIT, original outbox SHA, Queue/DLQ, and TUR065-067 regression suites. Existing push/PR legacy workerd/vinext, Chromium/SEO, licensing and release-hold workflows must all be independently checked at **final HEAD**, with exact completed SUCCESS count only. No synthetic tests renamed as live Cloudflare security proof.
+
+## Development work-package estimate
+Earlier documented weighted 71/100 was a subjective estimate, **not readiness**. When the new evidence and all CI pass, security-evidence coverage 15/20 to 16/20 would imply **72/100 work-package progress** (architecture 14/15, UI 12/20, services 21/25, security 16/20, CI 9/10, public/legal 0/10). Do not claim 72 unless final test SUCCESS. Issue #22 OPEN; RELEASE NO-GO.
