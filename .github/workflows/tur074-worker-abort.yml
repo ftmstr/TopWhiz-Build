@@ -20,4 +20,4 @@ jobs:
       - name: Frozen dependency installation
         run: corepack enable && pnpm install --frozen-lockfile
       - name: Original Worker abort entrypoint tests
-        run: node --experimental-strip-types --test services/prices-worker/tests/tur074-worker-abort-entrypoint-adversarial.test.mjs
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur074-worker-abort-entrypoint-adversarial.test.mjs
