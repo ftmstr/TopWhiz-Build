@@ -1,0 +1,66 @@
+name: TUR056 actual Next HTTP PG16 independent table-owner bypass NO-GO
+on:
+  push:
+    branches: [feat/tur056-real-next-pg16-owner-trigger-bypass-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur056-next-pg16-owner-bypass.integration.test.ts'
+      - '.github/workflows/tur056-next-pg16-owner-bypass.yml'
+      - 'docs/reports/TUR056_**'
+permissions:
+  contents: read
+jobs:
+  real-next-http-disposable-pg16-owner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: Disposable PG16 original fictional Next production build data
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Actual Next production build only — NO deploy
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Actual Next HTTP and distinct PG16 logins show table owner trigger override
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur056-next-pg16-owner-bypass.integration.test.ts
+      - name: Preserve actual Next HTTP TCP disconnect and COMMIT cuts
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur053-next-abort-pg16.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur041-next-server-pg16.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+      - name: Preserve real PG16 schema owner/SECDEF ACL and immutable Queue outbox SHA
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen license, TypeScript, no-release policy
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
