@@ -1,0 +1,3 @@
+# TUR057 — Security NO-GO
+
+A distinct password LOGIN with NOSUPERUSER NOCREATEDB NOCREATEROLE but TABLE OWNER authority can regrant privileges despite a prior administrator REVOKE. This test does not model all production Neon roles, SECURITY DEFINER, CREATE privilege propagation, security-barrier views or operator IAM. Owner separation and independent operator IAM approval remain required; trigger enforcement alone is not sufficient. R2 revocation, CDN invalidation, last network byte and receiver ACK remain NOT_PROVEN. TUR018 99,276 fictional bytes and TUR019 cross-isolate bypass remain negative evidence, not PASS. Issue #22 OPEN; release NO-GO. No main merge or live Cloudflare/Neon actions.
