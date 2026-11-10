@@ -155,7 +155,7 @@ test('TUR068 original CMS handler: socket abort does not cancel in-flight R2 ver
       }catch{
         handlerStatus=503;
         if(!res.destroyed&&!res.headersSent){res.writeHead(503);res.end()}
-      }finally{handlerEnded.resolve()}
+      }finally{if(slowMode)handlerEnded.resolve()}
     });
     server.listen(0,'127.0.0.1');await once(server,'listening');
     port=server.address().port;
