@@ -1,0 +1,2 @@
+# TUR052 Queue recovery — 2026-11-10
+The tests demonstrate that a reservation committed before a lost delivery ACK creates an uncertain outcome; retrying may duplicate, while denying replay does not prove delivery. Cross-isolate independent ledgers both accept the same nonce. Require durable shared ledger, transactional/outbox identity, broker lease fencing, concurrent Queue/DLQ recovery and uncertain COMMIT reconciliation. These integration checks were NOT_RUN in this TUR; no Queue or DB service was invoked.
