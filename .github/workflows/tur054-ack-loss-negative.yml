@@ -1,0 +1,20 @@
+name: TUR054 ACK loss and revocation fence negative NO-GO
+on:
+  push:
+    branches: [feat/tur054-ack-loss-revocation-fence-negative-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur054-ack-loss-revocation-fence-negative.test.mjs'
+      - '.github/workflows/tur054-ack-loss-negative.yml'
+      - 'docs/reports/TUR054_*'
+permissions:
+  contents: read
+jobs:
+  negative-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test services/prices-worker/tests/tur054-ack-loss-revocation-fence-negative.test.mjs
