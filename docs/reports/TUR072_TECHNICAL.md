@@ -1,0 +1,29 @@
+# TUR072 Technical — 2026-11-10
+Parent: TUR071 exact HEAD ad4e588a5b46aa23cbeff345116ba647e9feed66, Draft PR #77.
+Scope: four deterministic regression tests on original createGuardianApprovalLookup: abort during pending media SQL; abort during pending guardian SQL; per-request isolation; already-dispatched SQL completion.
+Local Node 22 smoke test: 4/4 PASS against an exact-behavior local copy of the TUR071 guardian contract. The repository GitHub CI must independently verify the committed original module; do not treat local smoke as exact-HEAD CI.
+No deployed Worker/Next adapter change, no real PostgreSQL driver cancellation proof, no Cloudflare/R2/CDN or last network byte proof. TUR071 real TCP 4136/8273 upstream cancellation evidence remains separate from TUR068 uncancelled 8273/8273 and TUR069 irreversible 25 bytes.
+Issue #22 OPEN / NO-GO. Work-package coverage estimate 73/100, not production readiness.
+
+---
+
+## Real disposable PG16 + original CMS HTTP extension (TUR072)
+
+# TOPWHIZ TUR072 — Actual PG16 in-flight SQL vs HTTP abort (2026-11-10)
+
+## Canonical base and unique scope
+Public `ftmstr/TopWhiz-Build`, stacked on TUR071 #77 final SHA `ad4e588a5b46aa23cbeff345116ba647e9feed66`. Predecessor actual GitHub run `42857636595`: 1/1 workflow, 3/3 real jobs SUCCESS, four reports; Issue #22 OPEN, main unchanged. At branch creation no TUR072 or higher tour existed.
+
+**Distinct from TUR068's R2 stream / TUR071's PostgreSQL media-to-guardian POST-QUERY handoff:** Exercise a *previously dispatched* real PostgreSQL16 SQL query containing `pg_sleep(1.8)` under an independent login while actual Node loopback HTTP TCP disconnect triggers AbortController. Verify in `pg_stat_activity` that the backend remains ACTIVE after TCP close: cooperative request cancellation is **not** a driver/backend cancel. Concurrent guardian-owner LOGIN commits revocation `approved=false,generation=2`. Once the in-flight query finishes, opt-in CMS guardian contract checks the abort signal and denies 503: no guardian lookup after stale media SQL, no fictional R2 object fetch, zero bytes delivered to dropped client; fresh HTTP 404/zero after guardian COMMIT.
+
+On another active `pg_sleep(4)` query, attempt `pg_cancel_backend` as a separate non-superuser guardian-reader LOGIN and require permission denied. Then exercise a CI-only superuser admin-initiated `pg_cancel_backend` that returns SQLSTATE `57014`. Demonstrates real permission boundary: canceling unrelated backend requires its owner, role membership or an intentionally privileged grant. **Do not suggest giving application roles broad `pg_signal_backend`**; this test uses disposable PG16 admin only, not Cloudflare or Neon IAM.
+
+Four separately password-authenticated, NOSUPERUSER, NOCREATEDB, NOCREATEROLE PG16 LOGIN sessions (media reader/media table owner/guardian reader/guardian table owner). Actual ACL rejects guardian UPDATE from media owner and guardian reader. Inherited TUR060/056 retain SECURITY DEFINER and CREATE ACL exploits; TUR030 retains unknown COMMIT; TUR017/018/019 retain original SHA, Queue/DLQ, lease, and publication revocation tests.
+
+## True production feasibility gaps
+Current `services/prices-worker/src/index.ts` does NOT pass AbortSignal to `handleCmsMedia`, nor an independently owned dual guardian. Its `publicMediaAssetSql` still lacks generation. Next/Cloudflare physical disconnect propagation is **not proven**, even if `Request.signal` exists. The new test-only Node adapter explicitly bridges `res.close`; never treat this as deployed Worker/Next behavior. PostgreSQL user cancellation is not instantaneous, SQL statements may outlive request disposal, and a remote CDN last-byte ACK/global purge is absent.
+
+## Acceptance and work-package estimate
+New `.github/workflows/tur072-pg16-inflight-query-cancel.yml` contains actual disposable PG16, real Node HTTP + original CMS handler, TUR071/068 preserved counterexamples, TUR064 real CMS HTTP post-check, TUR063/062 real Next gates, TUR060/056 owner/SECDEF/CREATE ACL, TUR030 unknown COMMIT, original Queue/DLQ SHA and receipt, frozen pnpm, AGPL/LGPL/release hold, **local real workerd with 120 probes, real Chromium with mobile/desktop/axe/SEO/performance**. Exact final HEAD CI MUST be verified independently; this document itself is not a passing CI receipt.
+
+Prior TUR071 weighted engineering-work estimate 73/100, NOT deploy readiness. If the current empirical negative evidence and all three jobs pass, security-evidence dimension 17/20 -> 18/20, weighted total **74/100**; only use after final CI. Legal and launch readiness remains 0/10. Issue #22 OPEN; RELEASE NO-GO.

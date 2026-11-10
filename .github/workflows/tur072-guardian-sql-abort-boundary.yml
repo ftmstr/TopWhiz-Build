@@ -1,0 +1,30 @@
+name: TUR072 guardian SQL abort boundaries NO-GO
+on:
+  push:
+    branches: [feat/tur072-guardian-sql-abort-boundary-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur072-guardian-sql-abort-boundary.test.mjs'
+      - '.github/workflows/tur072-guardian-sql-abort-boundary.yml'
+      - 'docs/reports/TUR072_*'
+permissions:
+  contents: read
+jobs:
+  guardian-abort-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - run: pnpm install --frozen-lockfile
+      - run: node --check services/prices-worker/tests/tur072-guardian-sql-abort-boundary.test.mjs
+      - run: node --test services/prices-worker/tests/tur072-guardian-sql-abort-boundary.test.mjs
+      - name: Explicit release hold
+        run: |
+          echo "Issue #22 OPEN; production release NO-GO."
+          echo "Cooperative AbortSignal is not backend SQL cancellation or remote byte-delivery proof."
