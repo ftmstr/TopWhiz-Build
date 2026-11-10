@@ -1,0 +1,3 @@
+# TUR051 security report — 2026-11-10
+
+Issue #22 remains release NO-GO. TUR018: 12 synthetic interleavings, 99,276 fictional bytes after revocation; TUR019 cross-isolate bypass must remain intact. This turn explicitly demonstrates that two isolated nonce ledgers can both accept the same valid receipt, and local HMAC acceptance proves no remote final-byte delivery. Shared durable replay state, receiver authenticity, revocation fence through last network byte, CDN invalidation, and independent IAM remain unproven. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and media generation boundaries remain mandatory. No real R2/CDN run.
