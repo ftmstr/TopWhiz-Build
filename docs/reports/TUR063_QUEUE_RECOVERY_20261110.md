@@ -1,0 +1,4 @@
+# TUR063 — Queue/DLQ, COMMIT and byte boundary
+This tour changes no queue consumer, broker, original outbox, immutable SHA receipt, lease, DLQ or database rights COMMIT implementation. Inherited CI preserves TUR017/018 canonical original SHA & Queue/DLQ tests, TUR029/030 actual PG16 account separation and unknown COMMIT ACK readback, TUR053 physical HTTP disconnect. The TUR063 guardian COMMIT is acknowledged locally in disposable PG16. NO cross-region coordinator, distributed receipt ledger, remote browser ACK, durable last wire byte, CDN invalidation or live Cloudflare/R2/Neon checked.
+
+Semantic distinction: successful guardian DB SELECT at final CMS lookup is a **local authorization check**, not evidence that post-COMMIT revocation stopped bytes already in server, edge or receiver buffers. Do not derive a strict zero-byte guarantee. Issue #22 remains OPEN; RELEASE NO-GO.
