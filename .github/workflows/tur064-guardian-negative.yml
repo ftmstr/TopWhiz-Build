@@ -1,0 +1,20 @@
+name: TUR064 guardian cross-request negative boundary NO-GO
+on:
+  push:
+    branches:
+      - feat/tur064-guardian-cross-request-fence-negative-20261110
+  pull_request:
+    paths:
+      - 'tests/tur064-guardian-cross-request-fence-negative.test.mjs'
+      - '.github/workflows/tur064-guardian-negative.yml'
+jobs:
+  negative-boundary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur064-guardian-cross-request-fence-negative.test.mjs
