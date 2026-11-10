@@ -1,0 +1,2 @@
+# TUR066 licensing and publication
+Only Node built-ins node:test, node:assert, node:http, node:events. No new dependency. Existing TUR002 frozen pnpm and AGPL/LGPL libvips provenance/publication gates unchanged. Real media licenses, merchant data rights, operator IAM and trademark clearance remain NO-GO. No production deployment, real media, prices, feed, domain, AdSense or main merge. Work-package estimate 73/100 (subjective, NOT production readiness).

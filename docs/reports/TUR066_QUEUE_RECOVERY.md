@@ -1,0 +1,2 @@
+# TUR066 Queue and recovery
+No Queue or outbox mutation. Preserve original outbox canonical SHA, strict route allowlist, independent brokers, uncertain COMMIT ACK, lease expiry, DLQ idempotence and monotonic rights epochs. HTTP response cancellation is NOT an original-outbox receipt and cannot be used as evidence of remote byte delivery. Retain fail-closed and adversarial tests. No live Queue/R2/CDN/cache purge.
