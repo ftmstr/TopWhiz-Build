@@ -1,0 +1,2 @@
+# TUR069 Queue recovery — 2026-11-10
+No Queue, broker, database or outbox production logic changed. Preserve original canonical outbox SHA and strict route allowlist; lease/fencing and duplicate ACK/unknown COMMIT recovery must remain fail-closed. Parallel broker/Queue/DLQ and revocation races not newly exercised by TUR069; inherited CI is required and a local HTTP client close is not a broker or receiver ACK. TUR030 unknown COMMIT, TUR018 canonical route and original SHA must remain gates. NO-GO.
