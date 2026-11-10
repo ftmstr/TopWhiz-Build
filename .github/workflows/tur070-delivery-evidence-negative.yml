@@ -1,0 +1,20 @@
+name: TUR070 delivery evidence negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur070-delivery-evidence-not-authorization.test.mjs'
+      - '.github/workflows/tur070-delivery-evidence-negative.yml'
+      - 'docs/tur070/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur070-delivery-evidence-not-authorization.test.mjs

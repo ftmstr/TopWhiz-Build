@@ -1,0 +1,2 @@
+# TUR070 licensing and release gates
+Only Node.js built-in node:test and node:assert used; no new runtime dependencies or external media. Existing frozen pnpm, TUR002 and AGPL/LGPL libvips obligations remain binding. No claim of license clearance, source rights, merchant approval, brand clearance or production readiness. No main merge or Cloudflare deployment. Local vinext/workerd stale-cache and real Chromium a11y/SEO/perf NOT_RUN in this turn; retain NO-GO.

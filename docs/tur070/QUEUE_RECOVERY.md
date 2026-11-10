@@ -1,0 +1,2 @@
+# TUR070 Queue recovery guardrails
+No Queue code changed. Original outbox canonical SHA and route allowlist, idempotent replay, broker ACK versus DB COMMIT uncertainty, parallel broker/DLQ and lease races must remain fail-closed. This turn does not execute disposable PG16, broker or DLQ concurrency acceptance. Prior evidence is inherited, not re-certified by this new contract test. A transport ACK is not a commit receipt or a delivery proof. No live Queue/R2/CDN/cache purge.
