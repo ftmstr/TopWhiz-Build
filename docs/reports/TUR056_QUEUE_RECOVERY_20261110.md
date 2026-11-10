@@ -1,0 +1,5 @@
+# TUR056 — Queue/DLQ original outbox SHA and unknown COMMIT HOLD
+
+This tour does NOT modify or execute real broker Queue, DLQ, leases, immutable outbox digest, publisher issuer, licence proofs or production migrations. The isolated PG16 owner mutation is a confirmed COMMIT but its unsanctioned state change deliberately **does not generate a canonical outbox revocation/re-publication event**; therefore a live consumer cannot infer an authorization receipt from database state alone. Original TUR018/017 canonical outbox SHA and route allowlist tests, TUR029 owner/ACL and TUR030 real transport-cut unknown-COMMIT readback remain mandatory CI regressions.
+
+A transaction ACK proves only local durable database state, NOT external receiver final-byte, distributed CDN purge, authenticated Queue ACK or cross-isolate delivery. TUR053 tests real Next client TCP close but no proven server cancellation. No actual Cloudflare/Neon/broker/CDN authorization or last-byte proof. Issue #22 OPEN, RELEASE NO-GO.
