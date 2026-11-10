@@ -1,0 +1,2 @@
+# TUR077 licensing — 2026-11-11
+No new packages, images, feeds, content or licensed assets. Retain TUR002 frozen pnpm gate, AGPL/LGPL/libvips audit and distribution provenance. TOPWHIZ/TOPWIZ trademark clearance, media rights, independent operator IAM approval and external security review are absent. No main merge, Cloudflare Preview/deploy, Queue/R2/CDN/purge, Neon/prod DB, DNS, actual content/prices/merchant feeds or AdSense. NO-GO.

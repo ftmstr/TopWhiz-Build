@@ -1,0 +1,19 @@
+name: TUR077 PostgreSQL cancellation ownership negative model NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur077-pg-cancel-owner-boundary.test.mjs'
+      - '.github/workflows/tur077-pg-cancel-owner-boundary.yml'
+      - 'docs/reports/TUR077_*.md'
+  workflow_dispatch:
+jobs:
+  negative-model:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur077-pg-cancel-owner-boundary.test.mjs

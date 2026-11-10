@@ -1,0 +1,2 @@
+# TUR077 technical — 2026-11-11
+Base: TUR076 f23b98e64a80b4a1060495bd9d700879040c1abf. Deterministic Node 22 identity/pool/lease regression tests; no runtime dependency or production code changes. Tests are a negative model, not real PostgreSQL16, actual pool PID recycling, real Worker/Next signal propagation, real Chromium or Cloudflare acceptance. Preserve TUR018 12 interleavings/99,276 synthetic bytes and TUR019 cross-isolate bypass. CI must be independently checked on final report SHA. Issue #22 OPEN, release NO-GO.
