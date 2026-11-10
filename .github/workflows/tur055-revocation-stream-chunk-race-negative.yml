@@ -1,0 +1,21 @@
+name: TUR055 synthetic chunk-race NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur055-revocation-stream-chunk-race-negative.test.mjs'
+      - '.github/workflows/tur055-revocation-stream-chunk-race-negative.yml'
+      - 'docs/tur055/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic deterministic negative evidence
+        run: node --test services/prices-worker/tests/tur055-revocation-stream-chunk-race-negative.test.mjs
