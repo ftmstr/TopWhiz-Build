@@ -1,0 +1,24 @@
+name: TUR066 real loopback HTTP drain negative NO-GO
+on:
+  push:
+    branches:
+      - feat/tur066-http-drain-revocation-negative-20261110
+  pull_request:
+    paths:
+      - 'tests/tur066-http-drain-revocation-negative.test.mjs'
+      - '.github/workflows/tur066-http-drain-negative.yml'
+  workflow_dispatch:
+jobs:
+  loopback-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur066-http-drain-revocation-negative.test.mjs
