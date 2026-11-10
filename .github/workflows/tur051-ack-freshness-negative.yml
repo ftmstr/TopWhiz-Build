@@ -1,0 +1,21 @@
+name: TUR051 ACK freshness and distributed replay NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur051-ack-freshness-replay-negative.test.mjs'
+      - '.github/workflows/tur051-ack-freshness-negative.yml'
+      - 'docs/tur051-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-ack-freshness-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run deterministic synthetic negative regression
+        run: node --test tests/tur051-ack-freshness-replay-negative.test.mjs
