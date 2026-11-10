@@ -35,8 +35,13 @@ export default {
     if (url.pathname.startsWith("/v1/media/")) {
       if(!env.DATABASE_URL || !/^postgres(ql)?:\/\//.test(env.DATABASE_URL) || !env.MEDIA_BUCKET)
         return json({error:"not_configured"},503);
+      // TUR073: opt-in cooperative request cancellation. This forwards the
+      // platform Request.signal only; physical TCP loss -> signal delivery,
+      // PostgreSQL backend cancellation and independent guardian IAM remain
+      // separately unproven. No live deployment is authorized.
       return handleCmsMedia(request,{
         bucket:env.MEDIA_BUCKET,
+        abortSignal:request.signal,
         findApprovedAsset:(id:string)=>readApprovedMediaAsset(env.DATABASE_URL!,id)
       });
     }

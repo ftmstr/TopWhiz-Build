@@ -19,19 +19,28 @@ function safeOrigin():string|null{
 }
 
 /** Server-only, same-origin image proxy. Never accepts arbitrary remote URLs. */
-export async function GET(_request:NextRequest,{params}:{
+export async function GET(request:NextRequest,{params}:{
   params:Promise<{id:string}>
 }){
   const {id}=await params;
   if(!VALID_ID.test(id))return unavailable(404);
   const base=safeOrigin();
   if(!base)return unavailable(503);
+  // TUR073: bound, composable cancellation. The deployed Next runtime must
+  // actually signal connection loss for this to abort in-flight work: that
+  // transport-to-Request.signal bridge is NOT proven by a unit test.
+  const requestSignal=AbortSignal.any([request.signal,AbortSignal.timeout(6000)]);
+  if(requestSignal.aborted)return unavailable(503);
   try{
     const response=await fetch(base+"/v1/media/"+id,{
       method:"GET",redirect:"error",cache:"no-store",
       headers:{"Accept":"image/png, image/jpeg, image/webp"},
-      signal:AbortSignal.timeout(6000)
+      signal:requestSignal
     });
+    if(requestSignal.aborted){
+      if(response.body)await response.body.cancel().catch(()=>{});
+      return unavailable(503);
+    }
     if(!response.ok || !response.body) return unavailable(response.status===404?404:503);
     const mime=response.headers.get("content-type")?.split(";")[0].trim();
     const byteCount=Number(response.headers.get("content-length"));
@@ -39,6 +48,7 @@ export async function GET(_request:NextRequest,{params}:{
        byteCount<12||byteCount>MAX_BYTES){
       await response.body.cancel();return unavailable(503)
     }
+    if(requestSignal.aborted){await response.body.cancel().catch(()=>{});return unavailable(503)}
     return new Response(response.body,{status:200,headers:{
       "Content-Type":mime,
       "Content-Length":String(byteCount),
