@@ -1,0 +1,20 @@
+name: TUR052 ACK ledger atomicity negative evidence
+on:
+  pull_request:
+    paths:
+      - 'tests/tur052-ack-ledger-atomicity-negative.test.mjs'
+      - '.github/workflows/tur052-ack-ledger-negative.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-ack-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deterministic ACK ledger adversarial tests
+        run: node --test tests/tur052-ack-ledger-atomicity-negative.test.mjs
