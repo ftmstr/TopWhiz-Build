@@ -1,0 +1,169 @@
+name: TUR072 real PG16 in-flight query survives TCP abort and backend cancellation ACL NO-GO
+on:
+  push:
+    branches: [feat/tur072-real-pg16-inflight-query-transport-abort-negative-20261110]
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur072-real-pg16-inflight-query-abort.integration.test.mjs'
+      - '.github/workflows/tur072-pg16-inflight-query-cancel.yml'
+      - 'docs/reports/TUR072_**'
+permissions:
+  contents: read
+jobs:
+  pg16-inflight-query-sql-cancel-acl-real-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install frozen pnpm dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Seed local PostgreSQL16 fictional production build fixtures
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Build original Next.js production app NO DEPLOY
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Check original CMS handler and new real PG16 cancellation test syntax
+        run: |
+          node --check services/prices-worker/src/cms/media-handler.mjs
+          node --check services/prices-worker/src/cms/guardian-approval-contract.mjs
+          node --check services/prices-worker/tests/tur072-real-pg16-inflight-query-abort.integration.test.mjs
+      - name: TUR072 real PG16 backend in-flight SQL vs physical HTTP abort and privileged backend cancellation
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur072-real-pg16-inflight-query-abort.integration.test.mjs
+      - name: Retain TUR071 opt-in upstream cancellation and media-to-guardian handoff
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur071-cms-abort-signal-pg16.integration.test.mjs
+      - name: Preserve TUR068 uncancelled source negative counterexample (no abort signal)
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur068-real-cms-http-abort-pg16.integration.test.mjs
+      - name: Retain distinct TUR064 post-last-check HTTP byte race
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur064-cms-guardian-contract-postcheck.integration.test.mjs
+      - name: Retain TUR063 real Next HTTP two-login guard positive control
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur063-next-pg16-dual-guardian.integration.test.ts
+      - name: Inherited TUR062 distinct negative control (unchanged HTTP adapter)
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur062-next-pg16-guardian-anchor.integration.test.ts
+      - name: Inherited SECURITY DEFINER, real HTTP client disconnect, PG16 owner and unknown COMMIT
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur060-next-pg16-definer-create-acl.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur056-next-pg16-owner-bypass.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur053-next-abort-pg16.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+      - name: Inherited original outbox SHA, ACL, and Queue/DLQ recovery
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur029-owner-iam-commit.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Inherited TUR065 request pin, TUR066 physical drain and TUR067 ACK boundary
+        run: |
+          node --test tests/tur065-guardian-pin-failclosed-contract.test.mjs
+          node --test tests/tur066-http-drain-revocation-negative.test.mjs
+          node --test tests/tur067-revocation-ack-boundary-negative.test.mjs
+      - name: Preserve TUR069 physical post-header and TUR070 ACK classification negatives
+        run: |
+          node --test services/prices-worker/tests/tur069-postheaders-physical-disconnect-negative.test.mjs
+          node --test tests/tur070-delivery-evidence-not-authorization.test.mjs
+      - name: Preserve frozen license, type, and release hold
+        run: |
+          pnpm test
+          pnpm typecheck
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
+
+  local-workerd-real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      CI: 'true'
+      TOPWHIZ_CMS_API_BASE: ''
+      TOPWHIZ_CMS_API_HOST: ''
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Local vinext/workerd actual build with no live credentials
+        run: |
+          node scripts/tur011-workerd-config-gate.mjs
+          pnpm --filter @topwhiz/web build:workerd
+          node scripts/tur012-sharp-provenance.mjs
+      - name: Local-only 120 stale/conditional response probes
+        shell: bash
+        run: |
+          pnpm --filter @topwhiz/web preview:workerd > /tmp/tur072-workerd.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          if ! node scripts/tur018-workerd-stale.mjs; then
+            tail -n 150 /tmp/tur071-workerd.log
+            exit 1
+          fi
+
+  chromium-real-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TOPWHIZ_SYNTHETIC_API: '1'
+      TOPWHIZ_CMS_API_BASE: https://cms.ci.invalid/
+      TOPWHIZ_CMS_API_HOST: cms.ci.invalid
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pnpm install --frozen-lockfile
+      - name: Install actual local Playwright Chromium
+        run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Seed fictional PostgreSQL images and content
+        run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
+      - name: Build real Next production on fictional CI fixtures
+        env:
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
+      - name: Real Chromium keyboard, mobile, desktop, axe, SEO and performance
+        shell: bash
+        run: |
+          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm --filter @topwhiz/web exec next start -p 3109 > /tmp/tur072-browser.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid" 2>/dev/null || true' EXIT
+          if ! pnpm --filter @topwhiz/web test:browser; then
+            tail -n 160 /tmp/tur071-browser.log
+            exit 1
+          fi
