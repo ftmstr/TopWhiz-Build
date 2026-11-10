@@ -1,0 +1,20 @@
+name: TUR061 revocation ACK fence negative evidence
+on:
+  pull_request:
+    paths:
+      - 'tests/tur061-revocation-ack-fence-counterexample.test.mjs'
+      - '.github/workflows/tur061-revocation-ack-negative.yml'
+      - 'docs/reports/TUR061_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deterministic negative evidence
+        run: node --test tests/tur061-revocation-ack-fence-counterexample.test.mjs
