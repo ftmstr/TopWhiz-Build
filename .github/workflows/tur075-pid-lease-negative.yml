@@ -1,0 +1,19 @@
+name: TUR075 PID lease ABA counterexample NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur075-pid-lease-aba-negative.test.mjs'
+      - '.github/workflows/tur075-pid-lease-negative.yml'
+      - 'docs/reports/TUR075_*'
+  workflow_dispatch:
+jobs:
+  pid-lease-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur075-pid-lease-aba-negative.test.mjs

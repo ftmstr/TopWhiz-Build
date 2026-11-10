@@ -1,0 +1,2 @@
+# TUR075 license and release
+No new runtime dependencies or external assets. Existing TUR002 frozen pnpm and AGPL/LGPL libvips distribution gates remain release blockers until independently cleared. TOPWHIZ/TOPWIZ trademark, media rights, operator IAM, third-party legal review unresolved. No main merge, deploy, Preview, production DB, CDN purge, real media/prices/merchant feed or AdSense. Estimated engineering work-package progress: 75%, NOT production readiness.

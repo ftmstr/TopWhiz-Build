@@ -1,0 +1,2 @@
+# TUR075 Queue and recovery
+No changes to original outbox canonical SHA, route allowlist, immutable recovery receipts, broker ACK, Queue/DLQ parallel leases, or unknown PostgreSQL COMMIT handling. Existing inherited CI gates must remain mandatory; this new workflow is supplemental and does not replace them. Never infer delivery from a local socket write or ACK from an untrusted actor. No live queue operations.
