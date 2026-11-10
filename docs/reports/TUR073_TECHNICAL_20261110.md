@@ -20,3 +20,6 @@ Dedicated TUR073 GitHub Actions workflow uses frozen pnpm, Next production build
 
 ## Work-package estimate
 Previous weighted engineering estimate: 74/100, *not production readiness*. If genuine final-head CI proves this scope, security evidence 18/20 -> 19/20 implies 75/100 overall. Legal/publication 0/10, external IAM and global last-byte authorization still NO-GO.
+
+## Production Worker Request.signal wiring (CI-only evidence)
+The actual `services/prices-worker/src/index.ts` media route now explicitly forwards the original web-standard `request.signal` into `handleCmsMedia`. CI invokes the ORIGINAL Worker `fetch` entrypoint with a pre-aborted `Request.signal`, a syntactically valid but unreachable database URL, a fictional R2 bucket and an intercepted external fetch. Expected result: fail-closed CMS 503 with empty body, no Neon SQL / R2 / external network. This tests **signal forwarding**, NOT whether a live Cloudflare Worker emits a signal on physical client disconnect or whether a remote Neon query cancels. Production guardian approval still lacks a separately authenticated independent epoch, so Issue #22 remains NO-GO. New test `services/prices-worker/tests/tur073-worker-media-request-abort.test.mjs` runs on exact-final-HEAD CI, alongside Next route and PG16 tests.

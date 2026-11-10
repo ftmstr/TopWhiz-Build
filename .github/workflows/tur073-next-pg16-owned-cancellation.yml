@@ -6,6 +6,8 @@ on:
     paths:
       - 'services/prices-worker/tests/tur073-pg16-same-role-owned-backend-cancel.integration.test.mjs'
       - 'apps/web/tests/tur073-next-cms-proxy-abort-contract.test.mjs'
+      - 'services/prices-worker/tests/tur073-worker-media-request-abort.test.mjs'
+      - 'services/prices-worker/src/index.ts'
       - 'apps/web/app/media/cms/[id]/route.ts'
       - '.github/workflows/tur073-next-pg16-owned-cancellation.yml'
       - 'docs/reports/TUR073_**'
@@ -50,8 +52,11 @@ jobs:
         run: |
           node --check services/prices-worker/tests/tur073-pg16-same-role-owned-backend-cancel.integration.test.mjs
           node --check apps/web/tests/tur073-next-cms-proxy-abort-contract.test.mjs
+          node --check services/prices-worker/tests/tur073-worker-media-request-abort.test.mjs
       - name: TUR073 original Next App Router request signal and deadline composition with intercepted allowlisted upstream
         run: pnpm --filter @topwhiz/prices-worker exec tsx --test ../../apps/web/tests/tur073-next-cms-proxy-abort-contract.test.mjs
+      - name: TUR073 original Cloudflare Worker fetch entrypoint forwards already-aborted Request.signal without Neon/R2
+        run: pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur073-worker-media-request-abort.test.mjs
       - name: TUR073 original CMS handler real Node TCP plus actual PG16 same-role backend cancel and sibling isolation
         run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur073-pg16-same-role-owned-backend-cancel.integration.test.mjs
       - name: Retain TUR072 actual PG16 query surviving physical request disconnect and unauthorized guardian cancellation
