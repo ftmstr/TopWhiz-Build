@@ -1,0 +1,2 @@
+# TUR074 Queue and recovery — NO-GO
+No mutation of original outbox canonical SHA, route allowlist, broker acceptance, Queue/DLQ lease, unknown COMMIT ACK or idempotent recovery. Inherited checks must remain mandatory and be reverified on final SHA. No actual Queue, R2 or Neon access. This tour cannot claim queue recovery acceptance solely from Worker abort tests.
