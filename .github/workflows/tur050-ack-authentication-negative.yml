@@ -1,0 +1,21 @@
+name: TUR050 ACK authentication negative
+on:
+  pull_request:
+    paths:
+      - 'tests/security/tur050-ack-authentication-boundary-negative.test.mjs'
+      - '.github/workflows/tur050-ack-authentication-negative.yml'
+      - 'docs/reports/TUR050/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-negative:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: TUR046-050 synthetic ACK negative regressions
+        run: |
+          node --test tests/security/tur046*.test.mjs tests/security/tur047*.test.mjs tests/security/tur048*.test.mjs tests/security/tur049*.test.mjs tests/security/tur050*.test.mjs
