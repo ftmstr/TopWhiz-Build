@@ -155,9 +155,8 @@ jobs:
         run: pnpm --filter @topwhiz/prices-worker exec tsx tests/fixtures/ssr-seed.ts
       - name: Build real Next production on fictional CI fixtures
         env:
-          NODE_OPTIONS: "${{ github.workspace }}/scripts/tur007-api-preload.mjs"
-        run: |
-          NODE_OPTIONS="--import=$GITHUB_WORKSPACE/scripts/tur007-api-preload.mjs" pnpm build
+          NODE_OPTIONS: "--import=${{ github.workspace }}/scripts/tur007-api-preload.mjs"
+        run: pnpm build
       - name: Real Chromium keyboard, mobile, desktop, axe, SEO and performance
         shell: bash
         run: |
