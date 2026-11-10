@@ -1,0 +1,2 @@
+# TUR078 technical — 2026-11-11
+Stacked on TUR077 exact HEAD 5e0356bc7468473b542ef47f85bdeb7b7c616faa. Adds real disposable PostgreSQL16 service and two independent non-superuser login roles; tests active backend cancellation cross-role denial and same-login cancellation capability. No production changes. No evidence of PID reuse, pool lease ownership, real Next/Worker transport, CDN or final-byte safety. Preserve TUR018 12 cases / 99,276 fictional bytes and TUR019 cross-isolate bypass. CI final HEAD must be verified independently. Issue #22 OPEN, NO-GO.
