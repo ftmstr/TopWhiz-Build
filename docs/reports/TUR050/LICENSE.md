@@ -1,0 +1,2 @@
+# TUR050 license report
+No new runtime or test dependency; Node.js built-ins only. Frozen pnpm lockfile/TUR002, AGPL and LGPL/libvips compliance, image/media source rights, TOPWHIZ/TOPWIZ trademark clearance and independent operator IAM approval remain release blockers. No license clearance or distribution approval is claimed. Main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod, DNS/domain, real feeds/content/prices/media, and AdSense are forbidden.
