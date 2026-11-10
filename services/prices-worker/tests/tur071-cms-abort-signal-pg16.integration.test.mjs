@@ -112,6 +112,29 @@ test('TUR071 original CMS handler: socket abort does not cancel in-flight R2 ver
         'SELECT approved,generation FROM '+g+'.anchor WHERE id=$1',[target]);
       return result.rows[0]??null;
     };
+    // Distinct PG16 handoff test: media SELECT has returned, but the async
+    // request scope is aborted before its independent guardian SQL is sent.
+    // This does NOT pretend to cancel an already running PostgreSQL query.
+    const mediaReady=deferred(),finishMedia=deferred(),handoffAbort=new AbortController();
+    let guardianReadsAfterHandoff=0;
+    const pendingHandoff=createGuardianApprovalLookup({
+      readMedia:async target=>{
+        const result=await readMedia(target); // real read-only PG16 login
+        mediaReady.resolve();
+        await finishMedia.promise;
+        return result;
+      },
+      readGuardian:async target=>{
+        guardianReadsAfterHandoff++;
+        return readGuardian(target);
+      }
+    })(id,handoffAbort.signal);
+    await timed(mediaReady.promise,'PG16 media-to-guardian handoff');
+    handoffAbort.abort('http_abort_before_guardian_handoff');
+    finishMedia.resolve();
+    await assert.rejects(pendingHandoff,/cms_request_aborted/);
+    assert.equal(guardianReadsAfterHandoff,0,
+      'guard SQL must not start after aborted media-to-guardian handoff');
     const bucket={
       async get(key){
         if(key!==fixture.key)return null;
@@ -229,6 +252,7 @@ test('TUR071 original CMS handler: socket abort does not cancel in-flight R2 ver
       upstreamReadableStreamCancelCount:streamCancel,
       explicitNodeTransportAbortBridge:true,
       productionAbortBridge:'NOT_WIRED',
+      guardianSqlSkippedAfterAbortedMediaHandoff:guardianReadsAfterHandoff===0,
       actualSocketDeliveredBytesOnAbortedRequest:clientBytes,
       newRequestAfterCommitStatus:fresh.status,
       guardianCommitAck:'ACKNOWLEDGED_LOCAL_PG16',
