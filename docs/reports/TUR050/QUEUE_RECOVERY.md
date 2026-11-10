@@ -1,0 +1,2 @@
+# TUR050 Queue and recovery report
+No Queue/DLQ/broker or database transaction was exercised in this turn. Original outbox canonical SHA, allowlisted route, ambiguous COMMIT, parallel brokers, lease fencing, idempotent retry, DLQ recovery and restart tests remain required and NOT_RUN for this final HEAD until independent CI evidence. Local ACK authentication cannot reconcile uncertain durable COMMIT or prove remote receipt.
