@@ -1,0 +1,2 @@
+# TUR049 license report
+No new runtime dependency; Node built-ins only. Frozen pnpm, TUR002 license evidence, AGPL/LGPL/libvips obligations, source image rights, TOPWHIZ/TOPWIZ trademark clearance and independent operator IAM approval remain release blockers. No distribution authorization.

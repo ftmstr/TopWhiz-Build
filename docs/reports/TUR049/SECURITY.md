@@ -1,0 +1,2 @@
+# TUR049 security report
+Issue #22 remains OPEN / NO-GO. Preserve TUR018 12 scenarios and 99,276 fictional bytes, TUR019 cross-isolate bypass and TUR041 Next.js/PG16 negative findings. Local ACK, canonical identity, and server stream completion do not prove final receiver byte. Retain PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL, outbox original canonical SHA/route allowlist, stale-cache, Chromium and IAM gates. No distributed R2 last-byte guarantee claimed.

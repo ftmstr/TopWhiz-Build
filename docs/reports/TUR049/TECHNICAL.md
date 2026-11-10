@@ -1,0 +1,2 @@
+# TUR049 technical report
+Base: TUR048 HEAD f430e2f4daa26ef786884f5416ece7c4519e2127. Adds five synthetic Node.js ACK identity counterexamples. Length-prefixed UTF-8 tuple representation is a test oracle only, not production authorization or remote delivery evidence. CI must run on final report commit before acceptance. No main merge or deployment.
