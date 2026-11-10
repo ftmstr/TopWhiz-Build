@@ -206,6 +206,7 @@ test('TUR071 original CMS handler: socket abort does not cancel in-flight R2 ver
     assert.equal(clientBytes,0);
     await timed(handlerEnded.promise,'abort must resolve handler before stalled body releases');
     assert.equal(handlerStatus,503,'aborted handler denies without delivering body');
+    const abortedHandlerStatus=handlerStatus; // preserve before subsequent 404 request
     assert.equal(streamCancel,1,'abort must actively cancel upstream ReadableStream');
     await guardianOwner.query('BEGIN');
     try{
@@ -246,7 +247,7 @@ test('TUR071 original CMS handler: socket abort does not cancel in-flight R2 ver
       originalFictionalPngSha256:digest,
       baselineHttpStatus:200,physicalClientDisconnectBeforeHeaders:true,
       originalHandlerFinalGuardianReadAfterDisconnect:false,
-      originalHandlerStatusOnAbort:handlerStatus,
+      originalHandlerStatusOnAbort:abortedHandlerStatus,
       fictionalUpstreamBytesReadBeforeCancel:bytesReadFromBucket,
       baselineTUR068UpstreamBytesWithoutSignal:bytes.length,
       upstreamReadableStreamCancelCount:streamCancel,
