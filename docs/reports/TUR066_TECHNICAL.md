@@ -1,0 +1,2 @@
+# TUR066 technical — 2026-11-10
+Parent: TUR065 exact SHA 014ecceee16bb680011b46a69c3cee95f5169be9, observed 20/20 PR-triggered first-page SUCCESS. Distinct opt-in Node HTTP loopback test of real socket response, paused after first write. Revocation occurs before second write. No production code changes; no live infrastructure. This is NOT Next.js/Cloudflare acceptance. Exact final SHA CI must be checked separately.
