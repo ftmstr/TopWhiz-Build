@@ -66,7 +66,6 @@ test('TUR056: real Next HTTP exposes table-owner trigger removal after PG16 comm
     // TUR041 CI-only preload records final SQL reads in gates. For this test
     // release is always granted, because the threat is owner privilege, not
     // the earlier already-admitted HTTP buffering race.
-    await admin.query('UPDATE ' + schema + '.gates SET released=true');
     const dummyBucket = { async put() {} };
     for (const id of ids) {
       const staged = await stageLicensedMedia(dummyBucket,id,bytes,{
@@ -79,6 +78,13 @@ test('TUR056: real Next HTTP exposes table-owner trigger removal after PG16 comm
         [id,staged.key,staged.sha256,staged.contentType,staged.bytes]);
       await admin.query('INSERT INTO ' + schema + '.gates(id) VALUES($1)', [id]);
     }
+    // The gate rows must EXIST before they can be released. TUR056 does not
+    // pause on the already-authorized SQL snapshot; it tests owner privileges.
+    const release=await admin.query('UPDATE ' + schema + '.gates SET released=true');
+    assert.equal(release.rowCount,ids.length);
+    const gateRows=(await admin.query('SELECT released FROM ' + schema + '.gates')).rows;
+    assert.equal(gateRows.length,ids.length);
+    assert.ok(gateRows.every(row=>row.released===true));
     for (let i=0; i<roles.length; i++) {
       const link = new URL(URI);link.username=roles[i];link.password=passwords[i];
       const session = new pg.Client({connectionString:link.href});
