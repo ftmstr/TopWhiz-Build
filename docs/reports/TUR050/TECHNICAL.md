@@ -1,0 +1,2 @@
+# TUR050 technical report
+Parent TUR049 final HEAD: `84bb20893802a7596e610b1465dd83ca0ec698f3` (20/20 visible PR-triggered GitHub Actions SUCCESS; first page only). Added six synthetic Node 22 negative ACK-authentication tests using built-in crypto HMAC-SHA256, length-prefixed UTF-8 fields, domain separation, and constant-time comparison. Workflow runs TUR046–TUR050 synthetic tests. This is test-only evidence; no production ACK protocol change, remote transport, R2 or CDN test. CI final SHA must be checked independently.
