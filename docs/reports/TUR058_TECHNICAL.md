@@ -1,0 +1,2 @@
+# TUR058 technical — 2026-11-10
+Base: TUR057 `ea6e1d33dd8e171d0aae08158a5d747c9b9086b1`. Disposable PostgreSQL 16 test runs separate `psql` processes for admin REVOKE, owner SET ROLE/GRANT and privilege observation. Repeats revocation and regrant; expected outcome is a documented owner bypass, not remediation. Workflow is PR-only/dispatch; no live deploy. Missing DSN causes a skipped test locally, not a PASS. Independent CI result must be checked at final report HEAD.

@@ -1,0 +1,2 @@
+# TUR058 Queue/recovery boundaries
+No Queue, DLQ or broker integration changes. Preserve original outbox canonical SHA, strict route allowlist, idempotency and lease ownership; COMMIT ACK loss is ambiguous, not success. Parallel broker, DLQ redrive, transaction rollback and lease expiration must remain fail-closed. No actual broker test in this tour; existing regressions require separate CI evidence.

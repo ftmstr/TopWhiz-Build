@@ -1,0 +1,2 @@
+# TUR058 security — NO-GO
+Issue #22 remains OPEN. TUR018: 12 synthetic interleavings, 99,276 fictional PNG bytes after revocation; TUR019 cross-isolate bypass remain adverse evidence. TUR058 demonstrates that PostgreSQL object ownership survives ordinary ACL REVOKE and can regrant SELECT. This is not a fix for SECURITY DEFINER, CREATE ACL, schema owner or independent IAM. Final network byte, CDN/R2 purge, global cache, publication generation fencing and operator IAM unproven. No production release or main merge.
