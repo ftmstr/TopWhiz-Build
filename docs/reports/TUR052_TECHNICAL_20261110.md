@@ -1,0 +1,2 @@
+# TUR052 Technical — 2026-11-10
+Base TUR051: cb8c18f7ef1b80c655dea1b9c358f58db14a175e. Six deterministic Node.js tests model non-atomic check/record, atomic reservation, cross-isolate replay, restart, transport ACK loss and remote final-byte non-proof. These are synthetic fixtures, not production fixes. Workflow runs node --test; real CI status must be read from final SHA. Previous TUR051 visible PR workflow first page: 20/20 success; pagination not exhaustive. No live deployments.
