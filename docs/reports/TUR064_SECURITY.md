@@ -1,3 +1,15 @@
 # TUR064 security — release NO-GO
 
 Issue #22 remains a hard blocker. TUR018: 12 synthetic interleavings, 99,276 fictional bytes after revocation; TUR019 cross-isolate bypass retained. TUR062 real Next route ignored independent guardian, TUR063 CI-only guardian adapter denied revoked rows but historical unchanged adapter still returned 8,273 fictional bytes. This TUR064 only adds stale-edge/queued-byte counterexamples, not a fix. PostgreSQL SECURITY DEFINER, table/schema-owner, CREATE ACL and separate IAM need independent enforcement; no final network-byte linearization or global CDN invalidation proof. Trademark TOPWHIZ/TOPWIZ, media licensing, operator IAM and external security review not approved. No merge or production release.
+
+---
+
+## Additional independent CMS/PG16 HTTP integration evidence
+
+# TUR064 — Guardian IAM, ownership, CREATE ACL and last-byte negative evidence
+
+The new opt-in CMS handler lookup requires media/guardian generations to be canonically positive and equal, and pins the first accepted generation for the second read. It rejects the current production public media projection because its generation field is not returned. No production routing or secret change. Distinct PG16 five-login fixture: application media reader cannot independently write guardian table, guardian read-only user cannot write guardian table, media table owner cannot write guardian-owned table even using its own SECURITY DEFINER routine, and temporary schema CREATE followed by REVOKE does NOT remove a previously created SECURITY DEFINER function. Those tests are about **PostgreSQL SQL identities**, not separated cloud IAM/secrets or administrative compromise.
+
+The guardian *owner* is privileged over its schema; fail-closed application logic cannot cryptographically fence a compromised guardian owner, superuser, policy administrator or stolen database session. Schema owner/role grant operations and SECDEF remain privileged operations requiring independent external IAM, sealed migrations and second-party security approval. Existing media owner can disable its own trigger; independent guardian check blocks newly admitted HTTP only, not previously admitted bytes.
+
+**Critical residual negative evidence**: the original CMS `handleCmsMedia` verifies PNG and rechecks both authorities, produces a 200 Response, but a subsequent PG16 COMMIT revoking guardian can occur before Node writes response. A real HTTP client still receives verified fictional bytes *after* the COMMIT; next independent request fails 404/zero bytes. This is not a Cloudflare CDN breach or end-to-end delivery ACK. Post-final-read global zero-byte guarantee is NOT PROVEN; Issue #22 stays OPEN; no live release.
