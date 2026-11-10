@@ -1,0 +1,23 @@
+name: TUR074 Worker abort entrypoint adversarial
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/**'
+      - '.github/workflows/tur074-worker-abort.yml'
+      - 'docs/reports/TUR074_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  worker-abort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frozen dependency installation
+        run: corepack enable && pnpm install --frozen-lockfile
+      - name: Original Worker abort entrypoint tests
+        run: node --experimental-strip-types --test services/prices-worker/tests/tur074-worker-abort-entrypoint-adversarial.test.mjs
