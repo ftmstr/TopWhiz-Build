@@ -1,0 +1,3 @@
+# TUR064 security — release NO-GO
+
+Issue #22 remains a hard blocker. TUR018: 12 synthetic interleavings, 99,276 fictional bytes after revocation; TUR019 cross-isolate bypass retained. TUR062 real Next route ignored independent guardian, TUR063 CI-only guardian adapter denied revoked rows but historical unchanged adapter still returned 8,273 fictional bytes. This TUR064 only adds stale-edge/queued-byte counterexamples, not a fix. PostgreSQL SECURITY DEFINER, table/schema-owner, CREATE ACL and separate IAM need independent enforcement; no final network-byte linearization or global CDN invalidation proof. Trademark TOPWHIZ/TOPWIZ, media licensing, operator IAM and external security review not approved. No merge or production release.
