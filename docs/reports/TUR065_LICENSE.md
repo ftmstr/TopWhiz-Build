@@ -1,0 +1,2 @@
+# TUR065 License and Publication Gates
+No new runtime or third-party dependency: node:test and node:assert/strict only. Preserve frozen pnpm including TUR002, AGPL source obligations, LGPL/libvips provenance and distribution clearance, Chromium and vinext/workerd gates. No live Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon, DNS/domain, real content/media/prices/merchant feeds or AdSense. Source rights, trademark and independent IAM clearance absent; release NO-GO.

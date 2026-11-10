@@ -1,0 +1,25 @@
+name: TUR065 guardian pin contract negative NO-GO
+on:
+  push:
+    branches:
+      - feat/tur065-guardian-pin-failclosed-contract-20261110
+  pull_request:
+    paths:
+      - 'tests/tur065-guardian-pin-failclosed-contract.test.mjs'
+      - 'services/prices-worker/src/cms/guardian-approval-contract.mjs'
+      - '.github/workflows/tur065-guardian-pin-contract.yml'
+  workflow_dispatch:
+jobs:
+  guardian-contract-negative:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur065-guardian-pin-failclosed-contract.test.mjs
