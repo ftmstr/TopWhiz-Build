@@ -1,0 +1,5 @@
+# TOPWHIZ TUR094 — Security / distributed TOCTOU (NO-GO)
+
+HMAC-signed generation-1 media grant remains authentic after a generation-2 revocation. A fresh publisher that checks only signature, media scope and expiration reauthorizes eight fictional HTTP/2 bytes. Signature integrity is not a monotonic revocation fence. Test-only fresh generation lookup denies held tail and subsequent requests; authority unavailable returns 403. The lookup is an illustrative in-process callback, not independent durable IAM, cross-isolate quorum, CDN purge, or a receiver-final-byte proof.
+
+Preserve TUR018 12 negative scenarios / 99,276 bytes; TUR019 cross-isolate bypass; TUR090 restart; TUR092 PostgreSQL pooled PID/cancellation boundary; TUR093 mutable file high-water rollback. No issue #22 closure. PostgreSQL SECURITY DEFINER, schema-owner, CREATE ACL, independently owned IAM, issuer and media rights, R2 source/license revocation, TOPWHIZ/TOPWIZ trademark and operator approvals remain NO-GO. Never equate local HTTP/2 stream close with remote byte suppression.
