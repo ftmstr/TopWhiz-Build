@@ -1,0 +1,5 @@
+# TOPWHIZ TUR101 — Security and hard NO-GO
+
+An authenticated HTTP/2 connection is not a tenant-scoped media grant for every stream. The synthetic unsafe connection cache allows alpha's grant to fetch beta's four bytes, including after an epoch revocation ACK. A per-stream grant/tenant/asset/epoch check rejects these cases and local authority outage, but does not independently authenticate client-provided `:authority`; production requires trusted host routing, TLS SNI/origin mapping and independent monotonic IAM authority. No production rights guarantee is claimed.
+
+Issue #22 remains OPEN. TUR018 12-case 99,276-byte negative result, TUR019 cross-isolate bypass, TUR099 sibling KID ABA, TUR100 cross-asset cache, last remote byte and R2/CDN edge invalidation remain release blockers. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and separate logins, original outbox canonical SHA and route allowlist, parallel broker/Queue/DLQ ambiguous COMMIT/lease, workerd/vinext stale-cache, Chromium accessibility/SEO/performance, frozen pnpm and AGPL/LGPL libvips remain hard gates. Operator IAM, media rights and TOPWHIZ/TOPWIZ trademark not independently approved. NO-GO.
