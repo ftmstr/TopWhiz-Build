@@ -1,0 +1,5 @@
+# TOPWHIZ TUR096 — licensing, supply chain and release controls (NO-GO)
+
+One additive real PG16 test using Node built-ins and existing pinned `pg@8.16.3`, one read-only GitHub Actions disposable Postgres16 workflow, and four Markdown reports. No runtime/application changes, schema migrations, production dependency changes, lockfile drift, downloaded user assets, fonts, images, media or credentials. CI retains pnpm 10.18.3 frozen install and existing release-hold, licensing and provenance scripts. True Chromium install / mobile and desktop a11y/SEO, original Next build and local workerd remain required in inherited pull-request workflows, not skipped.
+
+AGPL-3.0 obligations and LGPL/libvips redistribution review, independently licensed content/merchant assets and TOPWHIZ/TOPWIZ trademark clearance still unresolved. Independent operator IAM, remote receiver acknowledgement and zero-leak R2/CDN invalidation are unproven. Issue #22 OPEN and release NO-GO; no main merge or live Cloudflare/Neon/R2/CDN/DNS/AdSense.
