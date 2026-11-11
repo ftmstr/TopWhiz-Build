@@ -1,0 +1,63 @@
+name: TUR097 actual PG16 role membership INHERIT SET cancellation authority NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur097-pg16-membership-cancel.integration.test.mjs'
+      - '.github/workflows/tur097-pg16-membership-cancel.yml'
+      - 'docs/reports/TUR097_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg16-dynamic-membership:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TUR097_DISPOSABLE_PG16: '1'
+      TUR096_DISPOSABLE_PG16: '1'
+      TUR095_DISPOSABLE_PG16: '1'
+      TUR092_DISPOSABLE_PG16: '1'
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm dependencies and syntax
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur097-pg16-membership-cancel.integration.test.mjs
+      - name: Real PG16 INHERIT FALSE SET FALSE, INHERIT TRUE and SET TRUE cancellation boundaries
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur097-pg16-membership-cancel.integration.test.mjs
+      - name: Actual prior pg.Pool, SET ROLE session user and physical TCP cancellation regressions
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur096-pg16-set-role-pool-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur095-http-pg-pool-handoff.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur092-real-pg16-pool-handoff.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur074-same-role-cross-request-cancel.integration.test.mjs
+      - name: Real inherited unknown COMMIT, SECDEF CREATE ACL, original SHA and Queue DLQ lease
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen supply, AGPL LGPL and release NO GO
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
