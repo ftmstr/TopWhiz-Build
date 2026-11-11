@@ -1,0 +1,7 @@
+# TOPWHIZ TUR088 — Security / Media Revocation — NO-GO
+
+Issue #22 remains OPEN. Real local HTTP/2 GOAWAY observed by a client does not revoke accepted multiplexed streams: the intentionally unsafe synthetic publisher emits 8 additional fictional bytes after the revocation/GOAWAY barrier. This is **negative evidence**, not a production exploit or real R2/CDN exposure. Session admission control and stream cancellation are different primitives.
+
+Per-stream NGHTTP2_CANCEL followed by server-side close events prevents the tested **new application writes** on two held streams. It does **not** prove a physical remote-receiver ACK, that previously queued bytes were not delivered, global CDN cache invalidation, all isolates/processes sharing a generation fence, or a zero-leakage guarantee under Cloudflare/R2 semantics. Client GOAWAY observation is not authenticated media-rights revocation proof. No production security control was changed.
+
+Retain TUR018 12 synthetic interleavings / 99,276 fictional PNG bytes and TUR019 cross-isolate bypass tests. Require a separately reviewed feasibility model for rights withdrawal across all publishers, old connections, HTTP/2 streams, kernel/network buffers and cache copies. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL must be tested under independently privileged IAM, not only app-role assertions. Rights, trademark and operator approvals remain unfulfilled. **Fail-closed NO-GO.**
