@@ -1,0 +1,5 @@
+# TOPWHIZ TUR099 — Security / release NO-GO
+
+A signature valid under a stale HMAC verification key does not prove current media rights. Two independent Node publisher processes and real localhost HTTP/2 show an epoch-2 rotation ACK from one process does not invalidate its sibling's epoch-1 cache; eight synthetic bytes were delivered after ACK. Reused key ID (`kid`) creates an ABA/confused-key risk. Local epoch-aware stream cancellation and old-key rejection are **test-only**, not distributed independent authority, remote receiver ACK, or R2/CDN final-byte proof.
+
+No production key service, IAM, role grants, credentials or media were changed. Synthetic HMAC-SHA256 and equal-length timing-safe signature comparison only. Preserve Issue #22 OPEN, TUR018 99,276 bytes / 12 cases, TUR019 cross-isolate bypass, PostgreSQL SECURITY DEFINER/schema owner/CREATE ACL and cross-login pg_cancel_backend, unknown COMMIT, Queue/DLQ lease, vinext/workerd stale cache, frozen pnpm AGPL/LGPL libvips, trademark/source rights and operator IAM. Release NO-GO.
