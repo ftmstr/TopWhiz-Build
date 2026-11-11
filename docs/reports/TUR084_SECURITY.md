@@ -1,0 +1,7 @@
+# TUR084 Security — NO-GO
+
+Issue #22 must remain OPEN until independent evidence covers R2 publication-right revocation through the **last network byte** across remote edge caches, already-open streams, independent publishers and cross-isolate replay. TUR018's 12 scenarios / **99,276 synthetic post-revocation bytes** and TUR019's cross-isolate bypass are historical negative evidence, not resolved findings.
+
+TUR084 negative findings: (a) HTTP 304 has no body and cannot erase eight bytes already held by a client; (b) a stale content ETag with `If-Range` may cause four fresh physical response bytes after rights revocation when authorization is incorrectly tied only to object identity. Neither `no-store`, 304, ETag, HTTP 206 nor a local socket completion proves revocation propagation, cache invalidation or authenticated remote receiver ACK. No claim is made about actual CDN caching semantics; the first test models a client-held cache.
+
+Release blockers retained: PostgreSQL16 independent owner/IAM and SECURITY DEFINER/schema-owner/CREATE ACL, same-role backend cancellation privilege, original outbox canonical SHA and route allowlist, Queue/DLQ parallel broker ambiguous COMMIT/lease/replay, local vinext/workerd stale-cache, Chromium accessibility/SEO/performance, frozen pnpm including TUR002, AGPL/LGPL libvips licensing, source/media rights, TOPWHIZ/TOPWIZ trademark clearance and independent operator IAM approval. All remain fail-closed NO-GO.
