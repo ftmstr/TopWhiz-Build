@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer, connect } from 'node:net';
 import { once } from 'node:events';
 
-test('physical local TCP: bytes observed before revocation cannot be recalled', async () => {
+test('physical local TCP: bytes observed before revocation cannot be recalled', { timeout: 5000 }, async () => {
   const first = Buffer.from('synthetic-tur081-before-revoke');
   let accepted;
   const acceptedPromise = new Promise(resolve => { accepted = resolve; });
@@ -29,8 +29,7 @@ test('physical local TCP: bytes observed before revocation cannot be recalled', 
   } finally {
     client?.destroy();
     peer?.destroy();
-    server.closeAllConnections();
-    await new Promise(resolve => server.close(resolve));
+    await new Promise((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
   }
 });
 
