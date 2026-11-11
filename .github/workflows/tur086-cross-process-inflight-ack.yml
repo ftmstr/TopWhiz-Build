@@ -1,0 +1,21 @@
+name: TUR086 cross-process in-flight post-ACK HTTP negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur086-cross-process-inflight-revoke-ack.test.mjs'
+      - '.github/workflows/tur086-cross-process-inflight-ack.yml'
+      - 'docs/reports/TUR086_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-inflight-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Two independent publishers and physical loopback streams
+        run: node --test tests/tur086-cross-process-inflight-revoke-ack.test.mjs
