@@ -1,0 +1,2 @@
+# TUR079 Technical — 2026-11-11
+Base: TUR078 exact SHA 68cfd47eb49a5db19be61fa3ff5f081c78460a2e. Narrow real local Node HTTP streaming regression: first chunk already read before rights revocation, second chunk suppressed, response cannot be rolled back. Two explicit ACK/CDN and generation negative tests. No production code or live service changes. Dedicated Node 22 workflow. Final exact-HEAD CI must be independently verified.
