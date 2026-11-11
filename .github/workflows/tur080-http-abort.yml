@@ -1,0 +1,18 @@
+name: TUR080 HTTP abort after first byte negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur080-http-abort-after-first-byte.test.mjs'
+      - '.github/workflows/tur080-http-abort.yml'
+      - 'docs/reports/TUR080_*'
+  workflow_dispatch:
+jobs:
+  negative-abort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur080-http-abort-after-first-byte.test.mjs
