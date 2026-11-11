@@ -1,0 +1,2 @@
+# TUR081 license and deployment hold
+Only Node.js built-in modules used; no new dependency or media assets. TUR002 frozen pnpm and AGPL/LGPL libvips redistribution and provenance gates remain mandatory, as do media rights, TOPWHIZ/TOPWIZ trademark and independent operator IAM approval. No Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod DB, DNS, real content, merchant prices/feeds, images or AdSense.
