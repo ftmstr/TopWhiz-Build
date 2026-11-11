@@ -1,0 +1,2 @@
+# TUR081 technical — 2026-11-11
+Stacked on TUR080 exact HEAD 830429381a4f33077386aff6b06c923ec101918b, which had 20/20 accessible PR-triggered GitHub Actions SUCCESS including TUR080 dedicated run 42943008106. Three narrowly scoped tests: actual loopback TCP receive before revocation, local write/drain versus remote ACK contract, stale-generation receipt rejection. Synthetic bytes only; no production code, dependency or network service changes. Final report SHA CI must be independently verified. Estimated engineering work package 75%, not production readiness.
