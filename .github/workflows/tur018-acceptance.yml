@@ -76,7 +76,7 @@ jobs:
           node scripts/tur018-workerd-stale.mjs
 
   chromium-synthetic:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 28
     services:
       postgres:
