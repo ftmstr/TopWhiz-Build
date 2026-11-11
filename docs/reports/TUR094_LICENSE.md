@@ -1,0 +1,3 @@
+# TOPWHIZ TUR094 — Licensing / provenance (NO-GO)
+
+Only Node.js built-ins (node:test, assert, http2, crypto, events), a synthetic test HMAC key, fictional bytes, and local test/CI/reports added. No new npm dependency, production code, product/media asset, merchant feed, price, font or lockfile changes. Dedicated CI retains frozen pnpm and inherited TUR002/TUR018, AGPL/LGPL/libvips release-hold gates. Source rights, lawful media licensing, TOPWHIZ/TOPWIZ trademark similarity and independent operator IAM/legal sign-off are NOT approved. No main merge or live Cloudflare/Neon/DNS/AdSense publication. Issue #22 OPEN, release NO-GO.
