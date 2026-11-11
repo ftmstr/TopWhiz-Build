@@ -1,0 +1,2 @@
+# TUR078 security — 2026-11-11
+A different non-superuser PostgreSQL login must not cancel the active target; a second session of the same login can cancel it. This proves SQL login isolation matters and request-local PID/lease guards cannot substitute for independent IAM. Test is disposable CI-only. No real Cloudflare/Neon access, independent operator IAM, R2 revoke last-byte guarantee or CDN purge. Keep Issue #22 OPEN and production NO-GO.
