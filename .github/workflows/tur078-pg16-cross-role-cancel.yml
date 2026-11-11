@@ -29,4 +29,6 @@ jobs:
         with:
           node-version: '22'
       - name: Real PostgreSQL 16 independent login boundary
+        env:
+          TUR078_PG16_SERVICE: '1'
         run: node --test tests/tur078-pg16-cross-role-cancel.test.mjs
