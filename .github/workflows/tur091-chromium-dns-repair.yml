@@ -1,0 +1,22 @@
+name: TUR091 Chromium runner DNS regression and strict browser-gate audit NO-GO
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/tur0*-acceptance.yml'
+      - '.github/workflows/tur091-chromium-dns-repair.yml'
+      - 'tests/tur091-chromium-runner-contract.test.mjs'
+      - 'docs/reports/TUR091_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runner-pin-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exactly 11 Chromium jobs pinned without bypassing production-style browser acceptance
+        run: node --test tests/tur091-chromium-runner-contract.test.mjs

@@ -1,0 +1,7 @@
+# TOPWHIZ TUR091 — security / release blocker (NO-GO)
+
+This is a CI environment reproducibility change, not a rights-revocation or request-cancellation fix. The GitHub runner's Ubuntu 26.04 package-index DNS failure prevented mandatory Chromium acceptance, so it must not be treated as a passing gate. Pin 11 Chromium jobs to Ubuntu 24.04 while preserving every real Playwright mobile/desktop accessibility, keyboard, SEO, screenshot and performance check. No `continue-on-error`, `|| true`, test skip or runner trust escalation.
+
+Unresolved real security boundaries: TUR074 same-role PostgreSQL16 backend cancellation returns SQLSTATE 57014 on unrelated siblings; PID ABA/pool handoff and per-request IAM not enforced; schema-owner, SECURITY DEFINER and CREATE ACL regrant authority require independent threat-model validation; physical Next/workerd disconnect Request.signal propagation and remote receiver ACK remain limited/negative. Keep TUR018 12 scenarios and 99,276 fictional post-revoke bytes, TUR019 cross-isolate evidence, TUR064 8,273 post-check, TUR068 8,273 uncancelled server-read, TUR071 4,136 cancelled server-read, TUR069 first 25 irrevocable bytes and TUR030 unknown COMMIT as historical negatives. NO-GO is not negotiable.
+
+Issue #22 stays OPEN pending externally demonstrated independent IAM, global CDN invalidation and authenticated last-byte receiver evidence. No production merge/deploy or sensitive asset/source use.
