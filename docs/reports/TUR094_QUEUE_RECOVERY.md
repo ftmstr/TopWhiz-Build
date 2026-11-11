@@ -1,0 +1,3 @@
+# TOPWHIZ TUR094 — Queue / original outbox recovery (NO-GO)
+
+No Queue/DLQ/broker/lease or database production mutation in TUR094. The dedicated CI invokes TUR018 original canonical outbox SHA and route allowlist regression and TUR017 recovery lease test. Preserve TUR030 parallel broker/Queue/DLQ ambiguous COMMIT and idempotent retry as inherited unresolved threat boundaries, not newly proven in this HTTP/2 test. A signed stale media grant is not a valid recovery receipt, and PostgreSQL COMMIT or Queue ACK is not remote CDN receiver ACK or last-byte revocation. No live Cloudflare Queue/R2/CDN/cache purge or Neon use. Issue #22 OPEN; release NO-GO.
