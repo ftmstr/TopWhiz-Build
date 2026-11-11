@@ -1,0 +1,5 @@
+# TOPWHIZ TUR092 — Queue/DLQ and immutable outbox recovery (NO-GO)
+
+No production changes to original immutable canonical outbox SHA, strict routes, idempotent retry, broker/Queue/DLQ leases, remote receiver ACK, guardian rights, SECURITY DEFINER/CREATE ACL, unknown COMMIT or media publication. The TUR092 dedicated PG16 CI invokes historical TUR030 ambiguous COMMIT, TUR019 schema/CREATE ACL, TUR018 original route/canonical SHA and TUR017 outbox recovery tests; these are **real reruns** on disposable PostgreSQL, not new algorithmic guarantees. A separate guardian-owner role COMMITs generation 2 in the novel test and an independent reader confirms it. Acknowledged local PostgreSQL COMMIT is not a remote broker acceptance or authenticated CDN final-byte receipt. Preserve 57014 negative and reject stale cancellation ticket but do not trust app-only lease as an SQL privilege boundary.
+
+Issue #22 OPEN, NO-GO. Do not interact with live Cloudflare Queues, Neon, R2, CDN or external customer data.
