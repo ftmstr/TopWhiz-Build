@@ -8,7 +8,7 @@ function sql(user, password, statement) {
   const result=spawnSync('psql',['-X','-A','-t','-v','ON_ERROR_STOP=1','-h',host,'-p',port,'-U',user,'-d',database,'-c',statement],{encoding:'utf8',env:{...process.env,PGPASSWORD:password},timeout:15000});
   return {status:result.status,out:(result.stdout||'').trim(),err:(result.stderr||'').trim()};
 }
-test('real PG16: independent role denied, same login can cancel its own backend; no request IAM guarantee',async()=>{
+test('real PG16: independent role denied, same login can cancel its own backend; no request IAM guarantee',{skip: process.env.TUR078_PG16_SERVICE !== '1' ? 'requires explicit disposable PG16 CI service' : false},async()=>{
   assert.equal(sql('postgres','postgres',"CREATE ROLE tur078_a LOGIN PASSWORD 'tur078_a'; CREATE ROLE tur078_b LOGIN PASSWORD 'tur078_b';").status,0);
   const worker=spawn('psql',['-X','-A','-t','-v','ON_ERROR_STOP=1','-h',host,'-p',port,'-U','tur078_a','-d',database,'-c','SELECT pg_sleep(20)'],{env:{...process.env,PGPASSWORD:'tur078_a',PGAPPNAME:'tur078_target'},stdio:['ignore','pipe','pipe']});
   let stderr='';worker.stderr.on('data',d=>stderr+=d);
