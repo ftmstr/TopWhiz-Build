@@ -1,0 +1,5 @@
+# TOPWHIZ TUR100 — Security / hard release NO-GO
+
+A valid HTTP/2 session is not proof of continuing per-stream media rights. Synthetic real-loopback counterexample: after rotation ACK, a cached session emits four new epoch-1 bytes; a new session rejects the old grant 403. The same cached connection can fetch asset B using an asset A token and emit four B bytes. A per-stream verifier denies stale epoch, forged signature, cross-asset scope and local authority outage with 403, but this does not prove distributed IAM, receiver/CDN final byte, or production Request.signal behavior.
+
+TUR099 stale sibling HMAC kid ABA, TUR018 12-case 99,276-byte negative evidence, TUR019 cross-isolate bypass, TUR093 rollback and TUR094 signed replay remain blockers. Issue #22 OPEN. Preserve PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and cross-login pg_cancel_backend, canonical outbox SHA/route allowlist, Queue/DLQ ambiguous COMMIT/lease, local vinext/workerd stale-cache, real Chromium a11y/SEO/perf, frozen pnpm AGPL/LGPL libvips, source rights and TOPWHIZ/TOPWIZ trademark. Independent operator IAM approval absent. No production keys or data modified. RELEASE NO-GO.
