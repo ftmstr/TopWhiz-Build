@@ -1,0 +1,12 @@
+# TOPWHIZ TUR096 — PG16 SET ROLE vs exclusive backend ownership (2026-11-11)
+
+**Canonical base:** Public `ftmstr/TopWhiz-Build` TUR095 Draft PR #101 exact SHA `4e0b76b37c933592aa9d5eea9ebaf16989e5a0b8`, verified 19/19 real GitHub Actions SUCCESS and dedicated TUR095 run 43093151219 SUCCESS. TUR096 and any later branch absent at start.
+
+## Unique real PostgreSQL16 experiment
+On disposable Postgres16, create one authentic `pg.Pool(max:1)` connection signed in as a common non-superuser `pool_login`; grant it membership of two restricted NOLOGIN subroles. Request A uses `SET ROLE stage_a`; while checkout A is held, another pool checkout is proven queued/not allocated. A `RESET ROLE` / `DISCARD ALL`, release and B's `SET ROLE stage_b` preserve the physical backend PID and **session_user pool_login**, despite distinct effective current_user. A test-only lease/epoch check rejects A's obsolete ticket, but third SQL session sharing pool_login directly invokes `pg_cancel_backend` for B's live SQL, causing SQLSTATE 57014. That role-switch is not independent backend-cancellation IAM.
+
+Positive boundary control: a separately authenticated, non-member LOGIN executes real long SQL; pool_login cannot cancel it (SQLSTATE 42501); it completes. Guardian reader/owner own separate schema, independent generation-2 COMMIT and readback. Six restricted PG roles total (four LOGIN, two NOLOGIN); five authenticated active connections including pool. No pg_signal_backend grant or service superuser. This is a new `SET ROLE` / `session_user` membership boundary test, **not** OS PID recycling or production security implementation. Physical TCP disconnect is inherited from TUR095 and is rerun as separate historical regression.
+
+Dedicated PR-scoped disposable PG16 GitHub workflow reruns TUR095 physical TCP/real pool, TUR092 simulated pool, TUR074 same-role sibling cancellation, TUR030 unknown COMMIT, TUR019 SECDEF/CREATE ACL, TUR018 canonical outbox SHA and TUR017 Queue/DLQ leases with frozen pnpm and release gates. Original Next production/real local workerd and Playwright mobile/desktop/a11y/SEO workflows remain unmodified. New exact-final-HEAD CI is **PENDING until read back**: do not attribute parent success to this commit.
+
+Issue #22 OPEN / RELEASE NO-GO. Preserve TUR018 99,276 synthetic revoked bytes, TUR019 cross-isolate, TUR064/TUR068 8,273, TUR071 4,136, TUR069 25. Engineering work-package scope estimate remains 75%, not production readiness. No main merge, live deploy, external IAM, Queue, R2, CDN, DNS, real prices/media/content or AdSense.
