@@ -44,7 +44,7 @@ async function phaseSql(target,admin,pid,tag,seconds){
  const p=target.query('SELECT pg_sleep('+seconds+'),'+tag+' AS marker').then(
   row=>({marker:row.rows[0].marker}),error=>({error}));
  await assertActive(admin,pid,'pg_sleep('+seconds+')');
- return p;
+ return {promise:p};
 }
 const membershipSql=(name)=>"SELECT pg_has_role(session_user,'"+name+"','MEMBER') AS is_member,"+
  "pg_has_role(session_user,'"+name+"','USAGE') AS can_inherit,"+
@@ -95,7 +95,7 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
      latest={pid,epoch:2,request:'B',login:roles[0]};
    assert.equal(ticketIsCurrent(stale,latest),false,'test-only lease rejects old A ticket');
    assert.equal(ticketIsCurrent(latest,latest),true);
-   const initial=await phaseSql(B,admin,pid,971,1.0);
+   const initial=(await phaseSql(B,admin,pid,971,1.0)).promise;
    await assertDenied(delegated,pid);
    await assertDenied(outsider,pid);
    assert.deepEqual(await initial,{marker:971});
@@ -106,7 +106,7 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
    assert.deepEqual(first,{is_member:true,can_inherit:false,can_set:false});
    await assert.rejects(delegated.query('SET ROLE '+roles[0]),
      error=>error?.code==='42501','SET FALSE must prohibit role switch');
-   const b1=await phaseSql(B,admin,pid,972,1.0);
+   const b1=(await phaseSql(B,admin,pid,972,1.0)).promise;
    await assertDenied(delegated,pid);
    assert.deepEqual(await b1,{marker:972});
 
@@ -114,7 +114,7 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
    await admin.query('GRANT '+roles[0]+' TO '+roles[1]+' WITH INHERIT TRUE, SET FALSE');
    const inherited=(await delegated.query(membershipSql(roles[0]))).rows[0];
    assert.deepEqual(inherited,{is_member:true,can_inherit:true,can_set:false});
-   const b2=await phaseSql(B,admin,pid,973,7);
+   const b2=(await phaseSql(B,admin,pid,973,7)).promise;
    const inheritedCancel=await delegated.query('SELECT pg_cancel_backend($1) cancelled',[pid]);
    assert.equal(inheritedCancel.rows[0].cancelled,true);
    assert.equal((await b2).error?.code,'57014');
@@ -123,7 +123,7 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
    await admin.query('REVOKE '+roles[0]+' FROM '+roles[1]);
    const gone=(await delegated.query(membershipSql(roles[0]))).rows[0];
    assert.deepEqual(gone,{is_member:false,can_inherit:false,can_set:false});
-   const b3=await phaseSql(B,admin,pid,974,1.0);
+   const b3=(await phaseSql(B,admin,pid,974,1.0)).promise;
    await assertDenied(delegated,pid);
    assert.deepEqual(await b3,{marker:974});
 
@@ -132,7 +132,7 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
    await admin.query('GRANT '+roles[0]+' TO '+roles[1]+' WITH INHERIT FALSE, SET TRUE');
    const switchable=(await delegated.query(membershipSql(roles[0]))).rows[0];
    assert.deepEqual(switchable,{is_member:true,can_inherit:false,can_set:true});
-   const b4=await phaseSql(B,admin,pid,975,7);
+   const b4=(await phaseSql(B,admin,pid,975,7)).promise;
    await assertDenied(delegated,pid);
    await delegated.query('SET ROLE '+roles[0]);
    const assumed=(await delegated.query('SELECT session_user login,current_user effective')).rows[0];
@@ -142,12 +142,12 @@ test('real PG16: independent LOGIN loses pg_cancel_backend isolation through INH
    assert.equal(switched.rows[0].cancelled,true);
    assert.equal((await b4).error?.code,'57014');
    await delegated.query('RESET ROLE');
-   const b5=await phaseSql(B,admin,pid,976,1.0);
+   const b5=(await phaseSql(B,admin,pid,976,1.0)).promise;
    await assertDenied(delegated,pid);
    assert.deepEqual(await b5,{marker:976});
 
    await admin.query('REVOKE '+roles[0]+' FROM '+roles[1]);
-   const b6=await phaseSql(B,admin,pid,977,1.0);
+   const b6=(await phaseSql(B,admin,pid,977,1.0)).promise;
    await assertDenied(delegated,pid);
    await assertDenied(outsider,pid);
    assert.deepEqual(await b6,{marker:977});
