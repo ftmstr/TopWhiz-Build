@@ -1,0 +1,18 @@
+name: TUR085 cross-process conditional HTTP revocation negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur085-cross-process-conditional-revocation-negative.test.mjs'
+      - '.github/workflows/tur085-cross-process-conditional.yml'
+      - 'docs/reports/TUR085_*'
+  workflow_dispatch:
+jobs:
+  negative-cross-process-conditional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur085-cross-process-conditional-revocation-negative.test.mjs
