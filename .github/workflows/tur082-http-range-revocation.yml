@@ -1,0 +1,18 @@
+name: TUR082 HTTP 206 dual-range revocation negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur082-http-range-revocation-negative.test.mjs'
+      - '.github/workflows/tur082-http-range-revocation.yml'
+      - 'docs/reports/TUR082_*'
+  workflow_dispatch:
+jobs:
+  negative-dual-range:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur082-http-range-revocation-negative.test.mjs

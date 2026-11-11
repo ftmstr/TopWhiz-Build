@@ -1,0 +1,3 @@
+# TUR082 security — NO-GO
+
+Issue #22 stays OPEN. TUR018's 12 scenarios and 99,276 synthetic post-revocation bytes remain negative evidence, as does TUR019 cross-isolate bypass. TUR082 deliberately models an unsafe stale publisher across two concurrently admitted HTTP byte ranges; it does **not** establish Cloudflare R2/CDN revocation, authenticated last-byte receiver ACK, cache purge or independent operator IAM. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and same-role pg_cancel_backend risks remain; separate rights owner/IAM and independent approval required. No live infrastructure, source media, main merge or release.
