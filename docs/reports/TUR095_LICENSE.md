@@ -1,0 +1,5 @@
+# TOPWHIZ TUR095 — license, dependency and supply-chain NO-GO
+
+Only a new test using Node built-ins and existing frozen dev dependency pg@8.16.3, one dedicated read-only CI workflow, and four Markdown reports. No production runtime changes, PostgreSQL migration, new package dependencies, pnpm lockfile modifications, media, source images, fonts, licenses, or networked releases. Disposable localhost PG16 CI service; generated synthetic restricted LOGINs cleaned in finally. Pinned pnpm 10.18.3 frozen lockfile and inherited release-hold guards; existing mandatory real Playwright Chromium installation, mobile/desktop/a11y/SEO, Next and workerd CI remain unchanged.
+
+AGPL-3.0 and LGPL/libvips redistribution licensing, original image/content rights, publisher permissions, TOPWHIZ/TOPWIZ trademark clearance, external operator IAM and independent security audit remain unresolved. No Cloudflare/Neon/R2/CDN/DNS live operations, main merge, real product prices/merchant feeds or AdSense; Issue #22 OPEN and release NO-GO.

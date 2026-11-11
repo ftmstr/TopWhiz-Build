@@ -1,0 +1,5 @@
+# TOPWHIZ TUR095 — Queue/DLQ, immutable original outbox and COMMIT (NO-GO)
+
+No modifications to canonical original outbox SHA/route allowlist, issuer signer, media/guardian schema owner, SECURITY DEFINER search_path, CREATE ACL, rights generation, PostgreSQL unknown COMMIT reconciliation, parallel Queue/DLQ broker leases, idempotent recovery, or remote receiver ACK. Dedicated real PostgreSQL16 CI explicitly reruns historical TUR030 two-login unknown-COMMIT CAS, TUR019 SECDEF/CREATE ACL shadow, TUR018 canonical original outbox SHA, and TUR017 parallel broker and DLQ lease tests; they are inherited actual reruns, not newly implemented recovery algorithms.
+
+The new guardian-owner local COMMIT generation-2 readback is only database acknowledgement. It does not establish remote broker/Queue ACK, CDN invalidation, or final receiver-byte delivery. The late HTTP disconnect and pooled SQL cancellation counterexample does not relax revocation handling. Issue #22 OPEN; no live Cloudflare/Neon/R2/CDN/DNS or real content.
