@@ -1,0 +1,2 @@
+# TUR080 Security — hard NO-GO
+Issue #22 remains a release blocker. TUR018 12 synthetic interleavings and 99,276 fictional bytes are negative evidence; TUR019 cross-isolate bypass remains. AbortSignal cannot retract bytes already read, nor establish CDN cache purge, independent recipient ACK or distributed generation fencing. PG16 SECURITY DEFINER/schema-owner/CREATE ACL and same-role pg_cancel_backend bypass require independent IAM validation. TOPWHIZ/TOPWIZ trademark, media rights and operator approval are unresolved. No main merge or production publication.
