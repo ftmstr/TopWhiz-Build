@@ -1,0 +1,21 @@
+name: TUR090 HTTP2 restart generation fence and missing authority NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur090-http2-restart-generation-fence.test.mjs'
+      - '.github/workflows/tur090-http2-restart-generation-fence.yml'
+      - 'docs/reports/TUR090_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-restart-http2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify stale restart negative and guarded fail-closed HTTP2
+        run: node --test tests/tur090-http2-restart-generation-fence.test.mjs
