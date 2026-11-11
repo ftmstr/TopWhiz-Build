@@ -1,0 +1,21 @@
+name: TUR087 in-flight close barrier vs receiver-read boundary NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur087-revocation-close-vs-receiver-read.test.mjs'
+      - '.github/workflows/tur087-revocation-close-barrier.yml'
+      - 'docs/reports/TUR087_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-close-and-receiver-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify local stream-close barrier and already-written receiver bytes
+        run: node --test tests/tur087-revocation-close-vs-receiver-read.test.mjs
