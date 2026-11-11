@@ -28,7 +28,7 @@ async function targetSql(c,root,pid,marker,seconds){
  const result=c.query('SELECT pg_sleep('+seconds+'),'+marker+' AS marker').then(
    v=>({marker:v.rows[0].marker}),e=>({error:e}));
  await active(root,pid,'pg_sleep('+seconds+')');
- return result;
+ return {promise:result};
 }
 async function denied(client,pid){
  await assert.rejects(client.query('SELECT pg_cancel_backend($1) AS cancelled',[pid]),e=>e?.code==='42501');
@@ -90,7 +90,7 @@ test('real PG16 non-inheriting ADMIN member delegates unauthorized query cancel;
    const leaseA={pid,backendStart:new Date(started).toISOString(),epoch:1,request:'A'};
    const leaseB={pid,backendStart:new Date(s).toISOString(),epoch:2,request:'B'};
    assert.notDeepEqual(leaseA,leaseB,'app lease alone is not PG cancel authorization');
-   const before=await targetSql(B,root,pid,981,1);
+   const before=(await targetSql(B,root,pid,981,1)).promise;
    await denied(delegate,pid);await denied(recipient,pid);
    await denied(guardianReader,pid);
    assert.deepEqual(await before,{marker:981});
@@ -100,7 +100,7 @@ test('real PG16 non-inheriting ADMIN member delegates unauthorized query cancel;
    assert.equal(direct.length,1);assert.equal(direct[0].admin_option,true);
    assert.equal(direct[0].inherit_option,false);assert.equal(direct[0].set_option,false);
    await assert.rejects(delegate.query('SET ROLE '+roles[0]),e=>e?.code==='42501');
-   const beforeGrant=await targetSql(B,root,pid,982,1);
+   const beforeGrant=(await targetSql(B,root,pid,982,1)).promise;
    await denied(delegate,pid);await denied(recipient,pid);
    assert.deepEqual(await beforeGrant,{marker:982});
    // Non-superuser delegate supplies third-party membership.
@@ -112,7 +112,7 @@ test('real PG16 non-inheriting ADMIN member delegates unauthorized query cancel;
    assert.equal(delegated[0].admin_option,false);
    assert.equal((await recipient.query('SELECT pg_has_role(session_user,$1,$2) permitted',
     [roles[0],'USAGE'])).rows[0].permitted,true);
-   const bActive=await targetSql(B,root,pid,983,7);
+   const bActive=(await targetSql(B,root,pid,983,7)).promise;
    assert.equal((await recipient.query('SELECT pg_cancel_backend($1) cancelled',[pid])).rows[0].cancelled,true);
    assert.equal((await bActive).error?.code,'57014');
    assert.equal((await B.query('SELECT 98 AS usable')).rows[0].usable,98);
@@ -128,7 +128,7 @@ test('real PG16 non-inheriting ADMIN member delegates unauthorized query cancel;
    assert.equal((await membership(root,roles[0],roles[2])).length,0);
    await assert.rejects(delegate.query('GRANT '+roles[0]+' TO '+roles[2]),
     e=>e?.code==='42501');
-   const after=await targetSql(B,root,pid,984,1);
+   const after=(await targetSql(B,root,pid,984,1)).promise;
    await denied(delegate,pid);await denied(recipient,pid);
    await denied(guardianReader,pid);
    assert.deepEqual(await after,{marker:984});
