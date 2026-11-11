@@ -1,0 +1,5 @@
+# TOPWHIZ TUR092 — License / provenance / release hold (NO-GO)
+
+Only a Node built-in test relying on already frozen dev dependency `pg@8.16.3`, an additive read-only GitHub workflow, and four Markdown reports. No new third-party dependencies, lockfile mutations, browser image, media asset, fonts, package publication, schema migration or application code. `postgres:16` is ephemeral CI service; four restricted random synthetic LOGIN names and credentials exist only in disposable test database, cleanup attempted in finally. Existing pnpm 10.18.3 frozen gate and AGPL/LGPL/libvips provenance/release-hold scripts run in dedicated CI; independent legal approval is still absent. TUR091's actual Chromium installation and a11y/SEO gates remain untouched.
+
+TOPWHIZ/TOPWIZ trademark comparison, lawful source/media/merchant rights, operator IAM, remote ACK/CDN zero-leak and independent security review remain blockers. Issue #22 OPEN; RELEASE NO-GO; no main merge, Preview/deploy, live Cloudflare/Neon/R2/CDN/DNS, real content/prices/media or AdSense.
