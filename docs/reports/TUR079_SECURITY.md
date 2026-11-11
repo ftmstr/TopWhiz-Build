@@ -1,0 +1,2 @@
+# TUR079 Security — NO-GO
+Issue #22 remains OPEN. TUR018 12 synthetic interleavings / 99,276 fictional bytes and TUR019 cross-isolate bypass remain negative evidence. A local HTTP socket does not prove Cloudflare R2/CDN final-byte delivery, cache invalidation, receiver ACK, or independent operator IAM. Preserve PG16 SECURITY DEFINER/schema-owner/CREATE ACL; same-role pg_cancel_backend bypass; request-scoped PID/lease cannot replace independent credentials. TOPWHIZ/TOPWIZ trademark and media rights unapproved. RELEASE NO-GO.

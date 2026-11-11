@@ -1,0 +1,2 @@
+# TUR079 Queue recovery — unchanged controls
+No broker/Queue/DLQ/outbox implementation change. Original outbox canonical SHA and route allowlist remain mandatory; parallel broker receipts, uncertain COMMIT, lease expiry, redelivery, idempotency, immutable original SHA and recovery ownership remain release gates. This tour does not claim those controls re-executed independently unless exact-HEAD CI reports show them.
