@@ -1,0 +1,5 @@
+# TOPWHIZ TUR097 — License, provenance and release gate (NO-GO)
+
+Changes are one Node built-in real PG16 test using the already pinned `pg@8.16.3` (dev dependency), one read-only GitHub Actions disposable `postgres:16` CI workflow, and four Markdown reports. No production app, schema migration, package/lockfile, downloaded images, browser assertions, licensed content or binaries changed. Tests generate isolated random PG roles; no real account credentials. New workflow runs frozen pnpm 10.18.3 and existing AGPL/LGPL/libvips dependency provenance and hard release-hold guards. Existing Chromium installation and real Playwright mobile/desktop a11y/SEO/performance as well as Next/workerd CI are untouched.
+
+AGPL-3.0 source redistribution review, LGPL/libvips provenance, TOPWHIZ/TOPWIZ trademark clearance, content ownership and merchant licensed price/media feeds, remote CDN last-byte, independent SQL IAM and broader release/security review remain NO-GO. GitHub Actions QUEUED is not a success; exact-final-HEAD CI acceptance must be independently verified. Issue #22 remains OPEN. Main not merged, no live cloud deploy or AdSense.
