@@ -1,0 +1,3 @@
+# TOPWHIZ TUR093 — Queue / outbox recovery (NO-GO)
+
+HTTP/2 rollback test does not modify Queue, DLQ, broker, leases or original immutable canonical outbox SHA/route allowlist. Dedicated CI re-runs TUR018 original SHA/route checks and TUR017 recovery lease; TUR030 ambiguous COMMIT is an inherited gate, not newly proven by this test. An acknowledged PostgreSQL COMMIT is not a remote Queue ACK, CDN receiver receipt, or post-revocation byte suppression. Do not treat rollback of an unauthenticated local floor as a valid grant/replay recovery. No live Cloudflare/Neon/Queue/R2 operations. Issue #22 OPEN, release NO-GO.

@@ -1,0 +1,49 @@
+name: TUR093 HTTP2 generation rollback and untrusted floor ABA NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur093-authority-rollback-aba-http2.test.mjs'
+      - '.github/workflows/tur093-http2-rollback-aba.yml'
+      - 'docs/reports/TUR093_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  http2-rollback-aba:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Exact frozen dependency install and syntax
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur093-authority-rollback-aba-http2.test.mjs
+      - name: Physical loopback HTTP2 mutable generation and untrusted floor rollback regressions
+        run: node --test services/prices-worker/tests/tur093-authority-rollback-aba-http2.test.mjs
+      - name: Preserve original canonical outbox, Queue and release license gates
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs

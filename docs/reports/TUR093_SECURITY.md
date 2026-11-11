@@ -1,0 +1,5 @@
+# TOPWHIZ TUR093 — Security (NO-GO)
+
+Three physical loopback HTTP/2 cases establish an ABA rollback hazard: a mutable generation source can revert 2→1 and reauthorize a stale snapshot; an intact synthetic floor can block; rolling back both files defeats the file-only floor and again sends eight fictional bytes. No independent trust anchor, quorum, signed immutable receipt, tamper-resistant monotonic counter, cross-process durability, CDN invalidation or remote final-byte proof is implemented. Do not interpret a local high-water filename as an independent IAM boundary.
+
+Preserve TUR018 12 scenarios / 99,276 fictional revoked-media bytes, TUR019 cross-isolate bypass, TUR090 restart stale generation, TUR092 pooled same-role PG cancellation and SQLSTATE 57014. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL and actual owner separation, request-specific cancellation, source rights, operator IAM and TOPWHIZ/TOPWIZ clearance remain blockers. Issue #22 OPEN, release NO-GO. No live deployment or main merge.
