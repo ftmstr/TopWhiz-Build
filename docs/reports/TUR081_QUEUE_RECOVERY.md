@@ -1,0 +1,2 @@
+# TUR081 Queue recovery — unchanged mandatory gates
+No broker, Queue, DLQ or outbox production modification. Original immutable outbox canonical SHA, route allowlist, parallel broker lease ownership, ambiguous COMMIT ACK, idempotent redelivery, monotonic generation and recovery fencing remain fail-closed requirements. Not independently re-executed in this narrow tour; inherited CI status does not resolve last-byte TOCTOU.
