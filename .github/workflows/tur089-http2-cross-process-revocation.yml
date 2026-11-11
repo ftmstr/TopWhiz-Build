@@ -1,0 +1,21 @@
+name: TUR089 cross-process HTTP2 stale sibling and ACK boundary NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur089-http2-cross-process-revocation.test.mjs'
+      - '.github/workflows/tur089-http2-cross-process-revocation.yml'
+      - 'docs/reports/TUR089_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-cross-process-http2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exercise two independent local HTTP2 publisher processes and paused receiver
+        run: node --test tests/tur089-http2-cross-process-revocation.test.mjs
