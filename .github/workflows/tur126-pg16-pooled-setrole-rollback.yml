@@ -2,8 +2,8 @@ name: TUR126 PG16 transactional RESET ROLE ROLLBACK restores elevated SQL identi
 on:
   pull_request:
     paths:
-      - 'services/prices-worker/tests/tur126-pg16-pooled-setrole-after-revoke.integration.test.mjs'
-      - '.github/workflows/tur126-pg16-pooled-setrole-after-revoke.yml'
+      - 'services/prices-worker/tests/tur126-pg16-pooled-setrole-rollback.integration.test.mjs'
+      - '.github/workflows/tur126-pg16-pooled-setrole-rollback.yml'
       - 'docs/reports/TUR126_*'
   workflow_dispatch:
 permissions:
@@ -54,9 +54,9 @@ jobs:
       - name: Frozen pnpm and new test syntax
         run: |
           pnpm install --frozen-lockfile
-          node --check services/prices-worker/tests/tur126-pg16-pooled-setrole-after-revoke.integration.test.mjs
+          node --check services/prices-worker/tests/tur126-pg16-pooled-setrole-rollback.integration.test.mjs
       - name: Real PG16 transaction RESET ROLE rollback reactivates revoked pooled identity
-        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur126-pg16-pooled-setrole-after-revoke.integration.test.mjs
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur126-pg16-pooled-setrole-rollback.integration.test.mjs
       - name: Inherited real TUR125 pooled identity leak after rights-admin REVOKE COMMIT
         run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur125-pg16-pooled-setrole-after-revoke.integration.test.mjs
       - name: Inherited TUR124 real PG16 active SET ROLE committed REVOKE negative
