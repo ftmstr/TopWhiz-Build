@@ -1,0 +1,9 @@
+# TOPWHIZ TUR106 — Security review and mandatory release NO-GO
+
+New NEGATIVE evidence: a deliberately unsafe HTTP/2 cache allows a late generation-1 origin response to overwrite a valid generation-2 object AFTER revoke ACK, so even a fresh correctly signed generation-2 request receives the stale four synthetic bytes. Concurrent fills and delayed cache publication are a distinct risk from TUR105's Range 206 stale cache-hit. This is not a production vulnerability observation, real R2/CDN exposure, physical wire measurement or receiver ACK.
+
+Guarded local countermodel rechecks a locally available generation AFTER asynchronous origin fetch and before cache publication, rejects old fills with HTTP 403, checks generation-tagged cache entries, and fails closed on authority outage. A local epoch variable is NOT independent, durable, globally monotonic operator IAM; already-buffered bytes, cross-isolate propagation, network in-flight bytes and production cancellation remain unresolved.
+
+Issue #22 stays OPEN / HARD NO-GO. Retain TUR018 12 scenarios / 99,276 synthetic bytes; TUR019 cross-isolate bypass; TUR099 KID ABA; TUR100 session cache; TUR101 cross-tenant authority; TUR102 buffered receiver bytes; TUR103 signed redirect; TUR104 duplicate query; TUR105 Range and delayed origin. Preserve independent PG16 schema-owner/SECURITY DEFINER/CREATE ACL, actual pg.Pool cancellation ownership, original outbox canonical SHA/route allowlist, parallel broker/Queue/DLQ uncertain COMMIT/lease, local vinext/workerd stale-cache, Chromium accessibility/SEO/perf, frozen pnpm and TUR002 AGPL/LGPL libvips gates.
+
+No approval for TOPWHIZ/TOPWIZ trademark, media/source rights, operator IAM or production. No main merge, live Cloudflare/Neon/R2/CDN/Queue/cache purge, DNS/domain, actual content/media/price/feed or AdSense.
