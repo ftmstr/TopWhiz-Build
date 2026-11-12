@@ -1,0 +1,11 @@
+# TOPWHIZ TUR121 — Technical report — 12 November 2026
+
+Repository: Public `ftmstr/TopWhiz-Build` only. Exact parent: TUR120 Draft PR #126, `60a9483436b148bfe59de4f996379907bc79ca15`. Parent first-page PR-triggered GitHub Actions 19/19 completed SUCCESS, including dedicated run 43213933236 and its PG16/HTTP2 inherited steps. TUR121 absent at preflight. Separate stacked Draft PR targets TUR120 branch; main remains untouched.
+
+## New regression
+`services/prices-worker/tests/tur121-http2-multilayer-etag-generation.test.mjs` exercises three disposable localhost HTTP/2 servers (authority, origin, gateway) with fictional AOLD/BOLD/BNEW media. Distinct from TUR120's shared ETag collision, TUR121 adds **two cache layers (L1 per-tenant and shared L2)**, simultaneous tenant-A revocation and tenant-B publication epoch/ETag transition, two held HTTP304 replies from old epoch released strictly after transition ACK, and an L2-to-L1 stale-content promotion. The deliberately vulnerable model leaks AOLD to tenant B through the stale 304, then serves the same wrong content on an L1 cache hit: 4+4 = **8 fictional bytes after ACK**. The guarded local model keys L1/L2 by tenant/asset/rights generation, rechecks authority after async origin revalidation, returns 403/zero body for stale old-epoch 304, then fetches BNEW for generation 2 and fails closed on authority outage. These are local model properties, NOT real Cloudflare/R2 last-byte guarantees.
+
+A dedicated Ubuntu 24.04 Node22 frozen pnpm/postgres:16 workflow `.github/workflows/tur121-http2-multilayer-etag-generation.yml` invokes the new test and inherited TUR118/117 PG16 role ACL, TUR115/114 HTTP2+PG16, TUR116/113/110/107/098/097/096/095/092, TUR112/111/109/108, TUR030/019/018/017 original outbox SHA/Queue/DLQ, TUR002 frozen license/release gates. Existing Next/vinext/workerd and real Chromium a11y/SEO/perf workflows are unchanged.
+
+## Acceptance rule
+Only exact **final report commit SHA** and its actual GitHub Actions jobs can establish CI success. This report is not CI acceptance. Local model tests are not independent production validation. Issue #22 OPEN, release HARD NO-GO. Engineering work-package estimate **75%** (not production readiness). No merge, live deployment, cache purge, production database, DNS, real merchant/media/prices, or AdSense.

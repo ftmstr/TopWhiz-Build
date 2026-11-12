@@ -1,0 +1,7 @@
+# TOPWHIZ TUR121 — License and release gate — 12 November 2026
+
+No new runtime dependency, library, vendor binary, media asset, product image, merchant feed, price, domain, advertising integration or production code is introduced. This TUR adds one Node built-in HTTP/2 adversarial regression, one GitHub Actions workflow and four Markdown reports.
+
+Frozen pnpm lockfile remains unchanged; TUR002 and later AGPL/LGPL/libvips supplier/provenance and redistribution obligations are hard release gates, not waived by successful tests. Dedicated CI executes `node scripts/tur018-frozen-ci-gate.mjs`, `node scripts/tur021-release-hold.mjs`, and `node scripts/tur010-dependency-gate.mjs` in addition to frozen install. Existing actual local vinext/workerd and Chromium mobile/desktop accessibility/SEO/performance workflows are not weakened.
+
+**NO-GO:** Issue #22 OPEN (TUR018 12 synthetic cases / 99,276 bytes, TUR019 cross-isolate bypass); independent operator IAM, TOPWHIZ/TOPWIZ mark review, source/media rights, real R2/CDN last receiver byte, global invalidation and external security sign-off unresolved. No merge to main, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod database, DNS/domain, real content/media/prices/merchant feed or AdSense. Estimated engineering package progress 75%, **not** production readiness. CI results for the exact final report SHA must be independently verified after this commit.
