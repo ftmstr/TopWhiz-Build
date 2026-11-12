@@ -1,0 +1,4 @@
+# TOPWHIZ TUR127 — frozen supplier and licensing NO-GO
+Scope: one disposable Node22/PostgreSQL16 adversarial test using already pinned pg; one Ubuntu24 GitHub Actions workflow; four Markdown reports. No production source, database migration, IAM grant, runtime dependency, lockfile, package, binary, license asset, third-party image, real merchant price, domain or advertisement changes. Workflow preserves pnpm install --frozen-lockfile at 10.18.3, TUR002 and inherited AGPL/LGPL/libvips source/license release gates, unchanged Next/vinext-workerd and actual Chromium mobile/desktop accessibility/SEO/performance CI.
+
+Source rights, TOPWHIZ/TOPWIZ trademark clearance, independent operator IAM, real R2/CDN revocation and final-byte delivery proof remain unapproved. No main merge, live Cloudflare Preview/deploy/R2/Queue/CDN/cache purge, Neon/prod DB, DNS, real content/media/prices/merchant feed or AdSense. Issue #22 OPEN, HARD RELEASE NO-GO.
