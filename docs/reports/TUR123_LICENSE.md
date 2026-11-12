@@ -1,0 +1,5 @@
+# TOPWHIZ TUR123 — Frozen pnpm, AGPL/LGPL/libvips and rights hold
+
+Exactly one new additive Node22 disposable real PG16 adversarial test, one Ubuntu24 real postgres:16 GitHub Actions workflow, four Markdown reports. Only the already pinned node-postgres `pg` used; no production runtime/migrations, package.json or pnpm lockfile changes, new binaries, external sources, fonts, licensed media, real prices, content, trademarks or affiliate feed. Frozen pnpm 10.18.3 and existing TUR002 AGPL-3.0/LGPL/libvips/release hard-hold checks preserved.
+
+Existing genuine Next/vinext-workerd, Chromium Playwright mobile/desktop accessibility/SEO/performance, Source/provenance rights and all release gates run unchanged on exact final SHA. Successful negative red-team test is NOT safe production request-bound SQL cancellation or publication clearance. Trademark TOPWHIZ/TOPWIZ, independent operator IAM, real Cloudflare Request.signal, CDN receiver final-byte ACK and merchant/media rights remain open. Issue #22 OPEN / HARD RELEASE NO-GO; no main merge or live Cloudflare/Neon/R2/CDN/DNS/Queue, content/prices/images, AdSense.
