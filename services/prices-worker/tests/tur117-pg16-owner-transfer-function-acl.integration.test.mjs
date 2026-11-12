@@ -9,7 +9,7 @@ import pg from 'pg';
  * SECURITY DEFINER canceller initially owned by a powerless NOLOGIN creator.
  * Its PUBLIC EXECUTE is removed via creator-specific global defaults, but an
  * explicit unrelated outsider EXECUTE is kept. An admin transfers the SAME
- * function (unchanged oid and ACL) to a separate NOLOGIN owner that inherits
+ * function (unchanged oid and outsider EXECUTE permission) to a separate NOLOGIN owner that inherits
  * victim-role cancellation rights. The existing outsider can now cancel B.
  * Revoking owner membership then caller EXECUTE independently cuts access.
  *
@@ -57,7 +57,7 @@ async function snapshot(root){
   'proacl::text AS acl, prosecdef, proconfig '+
   'FROM pg_catalog.pg_proc WHERE oid=$1::regprocedure',[fn])).rows[0];
 }
-test('actual PG16 owner transfer changes SECURITY DEFINER cancellation authority while OID and outsider EXECUTE ACL remain identical',{timeout:125000},async()=>{
+test('actual PG16 owner transfer changes SECURITY DEFINER cancellation authority with OID and outsider EXECUTE retained, grantor rewritten',{timeout:125000},async()=>{
  const root=new pg.Client({connectionString:process.env.TEST_DATABASE_URL});
  const sessions=[];let rootOpen=false,pool;
  try{
@@ -162,7 +162,9 @@ test('actual PG16 owner transfer changes SECURITY DEFINER cancellation authority
    await root.query('ALTER FUNCTION '+fn+' OWNER TO '+roles[2]);
    const afterTransfer=await snapshot(root);
    assert.equal(afterTransfer.oid,before.oid,'existing function identity remains');
-   assert.equal(afterTransfer.acl,before.acl,'explicit outsider ACL survives owner transfer');
+   assert.notEqual(afterTransfer.acl,before.acl,'PostgreSQL rewrites grantor metadata on OWNER transfer');
+   assert.ok(before.acl.includes(roles[3]+'=X/'+roles[1]),'outsider EXECUTE originally granted by old owner');
+   assert.ok(afterTransfer.acl.includes(roles[3]+'=X/'+roles[2]),'same outsider EXECUTE with new grantor');
    assert.equal(afterTransfer.owner,roles[2]);
    assert.equal(afterTransfer.prosecdef,true);
    assert.equal((await root.query('SELECT has_function_privilege($1,$2,$3) yes',
@@ -209,7 +211,8 @@ test('actual PG16 owner transfer changes SECURITY DEFINER cancellation authority
    postgresMajor:16,restrictedLoginSessions:5,oldAndNewOwnersNoLogin:true,
    stableSessionUserDuringSetRole:true,globalCreatorDefaultPublicRevoke:true,
    explicitOutsiderExecuteBeforeTransfer:true,preTransferOwnerDeniedCancel42501:true,
-   sameFunctionOidAcrossOwnerTransfer:true,unchangedExplicitFunctionAcl:true,
+   sameFunctionOidAcrossOwnerTransfer:true,aclGrantorRewrittenOnOwnerTransfer:true,
+   outsiderEffectiveExecuteRetainedAfterOwnerTransfer:true,
    newElevatedOwnerPermitsExistingOutsiderCancel57014:true,
    revokeOwnerVictimMembershipStopsCancel42501:true,
    regrantOwnerMembershipWithoutCallerGrantStillDenies42501:true,

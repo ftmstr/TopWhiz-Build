@@ -1,4 +1,4 @@
-name: TUR117 real PG16 SECURITY DEFINER owner transfer inherited cancellation with unchanged EXECUTE ACL NO-GO
+name: TUR117 real PG16 SECURITY DEFINER owner transfer inherited cancellation with retained outsider EXECUTE and rewritten grantor NO-GO
 on:
   pull_request:
     paths:
