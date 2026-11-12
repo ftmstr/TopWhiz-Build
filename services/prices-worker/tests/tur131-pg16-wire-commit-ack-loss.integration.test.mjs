@@ -78,6 +78,9 @@ test('PG16 physical COMMIT ACK lost: independent durable read prevents duplicate
     const viaProxy = new URL(raw);
     viaProxy.port = String(proxy.address().port);
     client = new pg.Client({ connectionString: viaProxy.href });
+    // pg emits an expected client-level error when the proxy drops the COMMIT ACK.
+    // The query rejection is asserted below; an unhandled EventEmitter error is not.
+    client.on('error', () => {});
     await client.connect();
     await client.query('BEGIN');
     await client.query('INSERT INTO ' + table + " (id,payload) VALUES ('event-131','synthetic')");
