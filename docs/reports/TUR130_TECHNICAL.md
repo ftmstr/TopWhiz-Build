@@ -1,0 +1,14 @@
+# TOPWHIZ TUR130 — Real PG16 HTTP/2 RST_STREAM during aborted SET LOCAL ROLE (2026-11-12)
+
+## Exact parent and scope
+Public ftmstr/TopWhiz-Build TUR129 Draft PR #135 exact-final-HEAD `2902e11b1421ff257133928e9a7481babc1c3cc8`, 19/19 PR-triggered GitHub Actions SUCCESS and dedicated PG16 run #43283301978 SUCCESS independently checked. TUR130+ branch and PR absent before creation. One stacked Draft PR based on exact TUR129 HEAD, no main merge. New test, disposable PG16 workflow and four reports only; no production code or IAM migration.
+
+## New, nonduplicative acceptance
+TUR129 covers an active transaction-local executor role under independently committed REVOKE and a clean A COMMIT. TUR130 instead opens a physical localhost HTTP/2 request A, obtains a real `pg.Pool(max:1)` broker connection, executes BEGIN; SET LOCAL ROLE executor, writes a synthetic row, then has a separate restricted rights-admin LOGIN commit REVOKE. A deliberate duplicate-key error (23505) forces the transaction into SQLSTATE 25P02. The actual HTTP/2 client sends NGHTTP2_CANCEL RST_STREAM; the local handler must ROLLBACK, return the backend to the pool and persist zero synthetic rows. Requests B/C must reuse the identical backend PID and backend_start, see broker identity, and receive 42501 for a new SET ROLE and private read. A failed rollback or any stale privilege is a test failure.
+
+This is an explicitly test-owned HTTP/2 server with an explicit close-to-ROLLBACK handler, NOT the original production Next/Cloudflare transport or Request.signal bridge. It does not test lost COMMIT ACK or physical OS PID reuse; both remain NOT_TESTED/NOT_PROVEN. It does not demonstrate a globally fenced R2/CDN last receiver byte.
+
+## Required evidence
+GitHub Actions ubuntu-24.04 postgres:16 + frozen pnpm 10.18.3 executes the new test and inherited TUR129–092 PG16/HTTP2, TUR122–119 post-revocation cache, TUR030 uncertain COMMIT, TUR019 SECURITY DEFINER/CREATE ACL, TUR018 original canonical outbox SHA/route allowlist, TUR017 Queue/DLQ, TUR002 AGPL/LGPL/libvips release gates. Existing vinext/workerd and real Chromium mobile/desktop accessibility, SEO, performance CI must also pass on the final report commit. Syntax check alone is NOT physical acceptance. Report actual run IDs, failures, pending and NOT_RUN separately.
+
+Issue #22 OPEN / hard NO-GO. Preserve TUR018 12 synthetic cases / 99,276 fictional bytes, TUR019 cross-isolate bypass, TUR068 8,273, TUR071 4,136, TUR069 25 and later HTTP/2 cache counterexamples. Work-package estimate 75% is planning-only, not production readiness. No main merge, Cloudflare/Neon/R2/Queue/CDN/DNS, real media/content/prices/feeds or AdSense.
