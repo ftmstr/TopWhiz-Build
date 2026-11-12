@@ -1,0 +1,74 @@
+name: TUR112 HTTP2 publisher restart IPC replay and boot nonce NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur112-http2-restart-ipc-replay.test.mjs'
+      - '.github/workflows/tur112-http2-restart-ipc-replay.yml'
+      - 'docs/reports/TUR111_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur112-restart-ipc-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TUR110_DISPOSABLE_PG16: '1'
+      TUR107_DISPOSABLE_PG16: '1'
+      TUR098_DISPOSABLE_PG16: '1'
+      TUR097_DISPOSABLE_PG16: '1'
+      TUR096_DISPOSABLE_PG16: '1'
+      TUR095_DISPOSABLE_PG16: '1'
+      TUR092_DISPOSABLE_PG16: '1'
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen dependencies and new source syntax
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur112-http2-restart-ipc-replay.test.mjs
+      - name: Actual loopback HTTP2 delayed guardian result and post-ACK denial
+        run: node --test services/prices-worker/tests/tur112-http2-restart-ipc-replay.test.mjs
+      - name: Inherited cross-process, stale-cache, buffered-final-byte negatives
+        run: |
+          node --test services/prices-worker/tests/tur111-http2-concurrent-guardian-replies.test.mjs
+          node --test services/prices-worker/tests/tur108-http2-cross-process-revoke.test.mjs
+          node --test services/prices-worker/tests/tur106-http2-concurrent-cache-fill.test.mjs
+          node --test services/prices-worker/tests/tur105-http2-range-cache-revocation.test.mjs
+          node --test services/prices-worker/tests/tur102-http2-buffered-final-byte.test.mjs
+          node --test services/prices-worker/tests/tur099-http2-kid-aba-revocation.test.mjs
+      - name: Disposable PG16 SECDEF, schema owner and cancellation boundaries
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur110-pg16-secdef-public-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur107-pg16-secdef-lease-spoof.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur098-pg16-admin-cascade-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur097-pg16-membership-cancel.integration.test.mjs
+      - name: Original canonical outbox SHA, route, uncertain COMMIT, Queue and DLQ lease
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: TUR002 frozen AGPL LGPL libvips and hard release hold
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs

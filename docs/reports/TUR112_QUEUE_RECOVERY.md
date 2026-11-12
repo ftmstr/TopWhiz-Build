@@ -1,0 +1,5 @@
+# TOPWHIZ TUR112 — Queue / DLQ recovery, original outbox
+
+This tur changes no production Queue, DLQ, broker, lease, immutable outbox, canonical SHA/route allowlist, PostgreSQL rights schema, transaction COMMIT or receiver ACK. The synthetic publisher IPC reply is NOT a durable broker ACK or PostgreSQL COMMIT acknowledgement. A restarted publisher accepting stale approval is a separate replay channel; the test-only random boot identity does not replace persisted lease epoch or independent IAM.
+
+Dedicated frozen CI inherits disposable PG16 TUR110/TUR107/TUR098/TUR097 SECDEF/CREATE ACL and cancel authority; TUR030 uncertain COMMIT/concurrent generation transport; TUR019 schema ACL; TUR018 canonical original SHA/route allowlist; TUR017 Queue/DLQ recovery, idempotency and lease tests. Do not infer global Queue broker crash recovery or final byte guarantees from green CI. Original outbox digest/route restrictions and parallel lease uncertainty remain mandatory fail-closed NO-GO. No live Queue/Neon/R2/CDN touched.
