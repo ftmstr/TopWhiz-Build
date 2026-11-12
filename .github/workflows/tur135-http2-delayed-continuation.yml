@@ -1,0 +1,39 @@
+name: TUR135 HTTP2 delayed continuation revocation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur135-http2-delayed-continuation.test.mjs'
+      - '.github/workflows/tur135-http2-delayed-continuation.yml'
+      - 'docs/reports/TUR135_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur135-and-inherited-guards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm install TUR002 inherited
+        run: pnpm install --frozen-lockfile
+      - name: TUR135 delayed continuation and canceled HTTP2 stream
+        run: |
+          node --check services/prices-worker/tests/tur135-http2-delayed-continuation.test.mjs
+          node --test services/prices-worker/tests/tur135-http2-delayed-continuation.test.mjs
+      - name: Inherited TUR134 and TUR133 HTTP2 controls
+        run: |
+          node --test services/prices-worker/tests/tur134-http2-scoped-close-revocation.test.mjs
+          node --test services/prices-worker/tests/tur133-http2-goaway-revocation.test.mjs
+      - name: Historical original outbox and license hold remain present
+        run: |
+          test -f pnpm-lock.yaml
+          test -f docs/reports/TUR135_LICENSE.md
+          test -f docs/reports/TUR135_QUEUE_RECOVERY.md
