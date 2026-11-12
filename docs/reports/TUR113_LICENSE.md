@@ -1,0 +1,5 @@
+# TOPWHIZ TUR113 — License and pinned supply chain (NO-GO)
+
+Only one additive Node22 real PG16 adversarial test using existing pinned `pg`, one dedicated read-only Ubuntu24 disposable postgres:16 CI workflow, and four Markdown reports. No production code, migrations, dependency/lockfile changes, external assets, imagery, brands, content, licensed media or merchant offers. Pnpm 10.18.3 `--frozen-lockfile`, unchanged AGPL-3.0/LGPL/libvips provenance, all hard release gates and existing real Next/workerd and Chromium Playwright mobile/desktop a11y/SEO/perf workflows remain mandatory. Historical TUR110 and TUR112 inherited tests rerun only when confirmed by GitHub logs.
+
+TOPWHIZ/TOPWIZ trademark clearance, independent SQL operator IAM, original content/price permissions, Cloudflare/R2/CDN final-byte receiver ACK and real Worker/Next abort mapping unresolved. Issue #22 OPEN / HARD RELEASE NO-GO; no main merge, no live Cloudflare/Neon/R2/CDN/Queue/DNS, actual content/prices/images, AdSense or publication.
