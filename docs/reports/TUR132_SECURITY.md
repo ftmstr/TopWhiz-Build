@@ -1,0 +1,5 @@
+# TOPWHIZ TUR132 — Restricted guardians, request lease and HTTP2 late cancellation
+
+A physical HTTP2 RST of A arriving after pool handoff to tenant B is NOT a right to cancel SQL by cached PID/backend_start. Synthetic trusted lease row binds tenant, guardian authenticated session_user, unpredictable token, epoch and physical PID/start; guard A is denied even with B's token; B stays alive. A separate current guardian B can cancel a later request C only with matching current epoch; B's stale epoch 2 fails. Two guardians plus independent rights-admin have no SUPERUSER/CREATEROLE/pg_signal_backend, and the SECDEF helper with narrow inherited broker membership is TEST ONLY. No global privileges granted to application roles.
+
+This is not a production Request.signal implementation, durable lease issuer, adversarial atomic lease check/cancel proof, OS PID-reuse test, media/CDN last-byte proof or server certificate-authenticated transport. Production may still suffer TOCTOU between SQL lease check and pg_cancel_backend. Issue #22 OPEN / HARD RELEASE NO-GO.
