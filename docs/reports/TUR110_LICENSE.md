@@ -1,0 +1,5 @@
+# TOPWHIZ TUR110 — Licensing, pinned supply chain and release hold
+
+Exactly one new isolated JavaScript Node22 PG16 adversarial test, one dedicated GitHub Actions Ubuntu24 PostgreSQL16 workflow, four Markdown reports. Uses pinned existing `pg` and frozen pnpm 10.18.3; no runtime production SQL migrations/functions, package/lockfile changes, third-party content, binaries/images/fonts, source rights or secrets. The existing legal/release gate scripts run unchanged. Original real Next production/local vinext/workerd and Chromium Playwright mobile/desktop a11y/SEO/performance workflows are mandatory and unmodified. TUR109+ externally published assets, AdSense and merchant affiliate data still forbidden.
+
+AGPL-3.0/LGPL/libvips redistribution audit, TOPWHIZ/TOPWIZ trademark examination, licensed media and prices, independent IAM/owner/rights admin, verifiable global receiver ACK/CDN last byte and physical Cloudflare/Next Request.signal remain unresolved. GitHub Actions PENDING is not PASS. Issue #22 OPEN / hard RELEASE NO-GO. No main merge, Cloudflare/Neon/R2/CDN/DNS deploy, live Queue/cache purge or AdSense.
