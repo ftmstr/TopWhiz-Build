@@ -35,7 +35,7 @@ async function runVictim(victim, root, pid, marker, seconds) {
   const query = 'SELECT pg_sleep(' + seconds + '),' + marker + ' AS marker';
   const completion = victim.query(query).then(r => ({ marker: r.rows[0].marker }), e => ({ error: e }));
   await waitActive(root, pid, 'pg_sleep(' + seconds + ')');
-  return completion;
+  return { completion };
 }
 async function denied(promise) {
   await assert.rejects(promise, e => e?.code === '42501');
@@ -126,7 +126,7 @@ test('pooled request B inherits A active SET ROLE despite independent rights-adm
         const afterStart = (await root.query('SELECT backend_start FROM pg_stat_activity WHERE pid=$1', [identity.pid])).rows[0].backend_start;
         assert.equal(new Date(afterStart).getTime(), new Date(backendStart).getTime());
         assert.equal(pool.totalCount, 1);
-        const cancelled = await runVictim(victim, root, victimPid, 1251, 5);
+        const { completion: cancelled } = await runVictim(victim, root, victimPid, 1251, 5);
         assert.equal((await B.query(call, [victimPid])).rows[0].cancelled, true);
         assert.equal((await cancelled).error?.code, '57014',
           'request B inherits A effective SQL identity and cancels an unrelated victim');
@@ -140,7 +140,7 @@ test('pooled request B inherits A active SET ROLE despite independent rights-adm
       try {
         assert.equal((await C.query('SELECT pg_backend_pid() AS pid')).rows[0].pid, brokerPid);
         assert.equal((await C.query('SELECT current_user AS u')).rows[0].u, names[3]);
-        const safe = await runVictim(victim, root, victimPid, 1252, 1.1);
+        const { completion: safe } = await runVictim(victim, root, victimPid, 1252, 1.1);
         await denied(C.query(call, [victimPid]));
         assert.deepEqual(await safe, { marker: 1252 });
       } finally { C.release(); }
