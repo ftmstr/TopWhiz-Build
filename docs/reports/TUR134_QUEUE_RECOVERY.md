@@ -1,0 +1,2 @@
+# TUR134 Queue and recovery
+No production Queue or DB changes. Preserve original outbox canonical SHA and route allowlist, parallel broker/Queue/DLQ leases, idempotent retry, physical PG16 uncertain COMMIT and independent durable reconciliation from TUR131/TUR132. TUR134 local HTTP2 test cannot establish receiver ACK, lost COMMIT semantics or independent rights-admin revocation. These are inherited CI gates, not newly demonstrated by this test. Do not release or replay an ambiguous original outbox without durable evidence.
