@@ -1,0 +1,84 @@
+name: TUR116 real PG16 schema default GRANT override and function replacement ACL NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur116-pg16-schema-default-grant.integration.test.mjs'
+      - '.github/workflows/tur116-pg16-schema-default-acl.yml'
+      - 'docs/reports/TUR116_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg16-default-grant-replace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TUR116_DISPOSABLE_PG16: '1'
+      TUR115_DISPOSABLE_PG16: '1'
+      TUR114_DISPOSABLE_PG16: '1'
+      TUR113_DISPOSABLE_PG16: '1'
+      TUR110_DISPOSABLE_PG16: '1'
+      TUR107_DISPOSABLE_PG16: '1'
+      TUR098_DISPOSABLE_PG16: '1'
+      TUR097_DISPOSABLE_PG16: '1'
+      TUR096_DISPOSABLE_PG16: '1'
+      TUR095_DISPOSABLE_PG16: '1'
+      TUR092_DISPOSABLE_PG16: '1'
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm and real Node test syntax
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur116-pg16-schema-default-grant.integration.test.mjs
+      - name: Actual PG16 schema default GRANT override, CREATE OR REPLACE OID ACL and DROP CREATE
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur116-pg16-schema-default-grant.integration.test.mjs
+      - name: Inherited physical HTTP2 RST and independent PG16 IAM boundaries
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur115-http2-independent-iam-pg16-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur114-http2-rst-pg16-pool-handoff.integration.test.mjs
+      - name: Inherited real PG16 CREATE ACL and request scope negative checks
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur113-pg16-role-default-public-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur110-pg16-secdef-public-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur107-pg16-secdef-lease-spoof.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur098-pg16-admin-cascade-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur097-pg16-membership-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur096-pg16-set-role-pool-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur095-http-pg-pool-handoff.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur092-real-pg16-pool-handoff.integration.test.mjs
+      - name: Inherited real HTTP2 guardian and revocation negative checks
+        run: |
+          node --test services/prices-worker/tests/tur112-http2-restart-ipc-replay.test.mjs
+          node --test services/prices-worker/tests/tur111-http2-concurrent-guardian-replies.test.mjs
+          node --test services/prices-worker/tests/tur109-http2-delayed-authority-reply.test.mjs
+          node --test services/prices-worker/tests/tur108-http2-cross-process-revoke.test.mjs
+      - name: Immutable outbox SHA, unknown COMMIT, SECDEF CREATE ACL, Queue DLQ
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen AGPL LGPL libvips and hard release NO GO
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
