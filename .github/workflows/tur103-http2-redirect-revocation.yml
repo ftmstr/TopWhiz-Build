@@ -1,0 +1,66 @@
+name: TUR103 HTTP2 signed redirect origin revocation and alias fence NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur103-http2-redirect-revocation.test.mjs'
+      - '.github/workflows/tur103-http2-redirect-revocation.yml'
+      - 'docs/reports/TUR103_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur103-http2-redirect-fence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TUR098_DISPOSABLE_PG16: '1'
+      TUR097_DISPOSABLE_PG16: '1'
+      TUR096_DISPOSABLE_PG16: '1'
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm and syntax
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur103-http2-redirect-revocation.test.mjs
+      - name: Signed redirect stale epoch and immutable asset origin checks
+        run: |
+          node --test services/prices-worker/tests/tur103-http2-redirect-revocation.test.mjs
+          node --test services/prices-worker/tests/tur102-http2-buffered-final-byte.test.mjs
+          node --test services/prices-worker/tests/tur101-http2-authority-tenant-scope.test.mjs
+          node --test services/prices-worker/tests/tur100-http2-session-auth-cache.test.mjs
+          node --test services/prices-worker/tests/tur099-http2-kid-aba-revocation.test.mjs
+      - name: Disposable PG16 delegated membership and pooled cancellation regression
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur098-pg16-admin-cascade-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur097-pg16-membership-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur096-pg16-set-role-pool-cancel.integration.test.mjs
+      - name: Unknown COMMIT SECDEF CREATE ACL canonical outbox SHA Queue DLQ lease
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: TUR002 frozen AGPL LGPL libvips and release hold
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
