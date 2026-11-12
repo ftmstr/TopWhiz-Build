@@ -1,0 +1,11 @@
+# TOPWHIZ TUR104 — HTTP/2 duplicate query asset selection vs signed grant (2026-11-12)
+
+Canonical Public `ftmstr/TopWhiz-Build` only. Preflight: TUR103 Draft PR #109 HEAD `e48c57275d2371e5847dd90c340932183de1bd37`, 19/19 first-page PR-triggered GitHub Actions SUCCESS, TUR104 PR/branch absent. TUR104 stacked directly on that immutable commit; no completed TUR repeated.
+
+Four deterministic **real local loopback h2c** Node.js 22.16.0 tests use a redirect gateway and an independent origin server. The gateway signs immutable asset-a / generation-1 with test-only HMAC. (1) Deliberately unsafe origin authorizes the FIRST `asset` query value but selects the LAST, delivering eight synthetic asset-b bytes with `asset=asset-a&asset=asset-b`. (2) The same signed query-pollution exploit still delivers eight bytes after generation-2 revoke ACK. (3) Guarded origin accepts a single canonical unrevoked request, rejects duplicate asset/grant and noncanonical percent-encoded alias. (4) Guarded origin rejects stale signed grant and authority outage with HTTP 403 and zero media bytes.
+
+Initial local 4/4 PASS; 10 independent repetitions 40/40 PASS. Test SHA-256 `1070afe6b62b87062bcd91b588480a1f4c4281ae54ac97727f27b3c1ed6eb5c2`; Git blob `9c7e8f2d798822e9abfda2384be48391d7de6363` matched local source. The negative model is deliberately vulnerable and is NOT a production implementation. No schema, production publisher, third-party dependency, media or price changed.
+
+Dedicated Ubuntu 24.04 workflow includes frozen pnpm, historical TUR099–103 HTTP/2 tests, disposable PG16 TUR096–098, SECDEF/CREATE ACL, TUR018 canonical outbox SHA/route allowlist, TUR017 Queue/DLQ recovery, TUR030 uncertain COMMIT and TUR002 AGPL/LGPL libvips/release-hold. Full PR-triggered CI status must be independently verified after final report commit. Independent local Chromium/workerd and remote R2/CDN final-wire proof NOT_RUN.
+
+Issue #22 OPEN; RELEASE NO-GO. TUR018 12 scenarios / 99,276 synthetic bytes and TUR019 cross-isolate bypass preserved. Estimated engineering work-package progress 75%, **not production readiness**. No main merge, live deployment, Cloudflare/Neon/R2/Queue/CDN/cache purge, DNS, real content/media/prices/merchant feeds or AdSense.
