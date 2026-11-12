@@ -113,6 +113,10 @@ test('real PG16 group-inherited EXECUTE survives direct REVOKE and owner transfe
     await root.query('GRANT USAGE, CREATE ON SCHEMA ' + schema + ' TO ' + roleNames[2]);
     await root.query('GRANT USAGE ON SCHEMA ' + schema + ' TO ' +
       roleNames[4] + ',' + roleNames[5]);
+    // SET ROLE drops caller-specific schema USAGE. Give the GROUP itself
+    // USAGE so this test isolates function EXECUTE, not name resolution.
+    // This is an isolated test-only fixture grant, never production IAM.
+    await root.query('GRANT USAGE ON SCHEMA ' + schema + ' TO ' + roleNames[3]);
     await root.query('CREATE SCHEMA ' + guard + ' AUTHORIZATION ' + roleNames[6]);
     await root.query('CREATE TABLE ' + guard +
       '.anchor(id text PRIMARY KEY,approved boolean NOT NULL,generation bigint NOT NULL)');
