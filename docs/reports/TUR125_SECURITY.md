@@ -1,0 +1,7 @@
+# TOPWHIZ TUR125 — Security and IAM threat report (NO-GO)
+
+Threat: `pg.Pool(max=1)` may reuse a physical PostgreSQL16 session after request A executes `SET ROLE executor`, even when independent rights-admin has committed a role membership `REVOKE` before request B. A's session identity is not a request-scoped authorization grant. A cross-request effective identity can call a test-only SECURITY DEFINER function and cancel B's unrelated victim SQL (SQLSTATE 57014). Assert same PID and backend_start, distinct restricted logins, and no pg_signal_backend grant. Explicit RESET ROLE restores SQLSTATE 42501 denial and a clean third checkout.
+
+This is an adversarial test; test-only cancellation function is not production code. It does NOT establish independent production IAM, physical socket Request.signal linkage, production connection pool reset policy, OS PID reuse handling, security-definer CREATE ACL hardening in production, or Cloudflare/Neon permissions. Do not add broad pg_signal_backend, superuser, or unrestricted schema-owner privileges. Treat unresolved ownership/CREATE ACL and committed REVOKE/active session gaps as fail-closed NO-GO.
+
+Retain TUR018 12 cases/99,276 synthetic bytes after rights withdrawal, TUR019 cross-isolate bypass, and Issue #22 OPEN. R2 revocation after final rights check, cached HTTP 304, L1/L2 and single-flight stale grants, receiver final byte and cache invalidation are not solved by this PG16 test. No production fix claimed. No main merge or live deployment.

@@ -1,0 +1,5 @@
+# TOPWHIZ TUR125 — Queue / DLQ / ambiguous COMMIT recovery non-regression
+
+No Queue, outbox, broker, media, R2 or production implementation changed in this tour. Original immutable outbox canonical SHA and route allowlist are preserved by inherited TUR018 tests; TUR017 exercises Queue/DLQ recovery, TUR019 SECDEF/schema ACL, TUR030 parallel mutation and uncertain COMMIT transport. These inherited CI checks must run against the exact final report commit. A passing CI step does NOT prove actual Queue receiver ACK, a lost COMMIT ACK, lease ownership under production concurrency, global R2/CDN byte delivery, or media authorization after ACK.
+
+For unknown COMMIT/ACK or lease state: preserve original receipt digest, never synthesize successful publication, fail closed on absent independently trusted rights generation and owner/issuer. TUR125's PostgreSQL pooled-role experiment is independent of Queue semantics. External Queue/Neon/Cloudflare tests NOT_RUN by explicit live-environment prohibition. Issue #22 remains OPEN, HARD NO-GO.
