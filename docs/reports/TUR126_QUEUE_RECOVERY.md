@@ -1,0 +1,5 @@
+# TOPWHIZ TUR126 — Transaction rollback, Queue/DLQ, uncertain COMMIT and original outbox SHA
+
+TUR126's **new** SQL transaction is a local `BEGIN; RESET ROLE;` whose denial-induced abort and explicit ROLLBACK re-establish previously active SQL executor identity. This is distinct from Queue transaction recovery and TUR030 unknown-COMMIT transport ACK loss. Independent rights-admin REVOKE has already committed before the experiment, and that durable authorization graph remains revoked. No real Queue/DLQ, outbox, R2, CDN, merchant prices, content or media bytes are changed.
+
+Dedicated CI reruns inherited TUR030 uncertain COMMIT, TUR019 SECURITY DEFINER/CREATE ACL owner constraints, TUR018 original immutable outbox SHA/canonical route and TUR017 Queue/DLQ lease/idempotence; TUR119–122 HTTP/2 304 post-ACK race negatives are retained. These are inherited regressions only if real GitHub jobs physically execute, not new Queue work. Remote consumer ACK, network last byte and CDN invalidation unproven. Issue #22 OPEN / HARD RELEASE NO-GO.
