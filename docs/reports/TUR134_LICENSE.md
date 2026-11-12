@@ -1,0 +1,2 @@
+# TUR134 License and publication hold
+No new third-party dependencies; Node22 built-ins only. pnpm install --frozen-lockfile is retained. TUR002 AGPL/LGPL and libvips redistribution review remains an explicit NO-GO; no automatic license approval is implied by CI success. Brand TOPWHIZ/TOPWIZ, media/source rights and independent operator IAM require external approval. No main merge, Cloudflare live Preview/deploy, Queue/R2/CDN/cache purge, Neon/prod DB, DNS/domain, real content/images/prices/merchant feed or AdSense.
