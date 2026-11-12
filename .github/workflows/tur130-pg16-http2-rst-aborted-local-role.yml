@@ -1,0 +1,116 @@
+name: TUR130 real PG16 HTTP2 RST aborted SET LOCAL ROLE pooled handoff NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur130-pg16-http2-rst-aborted-local-role.integration.test.mjs'
+      - '.github/workflows/tur130-pg16-http2-rst-aborted-local-role.yml'
+      - 'docs/reports/TUR130_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg16-http2-rst-abort-and-inherited-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: topwhiz_test
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: topwhiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U topwhiz_test -d topwhiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://topwhiz_test:synthetic_test_password@127.0.0.1:5432/topwhiz_test
+      TUR130_DISPOSABLE_PG16: '1'
+      TUR129_DISPOSABLE_PG16: '1'
+      TUR128_DISPOSABLE_PG16: '1'
+      TUR127_DISPOSABLE_PG16: '1'
+      TUR126_DISPOSABLE_PG16: '1'
+      TUR125_DISPOSABLE_PG16: '1'
+      TUR124_DISPOSABLE_PG16: '1'
+      TUR123_DISPOSABLE_PG16: '1'
+      TUR118_DISPOSABLE_PG16: '1'
+      TUR117_DISPOSABLE_PG16: '1'
+      TUR116_DISPOSABLE_PG16: '1'
+      TUR115_DISPOSABLE_PG16: '1'
+      TUR114_DISPOSABLE_PG16: '1'
+      TUR113_DISPOSABLE_PG16: '1'
+      TUR110_DISPOSABLE_PG16: '1'
+      TUR107_DISPOSABLE_PG16: '1'
+      TUR098_DISPOSABLE_PG16: '1'
+      TUR097_DISPOSABLE_PG16: '1'
+      TUR096_DISPOSABLE_PG16: '1'
+      TUR095_DISPOSABLE_PG16: '1'
+      TUR092_DISPOSABLE_PG16: '1'
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm and syntax check
+        run: |
+          pnpm install --frozen-lockfile
+          node --check services/prices-worker/tests/tur130-pg16-http2-rst-aborted-local-role.integration.test.mjs
+          node --check services/prices-worker/tests/tur129-pg16-set-local-role-revocation.integration.test.mjs
+      - name: New real PG16 physical HTTP2 RST SQL abort transaction rollback and clean pool
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur130-pg16-http2-rst-aborted-local-role.integration.test.mjs
+      - name: Inherited TUR129 active SET LOCAL ROLE revoke COMMIT pooled handoff
+        run: pnpm --filter @topwhiz/prices-worker exec node --test tests/tur129-pg16-set-local-role-revocation.integration.test.mjs
+      - name: Inherited TUR128 dirty pool quarantine and TUR127 DISCARD ALL
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur128-pg16-dirty-pool-quarantine.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur127-pg16-discard-all-transaction-pool.integration.test.mjs
+      - name: Inherited TUR126 125 124 123 PG16 role and revoke cases
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur126-pg16-pooled-setrole-rollback.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur125-pg16-pooled-setrole-after-revoke.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur124-pg16-active-setrole-revoke-commit.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur123-pg16-transitive-setrole-admin.integration.test.mjs
+      - name: Inherited HTTP2 TUR122 121 120 119 post ACK cache revocation
+        run: |
+          node --test services/prices-worker/tests/tur122-http2-singleflight-304-tenant-fence.test.mjs
+          node --test services/prices-worker/tests/tur121-http2-multilayer-etag-generation.test.mjs
+          node --test services/prices-worker/tests/tur120-http2-cross-tenant-304.test.mjs
+          node --test services/prices-worker/tests/tur119-http2-304-post-ack-revalidation.test.mjs
+      - name: Inherited PG16 group ACL owner transfer and physical HTTP2 RST
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur118-pg16-group-execute-ownership.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur117-pg16-owner-transfer-function-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur115-http2-independent-iam-pg16-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur114-http2-rst-pg16-pool-handoff.integration.test.mjs
+      - name: Inherited PG16 SECURITY DEFINER CREATE ACL and pooled cancellation
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur116-pg16-schema-default-grant.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur113-pg16-role-default-public-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur110-pg16-secdef-public-acl.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur107-pg16-secdef-lease-spoof.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur098-pg16-admin-cascade-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur097-pg16-membership-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur096-pg16-set-role-pool-cancel.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur095-http-pg-pool-handoff.integration.test.mjs
+          pnpm --filter @topwhiz/prices-worker exec node --test tests/tur092-real-pg16-pool-handoff.integration.test.mjs
+      - name: Inherited HTTP2 guardian delayed authorization and revocation
+        run: |
+          node --test services/prices-worker/tests/tur112-http2-restart-ipc-replay.test.mjs
+          node --test services/prices-worker/tests/tur111-http2-concurrent-guardian-replies.test.mjs
+          node --test services/prices-worker/tests/tur109-http2-delayed-authority-reply.test.mjs
+          node --test services/prices-worker/tests/tur108-http2-cross-process-revoke.test.mjs
+      - name: Immutable original outbox SHA route allowlist unknown COMMIT SECDEF Queue DLQ
+        run: |
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur030-concurrent-generation-commit-transport.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur019-schema-acl-shadow.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur018-canonical-route.integration.test.ts
+          pnpm --filter @topwhiz/prices-worker exec tsx --test tests/tur017-outbox-recovery.integration.test.ts
+      - name: Frozen TUR002 AGPL LGPL libvips and hard release NO GO
+        run: |
+          node scripts/tur018-frozen-ci-gate.mjs
+          node scripts/tur021-release-hold.mjs
+          node scripts/tur010-dependency-gate.mjs
