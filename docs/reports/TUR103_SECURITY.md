@@ -1,0 +1,7 @@
+# TOPWHIZ TUR103 — Security / release NO-GO
+
+**New negative evidence:** An authentic HMAC-signed HTTP/2 redirect grant is insufficient when a downstream origin does not revalidate current revocation generation and immutable asset identity. A stale signed grant accepted after ACK returns eight synthetic bytes; a retargeted alias can deliver eight bytes belonging to a different synthetic object. Guarded origin rejects both and fails closed on authority outage. This is a **synthetic local model**, not production protection or proof of independent IAM, signed URL deployment, remote network timing or last-byte non-delivery.
+
+Issue #22 OPEN, RELEASE NO-GO. TUR018 12 scenarios / 99,276 fictional bytes and TUR019 cross-isolate bypass retained; TUR099 sibling KID ABA, TUR100 session/asset cache, TUR101 cross-tenant authority and TUR102 queued-before-ACK DATA retained. No basis to claim remote R2/CDN edge invalidation, trusted monotonic generation, receiver ACK or cross-region consistency.
+
+Hard gates remain: independent operator IAM and schema-owner/SECURITY DEFINER/CREATE ACL threat model, original outbox canonical SHA/route allowlist, parallel broker/Queue/DLQ uncertain COMMIT/lease, local vinext/workerd stale cache, real local Chromium accessibility/SEO/perf, TUR002 frozen pnpm and AGPL/LGPL libvips, independent media/source rights and TOPWHIZ/TOPWIZ trademark clearance. No release approval.
