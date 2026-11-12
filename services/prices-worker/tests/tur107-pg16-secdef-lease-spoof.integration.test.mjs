@@ -88,10 +88,29 @@ test('PG16 SECDEF scoped cancel RPC rejects stale lease but accepts current tupl
    'RETURN pg_catalog.pg_cancel_backend(in_pid); '+
    'END; $body$';
   await root.query(sql);
+  // Intentionally UNSAFE fallback fixture, not for any production deployment.
+  const unsafeProc=gated+'.unsafe_fallback(integer,timestamptz,bigint,text)';
+  const unsafeSql=
+   'CREATE FUNCTION '+gated+
+   '.unsafe_fallback(in_pid integer,in_start timestamptz,in_epoch bigint,in_request text) '+
+   'RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER '+
+   'SET search_path = pg_catalog, pg_temp AS $unsafe$ '+
+   'DECLARE pinned RECORD; BEGIN '+
+   'SELECT t.pid,t.backend_start,t.epoch,t.request_key INTO pinned '+
+   'FROM '+gated+'.lease AS t WHERE t.slot=1; '+
+   'IF NOT FOUND OR pinned.pid IS DISTINCT FROM in_pid OR '+
+   'pinned.backend_start IS DISTINCT FROM in_start OR '+
+   'pinned.epoch IS DISTINCT FROM in_epoch OR '+
+   'pinned.request_key IS DISTINCT FROM in_request THEN RETURN FALSE; END IF; '+
+   'RETURN pg_catalog.pg_cancel_backend(in_pid); END; $unsafe$';
+  await root.query(unsafeSql);
+  await root.query('ALTER FUNCTION '+unsafeProc+' OWNER TO '+roles[1]);
+  await root.query('REVOKE ALL ON FUNCTION '+unsafeProc+' FROM PUBLIC');
   await root.query('ALTER FUNCTION '+proc+' OWNER TO '+roles[1]);
   await root.query('REVOKE ALL ON FUNCTION '+proc+' FROM PUBLIC');
   await root.query('GRANT USAGE ON SCHEMA '+gated+' TO '+roles[2]);
   await root.query('GRANT EXECUTE ON FUNCTION '+proc+' TO '+roles[2]);
+  await root.query('GRANT EXECUTE ON FUNCTION '+unsafeProc+' TO '+roles[2]);
   await root.query('CREATE SCHEMA '+guardian+' AUTHORIZATION '+roles[5]);
   await root.query('CREATE TABLE '+guardian+
    '.anchor(id text PRIMARY KEY,approved boolean NOT NULL,generation bigint NOT NULL)');
@@ -155,12 +174,17 @@ test('PG16 SECDEF scoped cancel RPC rejects stale lease but accepts current tupl
    // A request-unauthorized broker already holding EXECUTE can simply present
    // B's fresh tuple and cancel B. This is the new unsafe counterexample.
    const live=(await ongoing(B,root,pid,1072,6)).promise;
-   const improper=(await broker.query(call,current)).rows[0].cancelled;
-   assert.equal(improper,true,'broker can spoof another request fresh lease tuple');
+   const strict=(await broker.query(call,current)).rows[0].cancelled;
+   assert.equal(strict,false,'restricted SECDEF cannot inspect other-role activity: fail closed');
+   const unsafeCall='SELECT '+gated+'.unsafe_fallback($1,$2,$3,$4) cancelled';
+   const improper=(await broker.query(unsafeCall,current)).rows[0].cancelled;
+   assert.equal(improper,true,'INSECURE fallback allows spoofed B current tuple');
    assert.equal((await live).error?.code,'57014');
    assert.equal((await B.query('SELECT 107 AS recovered')).rows[0].recovered,107);
    await root.query('REVOKE EXECUTE ON FUNCTION '+proc+' FROM '+roles[2]);
+   await root.query('REVOKE EXECUTE ON FUNCTION '+unsafeProc+' FROM '+roles[2]);
    await rejectSQL(broker.query(call,current),'42501');
+   await rejectSQL(broker.query(unsafeCall,current),'42501');
    const after=(await ongoing(B,root,pid,1073,1.2)).promise;
    await rejectSQL(broker.query(call,current),'42501');
    assert.deepEqual(await after,{marker:1073});
@@ -182,6 +206,7 @@ test('PG16 SECDEF scoped cancel RPC rejects stale lease but accepts current tupl
    testOnlyEpochStaleTicketDenied:true,spoofedBackendStartDenied:true,
    brokerDirectCancelDenied42501:true,outsiderFunctionCallDenied42501:true,
    secdefSearchPathRestricted:true,secdefOwnerNoLogin:true,
+   strictPgStatActivityFailClosed:true,testOnlyUnsafeFallbackSpoof:true,
    brokerCanSpoofFreshOtherRequestLease:true,otherRequestCancelled57014:true,
    revocationOfFunctionExecuteRestores42501:true,unaffectedBQueryMarker:1073,
    independentGuardianGeneration:'2',noGlobalPgSignalBackend:true,
