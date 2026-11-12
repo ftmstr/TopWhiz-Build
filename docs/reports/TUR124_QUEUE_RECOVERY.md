@@ -1,0 +1,7 @@
+# TOPWHIZ TUR124 — Queue, DLQ and ambiguous COMMIT recovery non-regression
+
+This tour adds one disposable PG16 active-SET-ROLE revocation negative, NOT a Queue implementation or a recovered production commit. Existing canonical original outbox SHA and route allowlist must remain immutable and validated by inherited TUR018/TUR019/TUR017 CI. Parallel broker/Queue/DLQ lease, receiver ACK and uncertain COMMIT/rollback are not redefined. Inherited TUR030 exercises ambiguous COMMIT transport; TUR124 explicitly does NOT test a lost COMMIT ACK.
+
+No post-ACK R2/media publication is authorized by this test. Any resumed Queue delivery must revalidate the independently trusted media grant generation, request identity, ownership and current publication fence before returning bytes; unknown ACK, lease owner or DB commit outcome must fail closed and preserve canonical original receipt SHA. Existing negative TUR018 99,276 fictional bytes, TUR019 cross-isolate bypass and Issue #22 remain release blockers.
+
+At document creation, independent Queue/broker/Cloudflare/Neon live tests NOT_RUN by design. Final exact-HEAD GitHub Actions outcomes must be checked separately; CI success is not production receiver-byte evidence.
