@@ -1,0 +1,7 @@
+# TOPWHIZ TUR104 — Security and publication NO-GO
+
+**New negative evidence:** an HMAC-authentic signed grant can be misapplied when the authorization parser selects the first `asset` query parameter but the object reader selects the last. The unsafe HTTP/2 origin delivers eight synthetic bytes of another object, including after generation-2 revocation ACK. A guarded synthetic origin requires exactly one canonical grant/asset pair, immutable object binding and current generation, and rejects authority outage. This does not prove independent IAM, remote R2/CDN cache invalidation, receiver acknowledgement, TLS/SNI behavior, or last physical network byte non-delivery.
+
+Issue #22 remains OPEN and release NO-GO. Preserve TUR018 12 scenarios / 99,276 synthetic bytes, TUR019 cross-isolate bypass, TUR099 HMAC KID ABA, TUR100 session authorization cache, TUR101 cross-tenant :authority, TUR102 buffered receiver and TUR103 redirect origin stale grant. Test success is negative model evidence only.
+
+Mandatory release gates remain independent operator IAM and schema-owner / SECURITY DEFINER / CREATE ACL threat model, monotonic revocation across processes and edges, canonical outbox original SHA / route allowlist, parallel broker/Queue/DLQ uncertain COMMIT and lease, local vinext/workerd stale-cache, real Chromium accessibility/SEO/performance, frozen pnpm and TUR002 AGPL/LGPL libvips, source/media rights and TOPWHIZ/TOPWIZ trademark clearance. No production authorization.
