@@ -1,0 +1,5 @@
+# TOPWHIZ TUR125 — License, source provenance and release gate
+
+Added only one synthetic disposable PostgreSQL16 test, one GitHub Actions workflow and four Markdown reports. No production runtime files, dependencies, lockfile, media, product data, real prices, merchants or third-party images changed. Existing Node22, node-postgres and frozen pnpm 10.18.3 are used. Preserve TUR002 and TUR018 frozen AGPL/LGPL/libvips source, binary and distribution gates; no CI PASS can itself grant copyright, media license or trademark permission.
+
+TOPWHIZ/TOPWIZ brand clearance, independent operator IAM sign-off, third-party asset provenance, and global R2/CDN final-byte revocation proof remain absent. Issue #22 OPEN; release **NO-GO**. Engineering work-package estimate 75% only, not production readiness. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod database, DNS/domain, real content/media/price/merchant feed or AdSense. Final exact-HEAD CI to be read separately after these reports are committed.
