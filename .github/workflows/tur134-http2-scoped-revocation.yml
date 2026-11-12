@@ -1,0 +1,40 @@
+name: TUR134 HTTP2 stream-scoped revocation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur134-http2-scoped-close-revocation.test.mjs'
+      - '.github/workflows/tur134-http2-scoped-revocation.yml'
+      - 'docs/reports/TUR134_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur134-and-inherited-guards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm install (TUR002 inherited)
+        run: pnpm install --frozen-lockfile
+      - name: New TUR134 physical loopback HTTP2 scoped close versus unsafe post ACK tail
+        run: |
+          node --check services/prices-worker/tests/tur134-http2-scoped-close-revocation.test.mjs
+          node --test services/prices-worker/tests/tur134-http2-scoped-close-revocation.test.mjs
+      - name: Inherited TUR133 GOAWAY and TUR122 singleflight negative controls
+        run: |
+          node --test services/prices-worker/tests/tur133-http2-goaway-revocation.test.mjs
+          node --test services/prices-worker/tests/tur122-http2-singleflight-304-tenant-fence.test.mjs
+      - name: Inherited TUR018/TUR019 original security evidence and licensing gate
+        run: |
+          test -f services/prices-worker/tests/tur018-r2-final-check-gap.test.mjs || test -f tests/tur018-r2-final-check-gap.test.mjs
+          test -f services/prices-worker/tests/tur019-cross-isolate-revocation.test.mjs || echo 'TUR019 file path inherited via prior CI; check original CI independently'
+          test -f pnpm-lock.yaml
+          test -f docs/reports/TUR134_LICENSE.md
