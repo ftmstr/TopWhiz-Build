@@ -1,0 +1,7 @@
+# TOPWHIZ TUR112 — technical evidence and acceptance
+
+Parent: TUR111 Draft PR #117, exact HEAD `d65cd421f6160e7c99cca4883644f1f0aac43fb2`. Independent preflight: 19/19 completed PR-triggered GitHub Actions SUCCESS; no TUR112 PR #118/#119, new branch created from exact parent. Scope: a Node22 built-in HTTP/2 loopback + separate child-process publisher restart test, one dedicated frozen workflow and four reports; no production runtime changes.
+
+Unique adversarial test: old publisher computes an epoch-1 positive guardian IPC reply with deterministic request ID/nonce. After publisher termination and epoch-2 revocation ACK, a newly started unsafe publisher reuses request ID/nonce and accepts that replay, emitting fictional OLD! (4 bytes). Protected model uses per-boot random UUID and per-request random nonce, rejects the pre-restart reply, rechecks revocation floor after awaiting authorization, denies epoch-1 as HTTP 403, accepts fresh epoch-2 NEW2, and fails closed on guardian silence. This is synthetic IPC, not authenticated distributed IAM, global clock ordering, R2/CDN or final network-byte proof.
+
+Exact source tested locally with Node 22.16.0: 5/5 TAP PASS; ten independent runs 50/50 PASS. Git blob SHA `0c45f6055c68ba670f851078aa4be9d4ca6bb6b0` matched the local tested file. CI acceptance requires final report HEAD exact SHA and completed real Actions, not just local tests. Work-package estimate 75% (NOT production readiness). Hard NO-GO.

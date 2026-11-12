@@ -1,0 +1,5 @@
+# TOPWHIZ TUR112 — security, threat model and NO-GO
+
+Negative evidence: a publisher restart can reuse predictable request identity and nonce, allowing a pre-restart epoch-1 approval to be replayed after epoch-2 revoke ACK. Deliberately unsafe model emits 4 fictional bytes; test-only per-boot/per-request unpredictable identity plus post-await generation-floor check blocks this specific replay. In-memory floor and IPC are NOT a durable, cryptographically authenticated, cross-isolate/region/global revocation fence; restarting without authoritative floor can still be unsafe. No production remediation or global guarantee is claimed.
+
+Preserve TUR018 12 scenarios / 99,276 fictional leaked bytes, TUR019 cross-isolate bypass, TUR102 buffered-byte consumer vs physical network distinction, TUR105–111 stale-cache, delayed authority and concurrent nonce tests. Issue #22 OPEN and HARD NO-GO until independent operator IAM, rights/media source approval, real R2/CDN final physical network byte and receiver ACK, PG16 SECURITY DEFINER/schema-owner/CREATE ACL boundaries and independent security acceptance. TOPWHIZ/TOPWIZ brand approval remains outstanding. Never merge or deploy.
