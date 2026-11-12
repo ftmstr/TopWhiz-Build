@@ -1,0 +1,7 @@
+# TOPWHIZ TUR130 — SQL aborted transaction and physical HTTP/2 cancellation security boundary
+
+Threat: a broker pool connection can retain an elevated role if a request disconnects while an active transaction or error state is unresolved. An independently committed membership REVOKE does not retroactively clear the effective role of an already-running transaction. TUR130 uses SET LOCAL ROLE plus an explicit ROLLBACK after SQLSTATE 23505/25P02 and a real local HTTP/2 RST_STREAM; no authorization is granted to a subsequent request unless same-backend B/C both show the broker and reject SET ROLE/private SELECT with 42501. The synthetic insert must be rolled back. A local HTTP/2 server's explicit close handler is only a test harness; no claim that production Next/workerd propagates Request.signal, aborts already dispatched SQL, or safely resolves COMMIT ACK ambiguity.
+
+All service roles are distinct synthetic non-superuser logins; executor is NOLOGIN; rights-admin holds narrow membership ADMIN OPTION only. No broad pg_signal_backend, superuser for service logins, global IAM, production SECURITY DEFINER or CREATE ACL changes. Test-only root is the disposable PostgreSQL16 fixture.
+
+Issue #22 stays OPEN / HARD NO-GO: no proof of distributed revocation fence from R2/guardian through final CDN receiver byte, global stale-cache purge, independent operator IAM, trademark TOPWHIZ/TOPWIZ or source licensing. TUR018 12/99,276 fictional bytes and TUR019 cross-isolate negative evidence remain authoritative. Do not publish.
