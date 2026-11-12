@@ -1,0 +1,7 @@
+# TOPWHIZ TUR111 — technical receipt and acceptance limits
+
+Parent: TUR110 Draft PR #116, exact HEAD `1a0c1162f84b91e9b55a6781063bf28bded0c590`; independent preflight found 19/19 PR-triggered SUCCESS, no TUR111 branch or PR. This unique stacked Draft PR adds a Node22 actual local HTTP/2 and two independent OS-process guardian/publisher synthetic regression, workflow, and four reports. No production code or dependencies changed.
+
+New adversarial schedule: two concurrent epoch-1 positive guardian replies are held, epoch-2 revocation ACK is observed, then both stale replies are released. Deliberately unsafe publisher delivers OLD! twice (8 fictional bytes) after ACK; a test-only rechecking publisher denies both 403/empty. A forged positive response with matching request ID but mismatched per-request nonce must not authorize; late genuine response cannot resurrect the completed request. Inherited four TUR109 cases retain delayed allow, authority outage and fresh epoch. Seven tests total, not a proof of globally durable IAM, TLS, R2, CDN, or physical last network byte.
+
+CI is only accepted from actual completed runs on the exact final report HEAD. Independent local prototype exercised the same four core scenarios with 4/4 PASS and ten repetitions 40/40 PASS before commit, but that prototype is not identical to the repository's extended seven-test file. GitHub exact-source CI must separately prove it. Estimated work-package progress 75%, not production readiness.
