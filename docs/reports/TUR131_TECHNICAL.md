@@ -11,3 +11,6 @@ The exact-final-report-commit must run real Ubuntu24 postgres:16, frozen pnpm 10
 
 ## Nonclaims and hard release block
 This test does not show independent operator IAM, lost Queue receiver ACK, broker lease durability, production Request.signal, OS PID reuse, remote R2/CDN receiver final byte or globally synchronized cache revocation. Issue #22 OPEN / hard NO-GO; preserve TUR019 cross-isolate bypass. TOPWHIZ/TOPWIZ trademark, media source rights and operator IAM need independent approval. Engineering work-package planning estimate 75%, never production readiness. No main merge, live Cloudflare/Neon/R2/Queue/CDN/cache purge/DNS, real content/media/prices/feeds or AdSense.
+
+## CI iteration audit
+Initial dedicated run #43296474727, job #131456022538 FAILED: test expected a physical PostgreSQL connection drop, but did not register a pg.Client `error` EventEmitter listener. Node test reported `uncaughtException: Connection terminated unexpectedly`; inherited steps were SKIPPED. The same Draft PR fixes the test harness by absorbing the expected client error event while still asserting the rejected COMMIT query and independent durable outcome. Initial failure is retained, not represented as PASS. Final SHA must be rechecked independently.
