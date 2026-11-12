@@ -1,0 +1,3 @@
+# TUR135 technical — 2026-11-13
+
+Parent TUR134 exact SHA `25c3fc5de3aeb9c94b850c07290cda782040fa7f`. Unique deterministic Node22 real loopback HTTP2 test pauses an asynchronous continuation after HEAD reaches client, ACKs synthetic rights revocation epoch 1→2, then resumes. Unsafe stream sends 4 post-ACK TAIL bytes; guarded request-scoped cancellation and epoch fence send 0, and sibling /health returns OK. Local Node22 test 1/1 PASS before commit; CI must be verified on final SHA. No production fix, no remote R2/CDN last receiver byte proof; physical wire RST not asserted. Issue #22 OPEN, NO-GO. Work-package estimate 75%, not readiness.
