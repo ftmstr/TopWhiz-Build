@@ -1,0 +1,3 @@
+# TUR149 Queue Recovery — 2026-11-13
+
+No broker, Queue, DLQ or R2 production writes performed. Original outbox canonical SHA, route allowlist, immutable grant provenance, idempotency keys, durable lease epochs and ambiguous COMMIT outcomes remain required. A replayed ALLOW from an earlier lease must not be accepted simply because epoch happens to match; bind nonce, tenant, grant, lease identity and revocation generation in the actual authority protocol, subject to physical PG16 and multi-isolate testing. This tour adds only a synthetic HTTP/2 regression and does not claim Queue recovery or distributed atomicity.

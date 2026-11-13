@@ -1,0 +1,21 @@
+name: TUR149 HTTP2 same-epoch nonce replay NO-GO
+on:
+  push:
+    branches:
+      - tur149-http2-same-epoch-nonce-replay-20261113
+  pull_request:
+    paths:
+      - 'tests/tur149-http2-same-epoch-nonce-replay.test.mjs'
+      - '.github/workflows/tur149-http2-same-epoch-nonce-replay.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur149-local-http2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur149-http2-same-epoch-nonce-replay.test.mjs
