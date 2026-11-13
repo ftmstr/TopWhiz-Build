@@ -1,0 +1,2 @@
+# TUR139 SECURITY
+HARD NO-GO. Issue #22 OPEN. Preserve TUR018 12 interleavings/99,276 fictional bytes and TUR019 cross-isolate bypass. New lease token is an in-process test double, NOT independently durable PostgreSQL state, real operator IAM, R2/CDN byte-level delivery or global cache invalidation. PostgreSQL SECURITY DEFINER/schema-owner/CREATE ACL, real transport cancellation and source rights remain unproven. No live changes.
