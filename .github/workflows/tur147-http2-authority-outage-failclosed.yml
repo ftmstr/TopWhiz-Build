@@ -1,0 +1,21 @@
+name: TUR147 HTTP2 authority outage fail-closed local NO-GO
+on:
+  push:
+    branches:
+      - tur147-http2-authority-outage-failclosed-20261113
+  pull_request:
+    paths:
+      - 'tests/tur147-http2-authority-outage-failclosed.test.mjs'
+      - '.github/workflows/tur147-http2-authority-outage-failclosed.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur147-local-http2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur147-http2-authority-outage-failclosed.test.mjs
