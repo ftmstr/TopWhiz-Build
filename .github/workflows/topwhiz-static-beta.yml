@@ -1,0 +1,45 @@
+name: TOPWHIZ static-only beta safety and browser QA
+on:
+  pull_request:
+    paths:
+      - 'beta/**'
+      - 'apps/web/e2e/beta-static.spec.ts'
+      - 'apps/web/beta.playwright.config.ts'
+      - '.github/workflows/topwhiz-static-beta.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate static beta without dependencies or external network
+        run: |
+          node --check beta/assets/site.js
+          node --check beta/tests/static-beta.test.mjs
+          node --test beta/tests/static-beta.test.mjs
+          test -s beta/assets/topwhiz-logo.png
+  chromium-beta:
+    needs: offline-static
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Frozen install and Chromium provision
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Real desktop/mobile Chromium catalog and comparison QA
+        run: pnpm --filter @topwhiz/web exec playwright test --config=beta.playwright.config.ts
