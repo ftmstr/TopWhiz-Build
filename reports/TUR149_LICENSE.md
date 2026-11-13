@@ -1,0 +1,3 @@
+# TUR149 License and Publication Gate — 2026-11-13
+
+No third-party runtime dependency or real content/media added. Retain TUR002 frozen pnpm dependency gates and unresolved AGPL/LGPL/libvips obligations, attribution, media licensing, merchant-feed authorization, TOPWHIZ/TOPWIZ mark review and independent operator IAM. Real Chromium accessibility/SEO/performance and local vinext/workerd stale-cache gates remain prerequisites, not newly executed physical evidence. Issue #22 remains OPEN; publication NO-GO. No main merge or Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod DB, DNS, live feed or AdSense.
