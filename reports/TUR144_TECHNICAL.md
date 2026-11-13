@@ -1,0 +1,2 @@
+# TUR144 technical report — 2026-11-13
+Base TUR143 exact SHA: e7601572d6b42f023c2825f703e0f5383beb84b1. New local Node22 HTTP/2 test uses an actual loopback connection and RST_STREAM(CANCEL), a delayed server callback, a synthetic revocation epoch and an independent sibling request. Assert unsafe stale continuation attempt=1 and guarded=0; do not equate attempts with delivered bytes. This is a regression harness, not a production fix. GitHub Actions final SHA acceptance pending.

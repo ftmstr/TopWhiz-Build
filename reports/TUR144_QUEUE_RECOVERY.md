@@ -1,0 +1,2 @@
+# TUR144 Queue recovery report — 2026-11-13
+The new HTTP2 test does not alter Queue/DLQ or PostgreSQL. Preserve original canonical outbox SHA, route allowlist, parallel broker leases, idempotent retries and uncertain COMMIT/ACK fail-closed semantics. Synthetic request cancellation must not be confused with durable broker cancellation or R2 deletion. Queue/DLQ physical replay, lease failover and PostgreSQL16 independent IAM acceptance NOT_RUN in this tur.
