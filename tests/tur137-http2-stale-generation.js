@@ -4,7 +4,8 @@ const http2 = require('node:http2');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
 async function scenario(guarded) {
-  let generation = 1, ack = false, release;
+  let generation = 1, ack = false, release, headReady;
+  const headSent = new Promise(resolve => { headReady = resolve; });
   const gate = new Promise(resolve => { release = resolve; });
   const server = http2.createServer();
   server.on('stream', stream => {
@@ -13,7 +14,7 @@ async function scenario(guarded) {
     }
     const captured = generation;
     stream.respond({ ':status': 200 });
-    stream.write('HEAD');
+    stream.write('HEAD'); headReady();
     void (async () => {
       await gate;
       if (!guarded || (captured === generation && !ack)) stream.write('TAIL');
@@ -34,7 +35,7 @@ async function scenario(guarded) {
   try {
     const media = read('/media');
     // Yield until server has emitted HEAD; then acknowledge a generation change.
-    await new Promise(resolve => setImmediate(resolve));
+    await headSent;
     generation++; ack = true; release();
     const [body, sibling] = await Promise.all([media, read('/sibling')]);
     return { body, sibling };
