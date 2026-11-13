@@ -1,0 +1,2 @@
+# TUR139 TECHNICAL
+Stacked on TUR138 exact HEAD 27d32a4bd99a14ff7bf950ce0300185b8cd8651d (20/20 workflows, 57/57 jobs SUCCESS independently verified). New localhost HTTP/2 deterministic pause/resume test adds a lease takeover concurrently with a synthetic revocation ACK. Unsafe model delivers 4 TAIL bytes; guarded model 0, sibling health request survives. Local Node test 1/1 PASS. This is test-only and NOT production protection or receiver-byte proof. Issue #22 OPEN, NO-GO. Estimated engineering work-package progress 75%, not release readiness.
