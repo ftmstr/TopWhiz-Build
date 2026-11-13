@@ -1,0 +1,19 @@
+name: TUR138 HTTP2 authority outage revocation synthetic NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur138-http2-authority-outage.mjs'
+      - '.github/workflows/tur138-http2-authority-outage.yml'
+      - 'reports/TUR138_*.md'
+  workflow_dispatch:
+jobs:
+  tur138-local-negative:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur138-http2-authority-outage.mjs
