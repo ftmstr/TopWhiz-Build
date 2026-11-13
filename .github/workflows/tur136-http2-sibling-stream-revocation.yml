@@ -1,0 +1,40 @@
+name: TUR136 HTTP2 sibling stream revocation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'services/prices-worker/tests/tur136-http2-sibling-stream-revocation.test.mjs'
+      - '.github/workflows/tur136-http2-sibling-stream-revocation.yml'
+      - 'docs/reports/TUR136_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur136-and-inherited-guards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CI: 'true'
+      CLOUDFLARE_API_TOKEN: ''
+      CLOUDFLARE_ACCOUNT_ID: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10.18.3}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Frozen pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: TUR136 HTTP2 sibling test
+        run: |
+          node --check services/prices-worker/tests/tur136-http2-sibling-stream-revocation.test.mjs
+          node --test services/prices-worker/tests/tur136-http2-sibling-stream-revocation.test.mjs
+      - name: Inherited TUR135 TUR134 TUR133
+        run: |
+          node --test services/prices-worker/tests/tur135-http2-delayed-continuation.test.mjs
+          node --test services/prices-worker/tests/tur134-http2-scoped-close-revocation.test.mjs
+          node --test services/prices-worker/tests/tur133-http2-goaway-revocation.test.mjs
+      - name: Inherited immutable reports
+        run: |
+          test -f docs/reports/TUR135_LICENSE.md
+          test -f docs/reports/TUR135_QUEUE_RECOVERY.md
+          test -f pnpm-lock.yaml
