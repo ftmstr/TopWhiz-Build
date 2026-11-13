@@ -1,0 +1,2 @@
+# TUR141 License and release gate — 2026-11-13
+TUR002 frozen pnpm supply-chain gate, AGPL/LGPL/libvips license and source-rights review remain blocking. TOPWHIZ/TOPWIZ trademark similarity, independent operator IAM, external security review and licensed media are NOT_APPROVED. Issue #22 OPEN. No release, main merge, Cloudflare Preview/deploy, Queue/R2/CDN/cache purge, Neon/prod, DNS, real content/images/prices/merchant feeds or AdSense. Engineering work-package progress estimate 75% only; NOT production readiness.
