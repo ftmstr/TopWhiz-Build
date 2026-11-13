@@ -1,0 +1,2 @@
+# TUR140 License and release hold
+No dependency, lockfile, libvips, content or license changes. Frozen pnpm including TUR002 and AGPL/LGPL/libvips release blockers remain mandatory and unwaived. TOPWHIZ/TOPWIZ trademark, independent source rights and operator IAM approvals remain absent; hard NO-GO. No main merge, Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon/prod, DNS, merchant feed, real prices/media/content or AdSense.
