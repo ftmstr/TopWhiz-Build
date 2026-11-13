@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
- testDir:"./e2e",
+ testDir:"./beta-e2e",
  testMatch:"beta-static.spec.ts",
  fullyParallel:false,
  workers:1,

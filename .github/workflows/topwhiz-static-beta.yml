@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'beta/**'
-      - 'apps/web/e2e/beta-static.spec.ts'
+      - 'apps/web/beta-e2e/beta-static.spec.ts'
       - 'apps/web/beta.playwright.config.ts'
       - '.github/workflows/topwhiz-static-beta.yml'
   workflow_dispatch:
