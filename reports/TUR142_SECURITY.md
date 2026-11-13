@@ -1,0 +1,2 @@
+# TUR142 Security / NO-GO
+No R2/CDN, actual network edge, real rights authority, external operator IAM or receiver ACK used. First four bytes delivered before revocation are irrevocable even in guarded model; zero post-ACK synthetic bytes does not imply global zero bytes or CDN cache safety. Preserve TUR018 12 scenarios / 99,276 fictional bytes and TUR019 cross-isolate bypass. PostgreSQL SECURITY DEFINER, schema-owner, CREATE ACL and independent IAM boundaries remain hard requirements. Issue #22 OPEN; no main merge or live deploy.
