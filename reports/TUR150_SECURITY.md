@@ -1,0 +1,7 @@
+# TUR150 Security — FAIL-CLOSED RELEASE NO-GO
+
+The test intentionally includes a SECURITY DEFINER cancellation helper vulnerable to the check-to-signal TOCTOU. **Never promote this test helper into production.** Independent restricted rights-admin and guardian logins, explicit REVOKE COMMIT, PostgreSQL16 pg.Pool(max:1) PID/backend_start reuse, tenant/nonce/epoch and session_user lease binding, two actual advisory gate points, and 42501 direct cancellation denial are required.
+
+At the first gate, A's stale authorization is rejected before pg_cancel_backend when B takes over. At the second gate, guardian B has passed BOTH validations, yet independent lease transfer to C before pg_cancel_backend enables wrong-tenant C cancellation (57014). An additional SELECT does not make PostgreSQL signal delivery atomic with application lease ownership. Connection quarantine or other safe ownership guarantees need separate production-grade implementation and physical proof.
+
+No broad pg_signal_backend, no superuser rights for restricted logins. SECURITY DEFINER fixed pg_catalog/pg_temp search_path, schema-owner and CREATE ACL boundaries remain hard requirements. Server restart/PID reuse, physical HTTP2 Request.signal bridge and remote R2/CDN receiver last byte remain unproven. Preserve TUR018 12 adverse interleavings/99,276 synthetic revoked bytes and TUR019 cross-isolate negative case. Issue #22 OPEN HARD RELEASE NO-GO.
