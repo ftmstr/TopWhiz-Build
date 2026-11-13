@@ -1,0 +1,21 @@
+name: TUR145 HTTP2 revocation drain local NO-GO
+on:
+  push:
+    branches:
+      - tur145-http2-revocation-drain-20261113
+  pull_request:
+    paths:
+      - 'tests/tur145-http2-revocation-drain.test.mjs'
+      - '.github/workflows/tur145-http2-revocation-drain.yml'
+  workflow_dispatch:
+jobs:
+  tur145-local-http2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur145-http2-revocation-drain.test.mjs
