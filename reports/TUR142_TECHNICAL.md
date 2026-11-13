@@ -1,0 +1,2 @@
+# TUR142 Technical — HTTP/2 irreversible first bytes
+Parent TUR141 exact HEAD 449c7ed1825529b4187b0970d835e6787b3ceaac. New independent localhost HTTP/2 test confirms HEAD (4 bytes) received before revocation ACK cannot be recalled. Unsafe continuation sends 4 more bytes after ACK; guarded epoch continuation sends zero additional bytes and preserves sibling health stream. Local Node22 test 1/1 PASS; final GitHub CI must be checked separately. This is a negative counterexample, not a production implementation or remote receiver proof. Issue #22 remains OPEN, release NO-GO.

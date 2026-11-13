@@ -1,0 +1,19 @@
+name: TUR142 HTTP2 already-delivered bytes revocation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur142-http2-first-bytes-revocation.mjs'
+      - '.github/workflows/tur142-http2-first-bytes.yml'
+      - 'reports/TUR142_*.md'
+  workflow_dispatch:
+jobs:
+  tur142-local-negative:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur140-http2-lease-aba.mjs tests/tur141-http2-tenant-epoch-isolation.mjs tests/tur142-http2-first-bytes-revocation.mjs
