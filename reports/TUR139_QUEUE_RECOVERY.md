@@ -1,0 +1,2 @@
+# TUR139 QUEUE RECOVERY
+The test simulates a concurrent lease takeover and revocation acknowledgement but does NOT dispatch real Queue/DLQ or verify receiver ACK. Preserve original outbox canonical SHA, route allowlist, parallel broker/Queue/DLQ ambiguous COMMIT, idempotency, lease fencing, recovery and revoked-media replay fail-closed gates. Existing inherited CI must stay successful. No production messages sent.
