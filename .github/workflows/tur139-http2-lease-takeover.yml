@@ -1,0 +1,19 @@
+name: TUR139 HTTP2 lease takeover revocation synthetic NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur139-http2-lease-takeover.mjs'
+      - '.github/workflows/tur139-http2-lease-takeover.yml'
+      - 'reports/TUR139_*.md'
+  workflow_dispatch:
+jobs:
+  tur139-local-negative:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur139-http2-lease-takeover.mjs

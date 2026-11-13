@@ -1,0 +1,2 @@
+# TUR139 LICENSE
+No dependency, lockfile, third-party image, media or merchant feed changes. Preserve TUR002 frozen pnpm, AGPL/LGPL and libvips provenance blockers, TOPWHIZ/TOPWIZ trademark review, source-rights and independent operator IAM approvals. No main merge, live Cloudflare Preview/deploy/Queue/R2/CDN/cache purge, Neon, DNS, AdSense or real content. Work-package estimate 75%, not production readiness.
