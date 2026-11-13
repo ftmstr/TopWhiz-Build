@@ -1,0 +1,3 @@
+TUR146 | 2026-11-13 | Base TUR145 fadb8df6fb4dab7a9d14a4575f0c953df9fbc026 | NO-GO. Issue #22 OPEN. Synthetic localhost test only. No production deploy, main merge, external R2/CDN, IAM or media. TUR018 12 scenarios/99,276 fictional bytes and TUR019 cross-isolate bypass remain unresolved.
+
+Novel acceptance: two concurrent stale media streams on the SAME real localhost HTTP/2 session pause after HEAD, synthetic generation is revoked (1->2), a new stream starts with generation 2, then all resume. Expected stale tails 0/2, fresh HEADTAIL, sibling SIBLING_OK. Local Node test 1/1 PASS. This does not establish network last-byte or distributed authority semantics. Final exact-HEAD GitHub Actions acceptance pending.
