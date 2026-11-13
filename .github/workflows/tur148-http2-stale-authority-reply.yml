@@ -1,0 +1,21 @@
+name: TUR148 HTTP2 delayed authority reply epoch NO-GO
+on:
+  push:
+    branches:
+      - tur148-http2-stale-authority-reply-20261113
+  pull_request:
+    paths:
+      - 'tests/tur148-http2-stale-authority-reply.test.mjs'
+      - '.github/workflows/tur148-http2-stale-authority-reply.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tur148-local-http2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur148-http2-stale-authority-reply.test.mjs
