@@ -1,0 +1,19 @@
+name: TUR141 HTTP2 tenant-scoped revocation epoch and lease ABA NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur141-http2-tenant-epoch-isolation.mjs'
+      - '.github/workflows/tur141-http2-tenant-epoch.yml'
+      - 'reports/TUR141_*.md'
+  workflow_dispatch:
+jobs:
+  tur141-local-negative:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur140-http2-lease-aba.mjs tests/tur141-http2-tenant-epoch-isolation.mjs
