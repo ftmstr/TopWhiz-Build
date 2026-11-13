@@ -1,0 +1,2 @@
+# TUR140 Technical
+Parent TUR139 exact HEAD: 8f7b24f364abb4db123fd590380b7aa8e7ae5438. New Node22 localhost HTTP/2 test covers lease identifier ABA (A->B->A) after synthetic revocation ACK: lease-only check expected 4 TAIL bytes; monotonic epoch and allowed guard expected 0; sibling SIBLING_OK. This is a negative countermodel, not production remediation or remote R2/CDN last-byte proof. Final SHA CI pending until independently checked.

@@ -1,0 +1,2 @@
+# TUR140 Queue recovery
+Lease ABA test is in-memory and does not exercise actual brokers or durable receiver ACK. Queue/DLQ retries must bind original canonical outbox SHA, route allowlist, tenant, monotonic rights epoch and lease ownership; uncertain COMMIT must be independently reconciled, never assumed rolled back. Preserve inherited PG16 and parallel Queue/DLQ tests. No production Queue or R2 action.
