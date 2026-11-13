@@ -1,0 +1,20 @@
+name: TUR144 HTTP2 reset and revoked continuation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur144-http2-reset-revocation.js'
+      - '.github/workflows/tur144-http2-reset-revocation.yml'
+      - 'reports/TUR144_*.md'
+  workflow_dispatch:
+jobs:
+  tur144-local-http2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur144-http2-reset-revocation.js
