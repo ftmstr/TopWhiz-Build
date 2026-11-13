@@ -8,8 +8,8 @@ async function scenario(guarded) {
   const headSent = new Promise(resolve => { headReady = resolve; });
   const gate = new Promise(resolve => { release = resolve; });
   const server = http2.createServer();
-  server.on('stream', stream => {
-    if (stream.headers[':path'] === '/sibling') {
+  server.on('stream', (stream, headers) => {
+    if (headers[':path'] === '/sibling') {
       stream.respond({ ':status': 200 }); stream.end('SIBLING_OK'); return;
     }
     const captured = generation;
