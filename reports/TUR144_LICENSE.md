@@ -1,0 +1,2 @@
+# TUR144 licensing and release report — 2026-11-13
+No dependency changes. Preserve TUR002 frozen pnpm gate, AGPL/LGPL/libvips provenance and obligations. TOPWHIZ/TOPWIZ trademark, third-party source/media rights and operator IAM require independent approval. No main merge, Cloudflare Preview/deploy/R2/Queue/CDN/cache purge, Neon/prod DB, DNS, real catalog, price feeds or AdSense. Production NO-GO; local vinext/workerd and Chromium a11y/SEO/performance independent re-runs NOT_RUN in this tur.
