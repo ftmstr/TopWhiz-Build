@@ -1,0 +1,19 @@
+name: TUR140 HTTP2 lease ABA monotonic epoch negative NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur140-http2-lease-aba.mjs'
+      - '.github/workflows/tur140-http2-lease-aba.yml'
+      - 'reports/TUR140_*.md'
+  workflow_dispatch:
+jobs:
+  tur140-local-negative:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur140-http2-lease-aba.mjs
