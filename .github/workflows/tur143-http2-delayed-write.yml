@@ -1,0 +1,20 @@
+name: TUR143 HTTP2 delayed write revocation NO-GO
+on:
+  pull_request:
+    paths:
+      - 'tests/tur143-http2-delayed-write-revocation.js'
+      - '.github/workflows/tur143-http2-delayed-write.yml'
+      - 'reports/TUR143_*.md'
+  workflow_dispatch:
+jobs:
+  tur143-local-http2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/tur143-http2-delayed-write-revocation.js

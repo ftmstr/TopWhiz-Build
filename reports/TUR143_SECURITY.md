@@ -1,0 +1,3 @@
+# TUR143 Security / release decision
+
+HARD NO-GO. Revocation after first bytes cannot retract already delivered HEAD; the test is synthetic authority + real localhost HTTP/2 and cannot establish physical final receiver byte, Cloudflare R2/CDN revocation, cross-isolate protection, network buffering or browser delivery. Preserve TUR018 12-scenario 99,276-byte adverse evidence and TUR019 cross-isolate bypass. PostgreSQL16 SECURITY DEFINER, schema owner, CREATE ACL and restricted independent IAM, original outbox canonical SHA, route allowlist and rights-admin COMMIT remain release gates. Issue #22 must remain OPEN without independent proof. No main merge, deployment or production access.
