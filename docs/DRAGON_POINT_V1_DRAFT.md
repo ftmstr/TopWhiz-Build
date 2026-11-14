@@ -30,7 +30,11 @@ Every score = metric weight × normalized ratio (0..1). Fixed piecewise linear a
 
 ## Evidence and guardrails
 
-- Real evidence requires HTTPS source, source kind, asserted verification, PERMITTED license status, ISO date, raw numeric value, exact units and where applicable benchmark suite/major/mode or measurement protocol.
+- Real evidence requires HTTPS source, source kind, asserted verification, PERMITTED license status, ISO measurement date, raw numeric value, exact units and where applicable benchmark suite/major/mode or measurement protocol.
+- Every **real** evidence record must carry canonical evidence.deviceId and evidence.variantId identical to the calculation input; cross-device or cross-region benchmark credit is rejected.
+- Caller must supply explicit and valid asOfDate (YYYY-MM-DD) for real evidence. Future measurements relative to that date are rejected. The clock is **not** inferred from browser wall time: identical input and as-of date give identical results.
+- Source URL metadata rejects login credentials, IP literals, localhost, special-use intranet hostnames and nonstandard HTTPS ports. This metadata check does **not** perform DNS resolution and must never be repurposed as an SSRF-safe fetch authorization.
+- Calibration anchor tuples and benchmark metadata are deeply frozen so importers cannot mutate scoring curves at runtime.
 - These fields are *claims at the module interface*, not independent proof of a real legal license or lab accreditation; ingestion and rights review must happen separately.
 - Any duplicate metric, malformed value, source/rights problem, version mismatch, unexpected manually-normalized real score, or synthetic/real mixture yields REJECTED.
 - Unknown measurements are not zeros. An incomplete device receives weighted coverage, category known points and best/worst numeric bounds, but no exact point total.
@@ -48,6 +52,17 @@ Every score = metric weight × normalized ratio (0..1). Fixed piecewise linear a
 6. Preserve Issue #22 HARD RELEASE NO-GO and the outstanding media, trademark, AGPL/LGPL and infrastructure checks.
 
 ## Verification
+
+Real evidence input example shape (fictional documentation example, **not** an observed benchmark):
+
+    { deviceId: 'phone-123', variantId: 'tr', asOfDate: '2026-11-14', observations: [{
+      metric: 'display.ppi', value: 420, unit: 'ppi',
+      evidence: { kind: 'INDEPENDENT', verified: true, licenseStatus: 'PERMITTED',
+        deviceId: 'phone-123', variantId: 'tr', measuredAt: '2026-11-12',
+        sourceUrl: 'https://example.org/benchmarks/fictional' }
+    }] }
+
+The sample `verified` and `licenseStatus` flags are untrusted **assertions**; do not infer independent rights clearance or an actual test from them. A permitted numeric calculation remains research-only while method is draft.
 
 Run from the repository root:
 
