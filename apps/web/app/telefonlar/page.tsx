@@ -21,6 +21,7 @@ export default async function PhoneIndex(){
           <small>{phone.brand} · {phone.modelCode} · {phone.market}</small>
         </article>)}</div>:
         <p className="empty-state">Henüz doğrulanmış gerçek telefon verisi yayımlanmadı. Örnek karşılaştırma için ana sayfadaki demo kullanılabilir.</p>}
+      <p className="data-note">Dragon Point değerlendirmesi, gerçek cihaz ölçümleri ve metodoloji onayı tamamlandığında kullanılacaktır. <Link href="/dragon-point">Puanlama ölçütlerini incele</Link>.</p>
     </section>
   </EditorialShell>;
 }

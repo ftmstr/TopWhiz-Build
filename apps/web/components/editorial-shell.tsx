@@ -14,6 +14,7 @@ export function EditorialShell({children}:{children:React.ReactNode}){
         <nav className="nav-links editorial-nav" aria-label="Ana menü">
           <Link href="/haberler">Haberler</Link>
           <Link href="/telefonlar">Telefonlar</Link>
+          <Link href="/dragon-point">Dragon Point</Link>
           <Link href="/#prices">Fiyatlar</Link>
         </nav>
       </div>
