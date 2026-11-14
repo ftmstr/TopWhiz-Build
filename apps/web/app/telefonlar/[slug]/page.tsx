@@ -5,6 +5,7 @@ import Image from "next/image";
 import { safeMediaPath } from "../../../lib/content-registry";
 import { getCmsPhone } from "../../../lib/cms-runtime";
 import { EditorialShell } from "../../../components/editorial-shell";
+import { DragonPointCard } from "../../../components/dragon-point-card";
 
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
   const {slug}=await params;
@@ -28,6 +29,7 @@ export default async function PhonePage({params}:{params:Promise<{slug:string}>}
       {image && <figure><Image unoptimized src={image} alt={phone.mediaAlt || phone.title} width={1000} height={800}/></figure>}
       <h2>Model varyantları</h2>
       <ul>{phone.variants.map((v,i)=><li key={i}>{v.name}: RAM {v.ramGb} GB · Depolama {v.storageGb} GB · {v.warrantyClass}</li>)}</ul>
+      <DragonPointCard />
       <h2>Teknik özellikler</h2>
       <table className="editorial-specs"><tbody>{phone.specifications.map((spec,i)=><tr key={i}>
         <th scope="row">{spec.label}</th><td>{spec.value}</td><td>Kaynak: {spec.sourceLabel}</td>

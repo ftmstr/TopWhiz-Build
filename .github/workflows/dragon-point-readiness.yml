@@ -1,0 +1,47 @@
+name: Dragon Point release readiness and Next phone surface
+on:
+  pull_request:
+    paths:
+      - 'packages/dragon-point/**'
+      - 'apps/web/components/dragon-point-card.tsx'
+      - 'apps/web/app/dragon-point/**'
+      - 'apps/web/app/telefonlar/**'
+      - 'apps/web/app/globals.css'
+      - 'apps/web/components/editorial-shell.tsx'
+      - '.github/workflows/dragon-point-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify scoring and production safety contracts
+        run: |
+          node --check packages/dragon-point/engine.mjs
+          node --check packages/dragon-point/release-gate.mjs
+          node --test packages/dragon-point/tests/*.test.mjs
+          node --test beta/tests/dragon-point.test.mjs
+          cmp packages/dragon-point/engine.mjs beta/assets/dragon-point.mjs
+  next-types:
+    needs: evidence-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Frozen install
+        run: pnpm install --frozen-lockfile
+      - name: Next.js TypeScript compile
+        run: pnpm --filter @topwhiz/web typecheck

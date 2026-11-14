@@ -233,3 +233,36 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 @media (min-width: 1001px) and (max-width: 1350px) {
   .site-header .header-action { display: none; }
 }
+
+
+
+/* Dragon Point production-facing shell: release gate blocks any numeric public score. */
+.dp-live-card{margin:35px 0;border:1px solid #516487;border-radius:22px;padding:30px;background:radial-gradient(circle at 90% 10%,#164585,#111b31 55%,#0b1322);color:#f6f8ff;box-shadow:0 18px 45px #03081688}
+.dp-live-header{display:flex;align-items:center;gap:19px}
+.dp-live-header img{width:66px;height:66px;object-fit:contain;border-radius:18px;background:#ffffff12;border:1px solid #ffffff25}
+.dp-live-header h2{font-size:clamp(22px,3vw,34px);margin:4px 0 0;letter-spacing:-.04em}
+.dp-live-header h2 span,.dp-method-head h1 span{color:var(--gold)}
+.dp-live-status{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap;margin:25px 0 12px}
+.dp-live-status strong{font-size:clamp(32px,4.3vw,55px);line-height:1.1;color:#ffe19b;letter-spacing:-.045em}
+.dp-live-status span{font-size:17px;font-weight:800;color:#c0d0ea}
+.dp-live-notice{line-height:1.8;color:#c6d6ec;font-size:12px;max-width:690px}
+.dp-live-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 22px;margin:25px 0}
+.dp-live-summary>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid #ffffff24;padding-bottom:9px;font-size:12px}
+.dp-live-summary dt{color:#d4deee}.dp-live-summary dd{margin:0;color:#fcd277;font-weight:800;white-space:nowrap}
+.dp-live-foot{margin:25px 0 0;display:flex;align-items:center;flex-wrap:wrap;gap:12px;color:#91b6e1;font-size:11px}
+.dp-live-foot a{display:inline-block;padding:10px 13px;border:1px solid #6682af;border-radius:10px;color:#fff;font-weight:800}
+.dp-live-foot a:hover{background:#2f4771}
+.dp-method-page h1{font-size:clamp(42px,5vw,74px);letter-spacing:-.07em;line-height:1.1;margin:12px 0 22px}
+.dp-method-page h2{font-size:clamp(22px,3vw,32px);letter-spacing:-.04em;margin:36px 0 20px}
+.dp-method-page>p{max-width:900px;color:#c3cfe3;font-size:14px;line-height:1.85}
+.dp-method-head{display:flex;align-items:center;justify-content:space-between;gap:30px}
+.dp-method-head img{width:min(145px,25vw);height:auto;object-fit:contain}
+.dp-method-warning{padding:22px 25px;border:1px solid #9c7846;border-left:4px solid var(--gold);border-radius:14px;background:#35291c7a;color:#ffdf9c;margin:32px 0}
+.dp-method-warning p{font-size:13px;line-height:1.8;color:#ebd7b1;margin:7px 0 0}
+.dp-method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.dp-method-item{border:1px solid #34445e;background:#121f33;border-radius:14px;padding:18px 20px;display:grid;gap:11px}
+.dp-method-item strong{font-size:14px}.dp-method-item>span{color:#ffcf64;font-size:13px;font-weight:800}
+.dp-method-meter{height:8px;background:#263852;border-radius:50px;overflow:hidden}
+.dp-method-meter i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--gold),var(--red));border-radius:50px}
+.dp-method-back{display:inline-flex;margin-top:28px;color:#fff;border:1px solid #59749b;border-radius:10px;padding:13px 17px}
+@media(max-width:640px){.dp-live-card{padding:20px}.dp-live-summary,.dp-method-grid{grid-template-columns:1fr}.dp-method-head img{width:85px}.dp-live-summary>div{font-size:11px}.dp-live-header img{width:53px;height:53px}}
