@@ -31,3 +31,11 @@ jobs:
           pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
       - name: Next production-source cinematic browser tests
         run: pnpm --filter @topwhiz/web exec playwright test --config=dragon-cinematic.playwright.config.ts
+      - name: Preserve real browser fire/sleep screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: topwhiz-dragon-cinematic-chromium
+          path: apps/web/test-results/**
+          if-no-files-found: warn
+          retention-days: 7
