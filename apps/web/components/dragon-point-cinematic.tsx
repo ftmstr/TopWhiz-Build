@@ -77,7 +77,7 @@ export function DragonPointCinematic({
   },[]);
 
   useEffect(()=>{
-    if(!entered || !showValue)return;
+    if(!entered || target===null)return;
     if(reduced){
       setShownScore(target);
       setPhase("asleep");
