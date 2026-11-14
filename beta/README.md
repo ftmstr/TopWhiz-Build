@@ -5,6 +5,7 @@ This folder is an **isolated static HTML/CSS/JS demo** of the TOPWHIZ interface.
 ## What works
 - Responsive Turkish home page, original `TopWhiz_Logo_02_KirmiziSariMavi.png` artwork (same existing Git blob reused, no third-party image)
 - Search, category filtering, device selection and side-by-side feature comparison
+- Dragon Point 1.0: interactive, 1,000-point branded card and 8-category breakdown, all scores generated only from 37 synthetic demo metrics. NOT real test results.
 - Clear persistent **DEMO / FICTIONAL** labels; 8 entirely fictional devices
 - No external requests, third-party scripts, tracking pixels, login, checkout or personal data collection
 - No SEO indexing, no merchant/affiliate redirects and no live CMS data
@@ -15,8 +16,11 @@ This folder is an **isolated static HTML/CSS/JS demo** of the TOPWHIZ interface.
 Alternative: Cloudflare Pages static site with output directory `beta`, no build command, deploying **only** these files. Do **not** create a Cloudflare Worker, route a request to R2 or deploy inherited application services. Platform setup and deployment require explicit user account connection/action; this repository change itself does **not** deploy.
 
 ## Validation
-From repo root: `node --check beta/assets/site.js && node --test beta/tests/static-beta.test.mjs`.
+From repo root: `node --check beta/assets/site.js && node --check beta/assets/dragon-point.mjs && node --test beta/tests/*.test.mjs`.
 Live browser mobile/desktop visual QA and the actual hosting HTTP response are **not yet verified** until a hosting provider is connected. Test static hosting with /, /assets/site.js, /assets/site.css and /assets/topwhiz-logo.png, and verify CSP, X-Robots-Tag and robots.txt.
 
 ## Release separation
 This is a **static beta demonstration**, never a commercial release, production CMS or evidence that Issue #22 was resolved. Do not merge the existing stacked PR chain to main just to host this demo. Existing TOR/legal, TOPWHIZ–TOPWIZ mark clearance, AGPL/LGPL, third-party data rights, independent IAM, and distributed revocation remain unresolved. No real prices, device claims, published articles, ads or external user traffic guarantees.
+
+## Dragon Point demo limitation
+The engine is defined in packages/dragon-point/engine.mjs (byte-identical browser copy in beta/assets/dragon-point.mjs). Benchmark-version and evidence guards are implemented, but several submetric calibrations are not yet approved; no real-device score is publishable. See docs/DRAGON_POINT_V1_DRAFT.md. No Dragon Point score from this beta should be cited as an independent product test.
