@@ -68,8 +68,8 @@ test("TopWhiz home foregrounds the signature dragon demo without a real phone cl
   const anchor=page.locator('#dragon-point');
   await expect(anchor).toBeVisible();
   await expect(page.locator('a[href="#dragon-point"]').first()).toBeVisible();
-  await anchor.scrollIntoViewIfNeeded();
   const demo=anchor.getByTestId("dragon-point-scene");
+  await demo.scrollIntoViewIfNeeded();
   await expect(demo).toHaveAttribute("data-mode","demo");
   await expect(demo).toContainText("KURGUSAL ANİMASYON DEMOSU");
   await expect(anchor).toContainText("gerçek bir cihazın ölçümü veya sıralaması değildir");
