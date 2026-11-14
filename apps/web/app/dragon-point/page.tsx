@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { EditorialShell } from "../../components/editorial-shell";
+import { DragonPointCinematic } from "../../components/dragon-point-cinematic";
 import { assessDragonPointReadiness } from "../../../../packages/dragon-point/release-gate.mjs";
 
 export const metadata: Metadata = {
@@ -38,6 +39,22 @@ export default function DragonPointMethodologyPage(){
           tamamlanmadığından hiçbir telefonun kesin Dragon Point puanı açıklanamaz.
           Eksik testler sıfır olarak değerlendirilmez.</p>
       </div>
+      <div className="dp-cine-preview-head">
+        <span className="section-kicker">DRAGON POINT · İMZA ANİMASYONU</span>
+        <h2>Ejderhanın gücünü izle</h2>
+        <p>Uyku, uyanış, ateş ve puan artışı yalnızca görsel bir gösterimdir.
+          Aşağıdaki 842 DP değeri tamamen kurgusaldır; gerçek bir telefona veya
+          ürün sıralamasına ait değildir.</p>
+      </div>
+      <DragonPointCinematic
+        mode="demo"
+        score={842}
+        maxScore={r.maximum}
+        methodologyVersion={r.methodologyVersion}
+        categories={Object.entries(r.categoryWeights).map(([id,maxPoints])=>({
+          id,name:LABELS[id],maxPoints:Number(maxPoints)
+        }))}
+      />
       <h2>Sekiz değerlendirme kategorisi</h2>
       <div className="dp-method-grid">
         {Object.entries(r.categoryWeights).map(([key,weight])=>
