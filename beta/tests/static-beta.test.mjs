@@ -24,7 +24,7 @@ test('beta contains standalone, static, accessible files and original artwork',(
  assert.match(js,/aria-pressed/);
  assert.match(js,/renderComparison\(\)/);
  assert.match(js,/evaluateDragonPoint/);
- assert.match(html,/DRAGON POINT/);
+ assert.match(html,/DRAGON <span>POINT<\/span>/);
  assert.match(html,/type="module"/);
  assert.match(css,/\.dragon-score-card/);
 });
