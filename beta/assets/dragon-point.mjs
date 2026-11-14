@@ -6,7 +6,7 @@
 "use strict";
 
 export const DRAGON_METHOD = Object.freeze({
-  version: "1.0.0-draft",
+  version: "1.0.1-draft",
   status: "DRAFT_CALIBRATION",
   maximum: 1000,
   categoryWeights: Object.freeze({
@@ -197,7 +197,7 @@ export function evaluateDragonPoint(input) {
     deviceId,variantId,asOfDate:asOfDate ?? null,methodologyVersion:DRAGON_METHOD.version,
     methodologyStatus:DRAGON_METHOD.status,status,publishable:false,
     totalScore:score,coverage,
-    scoreRange:[Math.round(knownPoints),Math.round(knownPoints+DRAGON_METHOD.maximum-knownWeight)],
+    scoreRange:exact ? [score,score] : [Math.floor(knownPoints),Math.ceil(knownPoints+DRAGON_METHOD.maximum-knownWeight)],
     categoryScores,issues:[]
   };
 }
