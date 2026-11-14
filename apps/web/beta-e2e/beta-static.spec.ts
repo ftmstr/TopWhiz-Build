@@ -11,7 +11,7 @@ for (const v of [{name:"desktop",width:1365,height:900},{name:"mobile",width:390
     await page.goto("http://127.0.0.1:4173/",{waitUntil:"load"});
     await expect(page.getByRole("heading",{name:/Teknolojiyi keşfet/})).toBeVisible();
     await expect(page.getByText("TOPWHIZ BETA")).toBeVisible();
-    await expect(page.locator(".device-card")).toHaveCount(8);
+    await expect(page.locator(".device-card")).toHaveCount(9);
     await page.getByRole("button",{name:"Tablet",exact:true}).click();
     await expect(page.locator(".device-card")).toHaveCount(2);
     await expect(page.locator("#result-count")).toContainText("2 örnek cihaz");
