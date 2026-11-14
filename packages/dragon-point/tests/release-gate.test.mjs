@@ -62,7 +62,7 @@ test("real Next.js phone detail integrates permanent no-score card without ficti
   const src=readFileSync(fileURLToPath(new URL("../../../apps/web/app/telefonlar/[slug]/page.tsx",import.meta.url)),"utf8");
   const card=readFileSync(fileURLToPath(new URL("../../../apps/web/components/dragon-point-card.tsx",import.meta.url)),"utf8");
   assert.match(src,/DragonPointCard/);
-  assert.match(card,/DRAGON POINT/);
+  assert.match(card,/<h2[^>]*>DRAGON\s*<span>POINT<\/span><\/h2>/);
   assert.match(card,/Veri bekleniyor/);
   assert.doesNotMatch(card,/DEMO_ONLY.*[0-9]{3}/);
 });
