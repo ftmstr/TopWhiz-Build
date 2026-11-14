@@ -26,6 +26,7 @@ test("DP 1.0: 8 categories sum to 1000, metric weights reconcile without duplica
     assert.equal(METRICS.filter(m => m.category === category).reduce((a, b) => a + b.weight, 0), weight);
   }
   assert.equal(DRAGON_METHOD.status, "DRAFT_CALIBRATION");
+  assert.equal(DRAGON_METHOD.version, "1.0.1-draft");
 });
 
 test("empty evidence is never a scored phone or a published ranking", () => {
@@ -184,4 +185,16 @@ test("scoring calibration, benchmark metadata and anchor tuples are immutable", 
   assert.equal(Object.isFrozen(ppi.calibration.anchors[0]),true);
   assert.equal(Object.isFrozen(benchmark.calibration.benchmark),true);
   assert.throws(()=>{ppi.calibration.anchors[0][1]=.99;},TypeError);
+});
+
+
+test("partial-score bounds round outward, never discard plausible fractional points", () => {
+  const r=evaluateAt({
+    deviceId:"phone-1",variantId:"tr",
+    observations:[genuine("display.ppi",375,"ppi")]
+  });
+  assert.equal(r.categoryScores.display.knownPoints,14.5);
+  assert.deepEqual(r.scoreRange,[14,995]);
+  assert.equal(r.totalScore,null);
+  assert.equal(r.publishable,false);
 });
