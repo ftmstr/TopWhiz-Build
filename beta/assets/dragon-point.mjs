@@ -57,8 +57,17 @@ const rows = [
   ["audio", "microphone", 10, null],
   ["audio", "haptics", 10, null]
 ];
+function freezeCalibration(calibration) {
+  if (!calibration) return null;
+  const copy = {...calibration};
+  if (calibration.anchors) {
+    copy.anchors = Object.freeze(calibration.anchors.map(anchor => Object.freeze([...anchor])));
+  }
+  if (calibration.benchmark) copy.benchmark = Object.freeze({...calibration.benchmark});
+  return Object.freeze(copy);
+}
 export const METRICS = Object.freeze(rows.map(([category,name,weight,calibration]) =>
-  Object.freeze({id:category+"."+name, category, weight, calibration:calibration ? Object.freeze(calibration) : null})
+  Object.freeze({id:category+"."+name, category, weight, calibration:freezeCalibration(calibration)})
 ));
 const byId = new Map(METRICS.map(m => [m.id, m]));
 const finite = v => typeof v === "number" && Number.isFinite(v);
@@ -71,7 +80,13 @@ const reject = (deviceId, variantId, issues) => ({
 function isTrustedUrl(url) {
   try {
     const u = new URL(url);
-    return u.protocol === "https:" && !!u.hostname && !u.username && !u.password;
+    if (u.protocol !== "https:" || !u.hostname || u.username || u.password || (u.port && u.port !== "443")) return false;
+    const host = u.hostname.toLowerCase().replace(/\.$/, "");
+    // This is a *metadata hygiene check*, not a network fetch / DNS pin.
+    // Reject all literal IP hosts (public or private), short intranet names and special domains.
+    if (!host.includes(".") || host.startsWith("[") || /^[\d.]+$/.test(host)) return false;
+    if (/\.(?:localhost|local|internal|lan|home|test|invalid|onion)$/.test(host)) return false;
+    return true;
   } catch { return false; }
 }
 function isCalendarDate(s) {
@@ -88,7 +103,7 @@ function normalizedByAnchors(value, anchors) {
   }
   throw Error("unreachable anchor interval");
 }
-function readObservation(o, metric) {
+function readObservation(o, metric, context) {
   if (!o || typeof o !== "object" || !o.evidence || typeof o.evidence !== "object")
     throw Error("invalid evidence shape for "+metric.id);
   const e = o.evidence;
@@ -101,6 +116,10 @@ function readObservation(o, metric) {
   if (!["INDEPENDENT","MANUFACTURER"].includes(e.kind) || e.verified !== true ||
       e.licenseStatus !== "PERMITTED" || !isTrustedUrl(e.sourceUrl) || !isCalendarDate(e.measuredAt))
     throw Error("unverified, unlicensed or invalid source for "+metric.id);
+  if (!isCalendarDate(context.asOfDate)) throw Error("valid as-of date required for real evidence");
+  if (e.measuredAt > context.asOfDate) throw Error("future measurement is invalid for "+metric.id);
+  if (e.deviceId !== context.deviceId || e.variantId !== context.variantId)
+    throw Error("device or regional variant identity mismatch for "+metric.id);
   if (Object.hasOwn(o,"normalized") || !finite(o.value) || o.value < 0)
     throw Error("invalid raw measurement for "+metric.id);
   const c = metric.calibration;
@@ -127,10 +146,13 @@ function readObservation(o, metric) {
  */
 export function evaluateDragonPoint(input) {
   const deviceId = input?.deviceId, variantId = input?.variantId;
+  const asOfDate = input?.asOfDate;
   const idOk = x => typeof x === "string" && /^[a-z0-9][a-z0-9-]{0,99}$/i.test(x);
   if (!idOk(deviceId) || !idOk(variantId) || !Array.isArray(input?.observations) ||
       input.observations.length > METRICS.length)
     return reject(deviceId,variantId,["invalid identity or observations"]);
+  if (asOfDate !== undefined && !isCalendarDate(asOfDate))
+    return reject(deviceId,variantId,["invalid as-of date"]);
   const observed = new Map(), issues = [];
   let seenSynthetic=false, seenReal=false;
   for (const observation of input.observations) {
@@ -138,7 +160,7 @@ export function evaluateDragonPoint(input) {
     if (!metric) { issues.push("unknown metric"); continue; }
     if (observed.has(metric.id)) { issues.push("duplicate metric "+metric.id); continue; }
     try {
-      const value = readObservation(observation, metric);
+      const value = readObservation(observation, metric, {deviceId,variantId,asOfDate});
       observed.set(metric.id,value);
       if (value.synthetic) seenSynthetic=true; else seenReal=true;
     } catch (error) { issues.push(String(error.message)); }
@@ -172,7 +194,7 @@ export function evaluateDragonPoint(input) {
   const status = seenSynthetic ? "DEMO_ONLY" :
     exact ? "RESEARCH_ONLY" : coverage>=0.5 ? "PROVISIONAL" : "INSUFFICIENT_DATA";
   return {
-    deviceId,variantId,methodologyVersion:DRAGON_METHOD.version,
+    deviceId,variantId,asOfDate:asOfDate ?? null,methodologyVersion:DRAGON_METHOD.version,
     methodologyStatus:DRAGON_METHOD.status,status,publishable:false,
     totalScore:score,coverage,
     scoreRange:[Math.round(knownPoints),Math.round(knownPoints+DRAGON_METHOD.maximum-knownWeight)],
