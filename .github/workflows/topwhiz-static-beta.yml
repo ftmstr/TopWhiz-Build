@@ -21,8 +21,9 @@ jobs:
       - name: Validate static beta without dependencies or external network
         run: |
           node --check beta/assets/site.js
+          node --check beta/assets/dragon-point.mjs
           node --check beta/tests/static-beta.test.mjs
-          node --test beta/tests/static-beta.test.mjs
+          node --test beta/tests/*.test.mjs
           test -s beta/assets/topwhiz-logo.png
   chromium-beta:
     needs: offline-static
