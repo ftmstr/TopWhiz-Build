@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'beta/**'
+      - 'packages/dragon-point/**'
       - 'apps/web/beta-e2e/beta-static.spec.ts'
       - 'apps/web/beta.playwright.config.ts'
       - '.github/workflows/topwhiz-static-beta.yml'
@@ -22,6 +23,8 @@ jobs:
         run: |
           node --check beta/assets/site.js
           node --check beta/assets/dragon-point.mjs
+          node --check packages/dragon-point/engine.mjs
+          cmp packages/dragon-point/engine.mjs beta/assets/dragon-point.mjs
           node --check beta/tests/static-beta.test.mjs
           node --test beta/tests/*.test.mjs
           test -s beta/assets/topwhiz-logo.png
