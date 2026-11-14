@@ -60,3 +60,18 @@ test("production-facing demonstration cannot masquerade as a scored real phone",
   await expect(page).toHaveTitle(/Dragon Point/);
   expect(await page.locator("canvas, video").count()).toBe(0);
 });
+
+
+test("TopWhiz home foregrounds the signature dragon demo without a real phone claim",async({page})=>{
+  await page.setViewportSize({width:1365,height:850});
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  const anchor=page.locator('#dragon-point');
+  await expect(anchor).toBeVisible();
+  await expect(page.locator('a[href="#dragon-point"]').first()).toBeVisible();
+  await anchor.scrollIntoViewIfNeeded();
+  const demo=anchor.getByTestId("dragon-point-scene");
+  await expect(demo).toHaveAttribute("data-mode","demo");
+  await expect(demo).toContainText("KURGUSAL ANİMASYON DEMOSU");
+  await expect(anchor).toContainText("gerçek bir cihazın ölçümü veya sıralaması değildir");
+  await expect(demo.getByTestId("dragon-point-number")).toHaveText("842",{timeout:8500});
+});
