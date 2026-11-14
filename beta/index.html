@@ -10,7 +10,7 @@
 <title>TOPWHIZ Beta | Teknolojiyi keşfet, karşılaştır</title>
 <link rel="icon" type="image/png" href="./assets/topwhiz-logo.png">
 <link rel="stylesheet" href="./assets/site.css">
-<script src="./assets/site.js" defer></script>
+<script type="module" src="./assets/site.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Ana içeriğe geç</a>
@@ -18,7 +18,7 @@
 <header class="site-header">
 <div class="shell nav-layout">
 <a class="brand" href="#top" aria-label="TOPWHIZ ana sayfa"><img src="./assets/topwhiz-logo.png" width="44" height="44" alt=""><span>TOP<span class="brand-accent">WHIZ</span></span><small>BETA</small></a>
-<nav aria-label="Ana menü"><a href="#devices">Cihazlar</a><a href="#compare">Karşılaştır</a><a href="#news">Haberler</a><a href="#about">Hakkında</a></nav>
+<nav aria-label="Ana menü"><a href="#devices">Cihazlar</a><a href="#dragon">Dragon Point</a><a href="#compare">Karşılaştır</a><a href="#news">Haberler</a><a href="#about">Hakkında</a></nav>
 <a class="nav-cta" href="#devices">Keşfet <span aria-hidden="true">↗</span></a>
 </div>
 </header>
@@ -49,6 +49,14 @@
 <div class="cards" id="device-cards" aria-label="Örnek cihazlar"></div>
 <div class="demo-notice"><strong><span aria-hidden="true">ⓘ</span> Gerçek cihaz kataloğu henüz yayımlanmadı.</strong> Bu bölümdeki marka, model ve sayısal bilgiler hayalîdir. Satın alma kararı için kullanılmamalıdır.</div>
 </section>
+<section class="dragon-section" id="dragon" aria-labelledby="dragon-title"><div class="shell">
+<div class="section-header"><div><p class="kicker">TOPWHIZ ÖZGÜN PUANLAMA SİSTEMİ</p><h2 id="dragon-title">DRAGON <span>POINT</span></h2><p>1.000 puanlık, kaynak ve metodoloji gerektiren telefon değerlendirme motorunun etkileşimli demonstrasyonu.</p></div><span class="demo-stamp">SADECE SENTETİK DEMO</span></div>
+<div class="dragon-shell">
+<div class="dragon-score-card" id="dragon-score" aria-live="polite" aria-atomic="true"></div>
+<div class="dragon-breakdown"><label for="dragon-device">Kurgusal telefonu seç</label><select id="dragon-device" aria-label="Dragon Point kurgusal telefon seçimi"></select><p class="dragon-disclaimer"><strong>Gerçek cihaz puanı değildir.</strong> Bu örnekteki tüm girdiler ve sayılar kurgusaldır. Metodoloji henüz <strong>DRAFT_CALIBRATION</strong> aşamasındadır; hiçbir sonuç yayında kullanılmaz.</p><div id="dragon-categories" aria-label="Dragon Point kategori alt puanları"></div></div>
+</div>
+<p class="dragon-footnote">Puan yalnızca yeterli ve karşılaştırılabilir kanıt varsa gösterilir. Eksik testlerde kesin puan yerine veri kapsamı ve belirsizlik aralığı sunulur. Benchmark ana sürümleri birbirine karıştırılmaz.</p>
+</div></section>
 <section class="compare-block" id="compare" aria-labelledby="compare-title"><div class="shell">
 <div class="section-header"><div><p class="kicker">YAN YANA KARŞILAŞTIRMA</p><h2 id="compare-title">İki cihazı <span>kıyasla.</span></h2><p>Örnek cihazları seçerek özellik farklarını incele.</p></div><span class="demo-stamp">DEMO</span></div>
 <div class="compare-pickers"><label for="left-device">Birinci cihaz<select id="left-device"></select></label><span class="vs-badge" aria-hidden="true">VS</span><label for="right-device">İkinci cihaz<select id="right-device"></select></label></div>

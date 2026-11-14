@@ -12,6 +12,13 @@ for (const v of [{name:"desktop",width:1365,height:900},{name:"mobile",width:390
     await expect(page.getByRole("heading",{name:/Teknolojiyi keşfet/})).toBeVisible();
     await expect(page.getByText("TOPWHIZ BETA")).toBeVisible();
     await expect(page.locator(".device-card")).toHaveCount(8);
+    await expect(page.locator("#dragon-score .dragon-number")).toContainText("/ 1.000 DP");
+    await expect(page.locator("#dragon-score")).toContainText("KURGUSAL DEMO PUANI");
+    await expect(page.locator("#dragon-categories .dragon-detail-row")).toHaveCount(8);
+    const initialDragon=await page.locator("#dragon-score .dragon-number").textContent();
+    await page.locator("#dragon-device").selectOption("vega-lite");
+    await expect(page.locator("#dragon-score .dragon-device-name")).toHaveText("Vega Lite");
+    expect(await page.locator("#dragon-score .dragon-number").textContent()).not.toBe(initialDragon);
     await page.getByRole("button",{name:"Tablet",exact:true}).click();
     await expect(page.locator(".device-card")).toHaveCount(2);
     await expect(page.locator("#result-count")).toContainText("2 örnek cihaz");
@@ -21,7 +28,7 @@ for (const v of [{name:"desktop",width:1365,height:900},{name:"mobile",width:390
     await page.locator("#search").fill("");
     await page.locator("#left-device").selectOption("terra-tab");
     await page.locator("#right-device").selectOption("nebula-pro");
-    await expect(page.locator("#compare-output .compare-row")).toHaveCount(8);
+    await expect(page.locator("#compare-output .compare-row")).toHaveCount(9);
     await expect(page.locator("#compare-output")).toContainText("Terra Tab");
     await expect(page.locator("#compare-output")).toContainText("Nebula Pro");
     await expect(page.locator("#compare-output")).toContainText("DEMO");
