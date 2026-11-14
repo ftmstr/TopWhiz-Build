@@ -61,8 +61,15 @@ test("unknown, partial, and rejected measurements never surface fake exact total
 test("real Next.js phone detail integrates permanent no-score card without fictional benchmark claims",()=>{
   const src=readFileSync(fileURLToPath(new URL("../../../apps/web/app/telefonlar/[slug]/page.tsx",import.meta.url)),"utf8");
   const card=readFileSync(fileURLToPath(new URL("../../../apps/web/components/dragon-point-card.tsx",import.meta.url)),"utf8");
+  const cinema=readFileSync(fileURLToPath(new URL("../../../apps/web/components/dragon-point-cinematic.tsx",import.meta.url)),"utf8");
+  const method=readFileSync(fileURLToPath(new URL("../../../apps/web/app/dragon-point/page.tsx",import.meta.url)),"utf8");
   assert.match(src,/DragonPointCard/);
-  assert.match(card,/<h2[^>]*>DRAGON\s*<span>POINT<\/span><\/h2>/);
-  assert.match(card,/Veri bekleniyor/);
-  assert.doesNotMatch(card,/DEMO_ONLY.*[0-9]{3}/);
+  assert.match(card,/mode="real"/);
+  assert.match(card,/view\.showNumericScore\s*\?\s*view\.totalScore\s*:\s*null/);
+  assert.match(cinema,/DRAGON <span>POINT<\/span>/);
+  assert.match(cinema,/Veri bekleniyor/);
+  assert.match(cinema,/TopWhiz_Logo_02_KirmiziSariMavi\.png/);
+  assert.match(method,/mode="demo"/);
+  assert.match(method,/score=\{842\}/);
+  assert.doesNotMatch(card,/score=\{842\}|DEMO_ONLY.*[0-9]{3}/);
 });

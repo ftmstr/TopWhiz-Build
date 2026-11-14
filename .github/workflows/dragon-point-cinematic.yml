@@ -1,0 +1,41 @@
+name: Dragon Point cinematic real browser and reduced-motion acceptance
+on:
+  pull_request:
+    paths:
+      - 'apps/web/components/dragon-point-*.tsx'
+      - 'apps/web/app/dragon-point/**'
+      - 'apps/web/app/globals.css'
+      - 'apps/web/dragon-cinematic-e2e/**'
+      - 'apps/web/dragon-cinematic.playwright.config.ts'
+      - 'packages/dragon-point/**'
+      - '.github/workflows/dragon-point-cinematic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cinematic-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Install frozen dependencies and real Chromium
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Next production-source cinematic browser tests
+        run: pnpm --filter @topwhiz/web exec playwright test --config=dragon-cinematic.playwright.config.ts
+      - name: Preserve real browser fire/sleep screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: topwhiz-dragon-cinematic-chromium
+          path: apps/web/test-results/**
+          if-no-files-found: warn
+          retention-days: 7

@@ -5,11 +5,17 @@ import { useMemo, useState } from "react";
 import demoCatalog from "../data/demo-catalog.json";
 import { PriceComparison } from "./price-comparison";
 import { AdSlot } from "./ad-slots";
+import { DragonPointCinematic } from "./dragon-point-cinematic";
+import { assessDragonPointReadiness } from "../../../packages/dragon-point/release-gate.mjs";
 import { safeMediaPath, type PublishedStory } from "../lib/content-registry";
 
 type Device = (typeof demoCatalog)[number];
 type Category = "Tümü" | "Telefon" | "Dizüstü" | "Tablet";
 const categories: Category[] = ["Tümü", "Telefon", "Dizüstü", "Tablet"];
+const dragonMethod = assessDragonPointReadiness();
+const dragonCategories = Object.entries(dragonMethod.categoryWeights).map(([id,maxPoints])=>({
+  id,name:dragonMethod.categoryNames[id as keyof typeof dragonMethod.categoryNames],maxPoints:Number(maxPoints)
+}));
 const fields = [
   ["display", "Ekran"],
   ["processor", "İşlemci"],
@@ -68,7 +74,7 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
             <span className="logo-word">TOP<span>WHIZ</span></span>
           </a>
           <nav className="nav-links" aria-label="Ana menü">
-            <a href="/telefonlar">Telefonlar</a><a href="/haberler">Haberler</a><a href="#compare">Karşılaştır</a><a href="#prices">Fiyatlar</a><a href="#how">Nasıl çalışır?</a>
+            <a href="#dragon-point">Dragon Point</a><a href="/telefonlar">Telefonlar</a><a href="/haberler">Haberler</a><a href="#compare">Karşılaştır</a><a href="#prices">Fiyatlar</a><a href="#how">Nasıl çalışır?</a>
           </nav>
           <a className="header-action" href="#catalog">Cihazları keşfet <span aria-hidden="true">↗</span></a>
         </div>
@@ -82,7 +88,7 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
             <div className="eyebrow"><span className="eyebrow-line" /> TEKNOLOJİYİ ANLAMANIN YENİ YOLU</div>
             <h1 id="hero-title">Teknolojiyi <span className="text-gradient">keşfet.</span><br />Özellikleri <span className="text-blue">karşılaştır.</span><br />Bilinçli <span className="text-gold">karar ver.</span></h1>
             <p className="hero-description">Teknik özellikler, karşılaştırmalar ve kaynak odaklı bilgiler tek bir deneyimde. TOPWHIZ; karmaşık teknoloji verisini anlaşılır hale getirmek için tasarlanıyor.</p>
-            <div className="hero-actions"><a className="btn btn-primary" href="#catalog">Cihazları incele <span aria-hidden="true">↗</span></a><a className="btn btn-secondary" href="#compare">Karşılaştırma demosu <span aria-hidden="true">⇄</span></a></div>
+            <div className="hero-actions"><a className="btn btn-primary" href="#catalog">Cihazları incele <span aria-hidden="true">↗</span></a><a className="btn btn-secondary" href="#dragon-point">Ejderhayı uyandır <span aria-hidden="true">✦</span></a></div>
             <div className="hero-chips"><span>◈ Kaynak şeffaflığı hedefi</span><span>◈ Mobil öncelikli</span><span>◈ Türkçe arayüz</span></div>
           </div>
           <div className="hero-visual">
@@ -95,6 +101,20 @@ export function Home({latestNews}:{latestNews:PublishedStory[]}) {
 
         <div className="container"><div className="feature-strip"><div><span className="feature-icon red">01</span><strong>Keşfet</strong><small>Kategori ve arama</small></div><div><span className="feature-icon blue">02</span><strong>Karşılaştır</strong><small>Yan yana özellikler</small></div><div><span className="feature-icon gold">03</span><strong>Değerlendir</strong><small>Kaynaklı karar desteği hedefi</small></div></div></div>
 
+
+        <section className="section container" id="dragon-point" aria-labelledby="dragon-feature-title">
+          <div className="section-top">
+            <div>
+              <span className="section-kicker">TOPWHIZ · İMZA DENEYİMİ</span>
+              <h2 id="dragon-feature-title">Teknik güç. <span>Ejderha etkisi.</span></h2>
+              <p>Dragon Point sahnesini izle: uyuyan ejderha uyanır, tabelaya ateş saçar ve puan yükselir.</p>
+            </div>
+            <a className="btn btn-secondary" href="/dragon-point">Puanlama metodolojisi</a>
+          </div>
+          <DragonPointCinematic mode="demo" score={842} maxScore={dragonMethod.maximum}
+            methodologyVersion={dragonMethod.methodologyVersion} categories={dragonCategories}/>
+          <p className="data-note"><strong>Kurgusal animasyon önizlemesi:</strong> 842 DP örneği gerçek bir cihazın ölçümü veya sıralaması değildir. Doğrulanmış gerçek telefon puanları henüz yayımlanmıyor.</p>
+        </section>
 
         <section className="section container" id="news" aria-labelledby="news-title">
           <div className="section-top">
