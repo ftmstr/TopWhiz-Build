@@ -25,6 +25,7 @@ jobs:
         run: |
           node --check packages/dragon-point/engine.mjs
           node --check packages/dragon-point/release-gate.mjs
+          node --check packages/dragon-point/calibration-intake.mjs
           node --test packages/dragon-point/tests/*.test.mjs
           node --test beta/tests/dragon-point.test.mjs
           cmp packages/dragon-point/engine.mjs beta/assets/dragon-point.mjs
