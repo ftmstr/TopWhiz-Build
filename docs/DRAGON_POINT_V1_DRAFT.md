@@ -1,4 +1,4 @@
-# TOPWHIZ Dragon Point 1.0 — Draft technical specification
+# TOPWHIZ Dragon Point 1.0.1-draft — Technical specification
 
 **Status: RESEARCH / STATIC BETA ONLY. NOT a calibrated real-phone leaderboard.**
 
@@ -37,10 +37,14 @@ Every score = metric weight × normalized ratio (0..1). Fixed piecewise linear a
 - Calibration anchor tuples and benchmark metadata are deeply frozen so importers cannot mutate scoring curves at runtime.
 - These fields are *claims at the module interface*, not independent proof of a real legal license or lab accreditation; ingestion and rights review must happen separately.
 - Any duplicate metric, malformed value, source/rights problem, version mismatch, unexpected manually-normalized real score, or synthetic/real mixture yields REJECTED.
-- Unknown measurements are not zeros. An incomplete device receives weighted coverage, category known points and best/worst numeric bounds, but no exact point total.
+- Unknown measurements are not zeros. An incomplete device receives weighted coverage, category known points and best/worst numeric bounds, but no exact point total. Partial bounds round **outward** (floor minimum, ceil maximum), never excluding plausible fractional points; exact complete scores remain exact single-point bounds.
 - The 37-value fictional test profile produces DEMO_ONLY. No demo score is publishable.
 - An otherwise complete real-evidence result remains RESEARCH_ONLY under DRAFT_CALIBRATION. Every result currently returns publishable=false.
 - No price or marketing claim feeds the technical score. Different benchmark major versions are not considered interchangeable.
+
+## Versioning
+
+Draft 1.0.1 tightens the input contract for real measurements: canonical device/variant binding and deterministic asOfDate are mandatory; private/literal source URL metadata is rejected; calibration anchors are deep-frozen; partial score bounds conservatively round outward. The eight category weights and all 37 submetric weights are unchanged. Draft scores remain **unpublishable** and must not be treated as official device ratings.
 
 ## Production GO gates (not yet met)
 
