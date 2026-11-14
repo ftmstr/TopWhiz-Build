@@ -5,7 +5,7 @@ for (const viewport of [
   {name:"mobile",width:390,height:844},
   {name:"small-mobile",width:360,height:760}
 ]) {
-  test("Dragon Point signature "+viewport.name+": real Chromium wake, fire, count and sleep",async({page})=>{
+  test("Dragon Point signature "+viewport.name+": real Chromium wake, fire, count and sleep",async({page},testInfo)=>{
     await page.setViewportSize({width:viewport.width,height:viewport.height});
     const external:string[]=[];
     page.on("request",r=>{
@@ -22,9 +22,12 @@ for (const viewport of [
     await expect(dragon).toHaveCount(1);
     await expect(scene).toHaveAttribute("data-phase","fire",{timeout:9000});
     await expect(scene.getByTestId("dragon-point-number")).not.toHaveText("842");
+    await expect(scene.getByTestId("dragon-point-number")).not.toHaveText("0");
+    await page.screenshot({path:testInfo.outputPath("dragon-fire-"+viewport.name+".png")});
     await expect(scene.getByTestId("dragon-point-number")).toHaveText("842",{timeout:8000});
     await expect(scene).toHaveAttribute("data-phase","asleep",{timeout:9000});
-    await expect(scene.locator(".dp-cine-fire")).not.toHaveClass(/is-active/);
+    await expect(scene.locator(".dp-cine-fire")).toHaveCSS("opacity","0");
+    await page.screenshot({path:testInfo.outputPath("dragon-sleep-"+viewport.name+".png")});
     const width=await page.evaluate(()=>document.documentElement.scrollWidth);
     expect(width).toBeLessThanOrEqual(viewport.width+2);
     expect(external).toEqual([]);
