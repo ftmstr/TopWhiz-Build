@@ -12,7 +12,7 @@ test('beta contains standalone, static, accessible files and original artwork',(
  for(const target of ['./assets/site.css','./assets/site.js','./assets/topwhiz-logo.png']){
   assert.ok(html.includes(target),'missing local asset '+target);
  }
- for(const id of ['device-cards','search','left-device','right-device','compare-output','result-count']){
+ for(const id of ['device-cards','search','left-device','right-device','compare-output','result-count','dragon-device','dragon-score','dragon-categories']){
   assert.ok(html.includes('id="'+id+'"'),'missing wired element '+id);
  }
  assert.match(html,/lang="tr"/);
@@ -23,6 +23,10 @@ test('beta contains standalone, static, accessible files and original artwork',(
  assert.match(css,/@media\(max-width:760px\)/);
  assert.match(js,/aria-pressed/);
  assert.match(js,/renderComparison\(\)/);
+ assert.match(js,/evaluateDragonPoint/);
+ assert.match(html,/DRAGON POINT/);
+ assert.match(html,/type="module"/);
+ assert.match(css,/\.dragon-score-card/);
 });
 test('beta has no remote data, tracking, payment, CMS, media service or true price feeds',()=>{
  const html=file('index.html'),js=file('assets/site.js');
