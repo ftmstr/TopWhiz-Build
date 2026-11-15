@@ -1,0 +1,57 @@
+name: Dragon Blender 3D render validation
+on:
+  push:
+    branches: [feature/topwhiz-blender-dragon-20261115]
+    paths:
+      - assets/dragon/blender/**
+      - .github/workflows/dragon-blender-render.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - assets/dragon/blender/**
+      - .github/workflows/dragon-blender-render.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install free Blender and FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender ffmpeg
+          blender --version | head -5
+          ffmpeg -version | head -2
+      - name: Run real Blender CPU Cycles render
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd assets/dragon/blender
+          blender -b -t 4 --python topwhiz_dragon_scene_v2.py -- --build --fps 1 --render-preview --render-all --render-sleep
+      - name: Encode transparent VP9 WebM and GIF
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd assets/dragon/blender
+          for seq in fire sleep; do
+            if [[ "$seq" == fire ]]; then name=TOPWHIZ_Dragon_V2_Fire; else name=TOPWHIZ_Dragon_V2_Sleep; fi
+            ffmpeg -hide_banner -loglevel error -y -framerate 1 -i "output/${seq}_frames/frame_%04d.png" -an -c:v libvpx-vp9 -pix_fmt yuva420p -auto-alt-ref 0 -b:v 0 -crf 24 -metadata:s:v:0 alpha_mode=1 "output/${name}_1280x480_1fps.webm"
+            ffmpeg -hide_banner -loglevel error -y -framerate 1 -i "output/${seq}_frames/frame_%04d.png" -filter_complex '[0:v]split[a][b];[a]palettegen=reserve_transparent=1:stats_mode=full[p];[b][p]paletteuse=alpha_threshold=120' -loop 0 "output/${name}_1280x480_1fps.gif"
+            ffprobe -v error -show_entries stream=width,height,codec_name,pix_fmt:format=duration -of json "output/${name}_1280x480_1fps.webm"
+          done
+      - name: Publish Blender project and rendered assets for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: topwhiz-dragon-v2-textured-1fps
+          path: |
+            assets/dragon/blender/output/*.blend
+            assets/dragon/blender/output/*.webm
+            assets/dragon/blender/output/*.gif
+            assets/dragon/blender/output/preview_*.png
+            assets/dragon/blender/topwhiz_dragon_scene_v2.py
+          if-no-files-found: warn
+          retention-days: 14
