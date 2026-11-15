@@ -30,7 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           cd assets/dragon/blender
-          sed -i "s/scene.render.engine='BLENDER_EEVEE'/scene.render.engine='CYCLES'; scene.cycles.samples=16/" topwhiz_dragon_scene.py
+          sed -i "s/scene.render.engine='BLENDER_EEVEE'/scene.render.engine='CYCLES'; scene.cycles.samples=24; bpy.context.view_layer.cycles.use_denoising=False/" topwhiz_dragon_scene.py
           blender -b -t 4 --python topwhiz_dragon_scene.py -- --build --fps 1 --render-preview --render-all --render-sleep
       - name: Encode transparent VP9 WebM and GIF
         shell: bash
