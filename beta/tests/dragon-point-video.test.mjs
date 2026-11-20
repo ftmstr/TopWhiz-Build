@@ -28,3 +28,11 @@ test("15-second 16:9 metadata required to keep counter exactly two seconds befor
  assert.equal(validateClipMetadata(15,720,1280),"dimensions");
  assert.equal(validateClipMetadata(15,1280,0),"dimensions");
 });
+
+test("real 15.04s video finishes counting at exactly 13.04s (not rounded 13s)",()=>{
+ assert.equal(state(13.039,842,15.04).number<842,true);
+ assert.equal(state(13.04,842,15.04).number,842);
+ assert.equal(state(15.039,842,15.04).burning,true);
+ assert.equal(state(15.04,842,15.04).burning,false);
+ assert.equal(state(15.04,842,15.04).phase,"complete");
+});
