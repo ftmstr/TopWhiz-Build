@@ -9,3 +9,12 @@ export function state(t,raw){
  const phase=t<2?"sleep":t<IGNITE?"wake":t<FIRE_OFF?"fire":t<13?"cooldown":t<DURATION?"return":"complete";
  return {t,target,number,phase,burning:t>=IGNITE&&t<DURATION,fire:t>=IGNITE&&t<FIRE_OFF,progress:t/DURATION};
 }
+/** Fail closed if the selected clip cannot honor the 15s choreography.
+ * Browser metadata cannot reliably prove FPS, so never report measured FPS here.
+ */
+export function validateClipMetadata(duration, width, height) {
+  if (!Number.isFinite(duration) || Math.abs(duration-DURATION)>0.5) return "duration";
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width<640 || height<360
+      || Math.abs(width/height-(16/9))>0.08) return "dimensions";
+  return null;
+}
