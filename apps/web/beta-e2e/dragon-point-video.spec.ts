@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 const testFile = join(process.cwd(), "beta-e2e/fixtures/dragon-video-synthetic-ci.mp4");
 const uri = "/dragon-point-video/";
-const read = (page: any) => page.evaluate(() => (window as any).__dpVideoPreview);
 for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:390,height:844}]) {
  test("Dragon Point 24FPS local MP4 "+size.name+" runs the single-flame ring/score without remote requests", async ({page}) => {
   await page.setViewportSize({width:size.width,height:size.height});
@@ -35,11 +34,11 @@ for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:
 }
 test("Dragon Point is playable when GPU WebGL creation is unavailable (2D fallback)",async({page})=>{
  await page.addInitScript(()=>{
-  const get=HTMLCanvasElement.prototype.getContext;
+  const get=HTMLCanvasElement.prototype.getContext as any;
   HTMLCanvasElement.prototype.getContext=function(type:any,...args:any[]) {
    if(type==="webgl"||type==="experimental-webgl")return null;
-   return get.call(this,type,...args as []);
-  } as typeof get;
+   return get.apply(this,[type,...args]);
+  } as any;
  });
  await page.goto(uri);
  await page.locator("#file").setInputFiles(testFile);
