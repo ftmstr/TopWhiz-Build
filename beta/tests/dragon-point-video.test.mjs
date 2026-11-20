@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {state,DURATION,IGNITE,FIRE_OFF,COUNT_DONE} from "../dragon-point-video/assets/timing.mjs";
+import {state,DURATION,IGNITE,FIRE_OFF,COUNT_DONE,validateClipMetadata} from "../dragon-point-video/assets/timing.mjs";
 test("fire occurs once; score ends exactly two seconds before video ends",()=>{
  assert.equal(DURATION,15);assert.equal(COUNT_DONE,13);
  assert.equal(state(0,842).phase,"sleep");assert.equal(state(3,842).phase,"wake");
@@ -17,4 +17,14 @@ test("count monotonic with seek-back and synthetic score bounds",()=>{
  assert.equal(state(15,9999).number,1000);
  assert.equal(state(15,-42).number,0);
  assert.equal(state(3,842).number,0);
+});
+test("15-second 16:9 metadata required to keep counter exactly two seconds before end",()=>{
+ assert.equal(validateClipMetadata(15.04,1280,720),null);
+ assert.equal(validateClipMetadata(15,1920,1080),null);
+ assert.equal(validateClipMetadata(15.51,1280,720),"duration");
+ assert.equal(validateClipMetadata(5,1280,720),"duration");
+ assert.equal(validateClipMetadata(Infinity,1280,720),"duration");
+ assert.equal(validateClipMetadata(15,320,180),"dimensions");
+ assert.equal(validateClipMetadata(15,720,1280),"dimensions");
+ assert.equal(validateClipMetadata(15,1280,0),"dimensions");
 });
