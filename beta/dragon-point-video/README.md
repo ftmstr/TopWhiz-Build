@@ -11,3 +11,35 @@ Preview-only static page at `/dragon-point-video/` (under the isolated `beta/` s
 - `beta/_headers` and `beta/vercel.json` permit local blob media, but retain strict noindex, no remote connections, and no third-party scripts.
 
 Media rights, trademark clearance, physical browser tests, Issue #22, and independent Dragon Point calibration are still HARD NO-GO. No main merge, live deployment, actual phone score, or asset upload.
+
+## 2026-11-21 compatibility and performance hardening
+
+- Real source inspected: **1280×720 H.264, 24/1 frames per second, `duration=15.040000`**. Score must reach target at `video.duration - 2` (13.04s on this source), not at an assumed fixed 13.00s.
+- Local MP4 is accepted at `loadedmetadata` so iOS Safari need not eagerly decode a frame before enabling a user-click play gesture. No autoplay; video is `muted playsinline`.
+- GP(U) chromakey draws only on decoded video frames via `requestVideoFrameCallback`, with `requestAnimationFrame` for the score/ring and browsers lacking the callback. Reduce redundant texture uploads when the screen refreshes at 60 Hz but the clip is 24 fps. Rendering is display-dependent and 24 FPS cannot be promised on every mobile device.
+- Actual upload must be 14.5–15.5 seconds, 16:9, at least 640×360. The browser cannot reliably verify a source video's *actual* FPS from metadata alone.
+- GPU failure now creates a fresh 2D canvas (browsers cannot switch a canvas's context type in place). CPU fallback caps processing resolution and potentially frame rate; it is **degraded compatibility mode, not premium certification**.
+- VP9-alpha validation checks multiple transparent corner samples of the first decoded frame. If a browser does not composite video alpha, reject this WebM and ask the user to select the original H.264 MP4, which is keyed locally. Avoid claiming that successfully decoding VP9 proves transparency.
+- Media is processed locally from `blob:` URLs; no server uploads, backend calls, third-party JS or telemetry. URI revoked upon replacement/leaving page.
+- Offscreen or hidden-tab playback pauses; reduced-motion mode shows the final sample score without playing the animation.
+
+### Safari evidence and known unknowns
+
+Apple's *Delivering Video Content for Safari* documents `playsinline` and `preload="metadata"` behavior:
+https://developer.apple.com/documentation/webkit/delivering-video-content-for-safari
+
+WebKit shipped `HTMLVideoElement.requestVideoFrameCallback` in Safari 15.4:
+https://webkit.org/blog/12445/new-webkit-features-in-safari-15-4/
+
+WebKit bug #275908, VP9 with transparency playing with a gray background, is **RESOLVED FIXED in the bug tracker**, but a bug tracker resolution does NOT establish that a particular deployed Safari version or iPhone device has correct VP9-alpha playback:
+https://bugs.webkit.org/show_bug.cgi?id=275908
+
+Apple provides HEVC with Alpha support in Safari / Apple devices:
+https://developer.apple.com/videos/play/wwdc2019/506/
+An actual HEVC-alpha asset is **not** created or distributed here; it requires approved export/tool rights and physical-device validation.
+
+**NOT VERIFIED:** hardware iPhone Safari, macOS Safari, video hardware decoder use, sustained battery/temperature, real 24fps under thermally constrained Android, HEVC-alpha playback, actual published server headers. Android Chromium and desktop Chromium observations for the user-supplied local media are from earlier standalone preview work; this PR has its own synthetic browser CI and must be evaluated at the exact final HEAD.
+
+### Acceptance / release boundaries
+
+CI creates a 15-second green-screen MP4 *synthetically* with FFmpeg only during CI; it is **not a third-party clip, user footage, or a device benchmark**. All production scoring gates stay locked (Issue #22 OPEN, Dragon Point evidence/calibration unresolved). Keep Draft. Never merge to main, deploy to public CDN, publish real-device scores, or commit user-supplied video without independent rights approval.
