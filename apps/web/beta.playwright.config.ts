@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
  testDir:"./beta-e2e",
- testMatch:"beta-static.spec.ts",
+ testMatch:["beta-static.spec.ts","dragon-point-video.spec.ts"],
  fullyParallel:false,
  workers:1,
  retries:0,
