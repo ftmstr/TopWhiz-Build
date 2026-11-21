@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#090d17">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; font-src 'none'; connect-src 'none'; form-action 'none'">
+<title>TOPWHIZ Dragon Point | 24 FPS Video Preview</title>
+<link rel="stylesheet" href="./assets/scene.css"><script type="module" src="./assets/scene.js"></script>
+</head><body><main class="shell">
+<header><a href="../index.html" class="brand">TOP<span>WHIZ</span> <small>DRAGON POINT · BETA</small></a><button id="language" type="button">EN</button></header>
+<p class="eyebrow" data-tr="SİNEMATİK DRAGON POINT · GÖRSEL ÖN İZLEME" data-en="CINEMATIC DRAGON POINT · VISUAL PREVIEW">SİNEMATİK DRAGON POINT · GÖRSEL ÖN İZLEME</p>
+<h1 data-tr="Ejderha uyanıyor. <em>Güç alev alıyor.</em>" data-en="The dragon awakens. <em>Power ignites.</em>">Ejderha uyanıyor. <em>Güç alev alıyor.</em></h1>
+<p class="lead" data-tr="Yüklediğiniz gerçek 24 FPS video ile ateş, puan sayacı ve Dragon Point halkasını aynı zaman çizelgesinde izleyin. Dosya cihazınızda kalır." data-en="Preview true 24 FPS footage with synced flame, counter and Dragon Point ring. Your file stays on your device.">Yüklediğiniz gerçek 24 FPS video ile ateş, puan sayacı ve Dragon Point halkasını aynı zaman çizelgesinde izleyin. Dosya cihazınızda kalır.</p>
+<section class="stage" id="stage" data-phase="sleep" aria-label="Dragon Point video animation">
+<div class="scene-label">TOPWHIZ · VIDEO DRAGON POINT</div>
+<div class="dragon" id="dragon" data-ready="no">
+  <div class="prompt" id="prompt"><strong data-tr="Ejderha videosunu seçin" data-en="Choose the dragon video">Ejderha videosunu seçin</strong><span>24 FPS · MP4 / WebM</span></div>
+  <video id="video" muted playsinline preload="none"></video><canvas id="key" width="1280" height="720" aria-hidden="true"></canvas>
+</div>
+<div class="orbit" id="ring"><div class="ring-flare" aria-hidden="true"></div><div class="ring-face"><span>DRAGON <b>POINT</b></span><output id="score" aria-label="Fictional score">0</output><small>/ 1000 DP</small></div></div>
+<div class="stage-status"><span id="phase">UYUYOR</span><span id="clock">0.0 / 15.0 s</span></div><div class="progress"><div id="progress"></div></div>
+</section>
+<div class="controls">
+  <label for="file" class="choose" data-tr="Video seç · MP4 / WebM" data-en="Choose video · MP4 / WebM">Video seç · MP4 / WebM</label>
+  <input id="file" type="file" accept="video/mp4,video/webm,.mp4,.webm">
+  <label for="target" class="num" data-tr="Örnek puan" data-en="Sample score">Örnek puan</label><input id="target" type="number" inputmode="numeric" min="0" max="1000" value="842">
+  <button id="play" disabled type="button" class="primary">▶ Animasyonu oynat</button><button id="pause" disabled type="button">Duraklat</button>
+  <label class="reduced"><input id="less" type="checkbox"><span data-tr="Az hareket" data-en="Reduced motion">Az hareket</span></label>
+</div>
+<p id="message" class="message" role="status" data-tr="Ön izlemeyi başlatmak için yerel video dosyasını seçin. Hiçbir dosya sunucuya gönderilmez." data-en="Select a local video to begin. No files are sent to a server.">Ön izlemeyi başlatmak için yerel video dosyasını seçin. Hiçbir dosya sunucuya gönderilmez.</p>
+<div class="timeline"><span>0–2s <b data-tr="Uyku" data-en="Sleep">Uyku</b></span><span>2–4.85s <b data-tr="Uyanış" data-en="Wake">Uyanış</b></span><span>4.85–9.85s <b data-tr="Tek ateş" data-en="One flame">Tek ateş</b></span><span>9.85–13s <b data-tr="Sayaç" data-en="Counter">Sayaç</b></span><span>13–15s <b data-tr="Uyku" data-en="Sleep">Uyku</b></span></div>
+<p class="note"><strong data-tr="YALNIZCA KURGUSAL DEMO" data-en="FICTIONAL DEMO ONLY">YALNIZCA KURGUSAL DEMO</strong> — <span data-tr="842 DP gerçek telefona ait değildir. Metodoloji taslak, yayın engelleri açık; bu sayfa üretim sistemi değildir." data-en="842 DP is not a real phone result. Methodology is draft, release gates remain; this is not production.">842 DP gerçek telefona ait değildir. Metodoloji taslak, yayın engelleri açık; bu sayfa üretim sistemi değildir.</span></p>
+</main></body></html>
