@@ -77,14 +77,15 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
      const box=(id:string)=>document.getElementById(id)!.getBoundingClientRect();
      const stage=box("stage"),ring=box("ring"),c=box("key");
      const canvas=document.getElementById("key") as HTMLCanvasElement;
-     const scale=Math.min(c.width/canvas.width,c.height/canvas.height);
-     const top=(c.height-canvas.height*scale)/2+c.top;
+     const sourceWidth=1280,sourceHeight=720;
+     const scale=Math.min(c.width/sourceWidth,c.height/sourceHeight);
+     const top=(c.height-sourceHeight*scale)/2+c.top;
      // The synthetic 24 FPS source includes a bright flame core at x=1150,y=365.
      const flameX=c.left+1150*scale,flameY=top+365*scale;
      const ringX=ring.left+ring.width/2,ringY=ring.top+ring.height/2;
      return {distance:Math.hypot(flameX-ringX,flameY-ringY),radius:ring.width/2,
       inside:flameX>=stage.left&&flameX<=stage.right&&flameY>=stage.top&&flameY<=stage.bottom,
-      clipSafe:Math.abs(c.height-canvas.height*scale)<0.5||Math.abs(c.width-canvas.width*scale)<0.5,
+      clipSafe:Math.abs(c.height-sourceHeight*scale)<0.5||Math.abs(c.width-sourceWidth*scale)<0.5,
       visibleFlameX:flameX,ringCenterX:ringX,viewportWidth:window.innerWidth,
       stageWidth:stage.width,stageHeight:stage.height};
     });
