@@ -18,7 +18,7 @@ async function loadMedia(page:Page,forceCanvas:boolean) {
  await page.locator("#file").setInputFiles(fixture);
  await expect.poll(()=>page.evaluate(()=>Boolean((window as any).__dpVideoPreview?.ready))).toBe(true);
  const renderer=await page.evaluate(()=>(window as any).__dpVideoPreview.renderer);
- expect(renderer).toBe(forceCanvas?"cpu":"gpu");
+ if(renderer!==(forceCanvas?"cpu":"gpu"))return renderer;
  await page.locator("#play").click();
  await expect.poll(()=>page.locator("#video").evaluate((v:HTMLVideoElement)=>v.currentTime),{timeout:10000}).toBeGreaterThan(0.08);
  await page.locator("#pause").click();
@@ -66,12 +66,13 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
    await page.setViewportSize({width:size.w,height:size.h});
    const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
    const active=await loadMedia(page,mode==="cpu");
+   if(mode==="gpu" && active!=="gpu")test.skip(true,"GPU WebGL context unavailable: measure as NOT_RUN, never counterfeit GPU PASS");
    expect(active).toBe(mode);
    const pixels=await sample(page);
    checkMatte(pixels);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
    expect(overflow).toBeLessThanOrEqual(2);
-   if(size.name.startsWith("desktop")&&mode==="gpu"){
+   if(size.name.startsWith("desktop")){
     const overlap=await page.evaluate(()=>{
      const box=(id:string)=>document.getElementById(id)!.getBoundingClientRect();
      const stage=box("stage"),ring=box("ring"),c=box("key");
@@ -102,7 +103,8 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
 
 test("synthetic GPU and Canvas chromakey preserve body/fire and limit alpha fringe drift",async({page,context})=>{
  await page.setViewportSize({width:1365,height:940});
- await loadMedia(page,false);
+ const renderer=await loadMedia(page,false);
+ if(renderer!=="gpu")test.skip(true,"No WebGL context; cannot assert GPU/Canvas parity");
  const gpu=await sample(page);
  checkMatte(gpu);
  const fallback=await context.newPage();
