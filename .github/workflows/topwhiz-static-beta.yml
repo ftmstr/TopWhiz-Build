@@ -64,14 +64,17 @@ jobs:
       - name: Validate synthetic screenshot and matte evidence exist
         if: success()
         run: |
-          test -d apps/web/test-results
-          test "$(find apps/web/test-results -type f -name '*desktop-flame-score-ring-overlap*.png' | wc -l)" -ge 1
-          test "$(find apps/web/test-results -type f -name '*desktop-matte-rgba*.json' | wc -l)" -ge 1
+          for view in desktop mobile; do
+            for mode in gpu cpu; do
+              test -s "apps/web/visual-qa-evidence/${view}-${mode}.png"
+              test -s "apps/web/visual-qa-evidence/${view}-${mode}.json"
+            done
+          done
       - name: Preserve synthetic visual QA screenshots and matte evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dragon-point-visual-qa
-          path: apps/web/test-results/
+          path: apps/web/visual-qa-evidence/
           if-no-files-found: error
           retention-days: 7
