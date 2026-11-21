@@ -77,7 +77,7 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
    expect(overflow).toBeLessThanOrEqual(2);
    let alignmentEvidence:unknown=null;
-   if(size.name.startsWith("desktop")){
+   {
     const overlap=await page.evaluate(()=>{
      const box=(id:string)=>document.getElementById(id)!.getBoundingClientRect();
      const stage=box("stage"),ring=box("ring"),c=box("key");
@@ -97,11 +97,16 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
     alignmentEvidence=overlap;
     expect(overlap.inside).toBe(true);
     expect(overlap.clipSafe,"contain must preserve entire video without cropping").toBe(true);
-    expect(overlap.stageWidth).toBeGreaterThan(1150);
-    expect(overlap.stageHeight).toBeGreaterThanOrEqual(590);
+    if(size.name.startsWith("desktop")){
+     expect(overlap.stageWidth).toBeGreaterThan(1150);
+     expect(overlap.stageHeight).toBeGreaterThanOrEqual(590);
+    }else{
+     expect(overlap.stageWidth).toBeGreaterThan(300);
+     expect(overlap.stageHeight).toBeGreaterThanOrEqual(280);
+    }
     expect(overlap.distance,"flame must physically strike inside the score ring").toBeLessThan(overlap.radius*.85);
-    await testInfo.attach("desktop-flame-score-ring-overlap",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
-    await testInfo.attach("desktop-matte-rgba",{body:Buffer.from(JSON.stringify({pixels,overlap},null,2)),contentType:"application/json"});
+    await testInfo.attach(size.name.startsWith("desktop")?"desktop-flame-score-ring-overlap":"mobile-flame-score-ring-overlap",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
+    await testInfo.attach(size.name.startsWith("desktop")?"desktop-matte-rgba":"mobile-matte-rgba",{body:Buffer.from(JSON.stringify({pixels,overlap},null,2)),contentType:"application/json"});
    }
    // CI proof files must survive independent of Playwright's test-results retention.
    // Never write user's uploaded MP4/WebM; this test only uses an original synthetic clip.
