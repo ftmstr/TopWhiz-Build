@@ -52,3 +52,21 @@ https://bugs.webkit.org/show_bug.cgi?id=284039
 The new preview watches for a **260ms** decoded-callback stall and rescues the transparent-keyed Canvas at no faster than once per **110ms**, without generating an additional flame from the dragon. It never claims this restores lost source frames or perfectly matches video hardware display. Synthetic Playwright test stubs the callback so it never runs, then checks the RAF rescue paints and the deterministic counter still completes.
 
 Safari alpha support remains **unverified**; the H.264 greenscreen source processed locally is the fallback. Apple HEVC-alpha is a possible future source only after rights/export validation. No new user media is committed.
+
+### 2026-11-21 desktop alignment and pixel QA — synthetic CI + local visual inspection
+
+**Newly measured defect (prior CSS):** On a 1365 CSS-pixel desktop viewport, the `beta` stage content area is approximately 1210px wide; the inherited `height:clamp(280px,35vw,450px)` caps it at 450px. The dragon container was only `width:74%`. An uncropped 1280×720 source therefore fits to about **800×450**, ending around stage-local x=800. The 244px Dragon Point ring with `right:4%` begins around stage-local x=918: the source flame can never reach the circle.
+
+**Actual local source pixel inspection, not committed media:** The owner's original 1280×720, 24 FPS video was sampled at approximately t=7s; bright fire extends roughly source x=651–1279. In a simple explicit warm-fire segmentation (r>170, g>75, r>0.95g, g>1.15b, x>650), baseline source-pixel to circular score mask overlap was **zero**. After changing to `width:100%` with `height:clamp(370px,50vw,600px)`, the same source frame on a 1210×600 stage has approx **37,136** flame source pixels inside the projected ring. This indicates geometric fire-to-ring contact without horizontal distortion or cropping. Local headless Chromium layout check at 1365×940 confirmed a 1210×600 stage and 244px ring. This local source-frame preview is evidence of still-frame placement, **not** proof of continuous in-device 24 FPS performance.
+
+**Independent CI fixture:** An *original synthetic*, license-free 1280×720 / 24 FPS / 15s H.264 clip is generated in CI only, with flat green background, red dragon-body surrogate, orange flame stripe, cream flame core, and intentionally contaminated green fringe. No user media or derived WebM is committed to GitHub.
+
+New real Chromium Playwright tests now sample GPU framebuffer or 2D Canvas keyed pixels directly:
+- green backdrop → nearly transparent (alpha < 35);
+- red surrogate / orange flame / cream core → near-opaque (alpha > 215);
+- mixed-green edge → partial alpha (20 < alpha < 240), green component corrected to within 40 of max(red, blue);
+- desktop 1365px geometry → synthetic flame core projected *inside* the score ring and entire video uncropped, with actual Chromium screenshot and JSON pixel evidence attached as ephemeral CI artifacts;
+- mobile 390px matte and overflow; GPU-vs-Canvas RGB/alpha parity under broad tolerances;
+- when WebGL is unavailable, GPU tests report **NOT_RUN/skipped**, and still validate the CPU fallback / desktop overlay. Never label an unavailable GPU as PASS.
+
+**Release limits:** The fixture is a flat synthetic surrogate, not a real dragon/particle/performance benchmark. Real user video chroma edges, desktop GPU, hardware Safari/Android thermals and 24 FPS playback quality still require independent physical device acceptance. Existing Issue #22, license, trademark, and Dragon Point calibration HARD NO-GO unchanged.
