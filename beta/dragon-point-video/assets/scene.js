@@ -51,4 +51,13 @@ target.addEventListener("change",()=>{value=clamp(Math.trunc(Number(target.value
 less.checked=matchMedia("(prefers-reduced-motion:reduce)").matches;function updateMotion(){document.body.classList.toggle("reduced-mode",less.checked);if(less.checked&&!v.paused){v.pause();stop();v.currentTime=(Number.isFinite(v.duration)?v.duration:15)-2;sync(v.currentTime);pause.disabled=true}}less.addEventListener("change",updateMotion);updateMotion();
 $("language").addEventListener("click",()=>{lang=lang==="tr"?"en":"tr";document.documentElement.lang=lang;$("language").textContent=lang==="tr"?"EN":"TR";document.querySelectorAll("[data-tr]").forEach(x=>{if(x.tagName==="H1")x.innerHTML=x.dataset[lang];else x.textContent=x.dataset[lang]});play.textContent=tr(v.ended?"replay":"play");pause.textContent=tr(v.paused?"resume":"pause");sync()});
 document.addEventListener("visibilitychange",()=>{if(document.hidden){v.pause();stop()}});if(typeof IntersectionObserver!=="undefined"){new IntersectionObserver(es=>{if(es.every(e=>!e.isIntersecting)){v.pause();stop()}},{threshold:0.05}).observe(stage);}window.addEventListener("pagehide",reset);
-window.__dpVideoPreview={get ready(){return ready},get renderer(){return renderer},get painted(){return painted},get decodedFrames(){return rvfcFrames},get rescueFrames(){return rescueFrames},get time(){return v.currentTime},get count(){return Number(score.textContent.replace(/\D/g,""))},seek(t){if(ready){v.currentTime=clamp(t,0,14.99);sync(v.currentTime)}}};sync(0);
+function sampleKeyedPixel(nx,ny){
+ if(!ready || !drawKey || v.readyState<2) return null;
+ const x=Math.floor(clamp(nx,0,1)*(c.width-1)),y=Math.floor(clamp(ny,0,1)*(c.height-1));
+ try{
+  if(renderer==="gpu"&&gl){drawKey();gl.finish();const pixel=new Uint8Array(4);gl.readPixels(x,c.height-1-y,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return Array.from(pixel)}
+  if(renderer==="cpu"&&ctx2d){const pixel=ctx2d.getImageData(x,y,1,1).data;return Array.from(pixel)}
+ }catch{}
+ return null;
+}
+window.__dpVideoPreview={get ready(){return ready},probe(nx,ny){return sampleKeyedPixel(nx,ny)},get renderer(){return renderer},get painted(){return painted},get decodedFrames(){return rvfcFrames},get rescueFrames(){return rescueFrames},get time(){return v.currentTime},get count(){return Number(score.textContent.replace(/\D/g,""))},seek(t){if(ready){v.currentTime=clamp(t,0,14.99);sync(v.currentTime)}}};sync(0);
