@@ -35,7 +35,7 @@ for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:
 test("Dragon Point is playable when GPU WebGL creation is unavailable (2D fallback)",async({page})=>{
  await page.addInitScript(()=>{
   const get=HTMLCanvasElement.prototype.getContext as any;
-  HTMLCanvasElement.prototype.getContext=function(type:any,...args:any[]) {
+  HTMLCanvasElement.prototype.getContext=function(this: HTMLCanvasElement,type:any,...args:any[]) {
    if(type==="webgl"||type==="experimental-webgl")return null;
    return get.apply(this,[type,...args]);
   } as any;
