@@ -1,8 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 
 const fixture = join(process.cwd(), "beta-e2e/fixtures/dragon-video-synthetic-ci.mp4");
 const uri = "/dragon-point-video/";
+const evidenceDir = process.env.GITHUB_WORKSPACE
+ ? join(process.env.GITHUB_WORKSPACE,"apps/web/visual-qa-evidence")
+ : join(process.cwd(),"visual-qa-evidence");
 type RGBA=[number,number,number,number];
 type Samples={background:RGBA;body:RGBA;orange:RGBA;core:RGBA;fringe:RGBA};
 
@@ -72,6 +76,7 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
    checkMatte(pixels);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
    expect(overflow).toBeLessThanOrEqual(2);
+   let alignmentEvidence:unknown=null;
    if(size.name.startsWith("desktop")){
     const overlap=await page.evaluate(()=>{
      const box=(id:string)=>document.getElementById(id)!.getBoundingClientRect();
@@ -89,6 +94,7 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
       visibleFlameX:flameX,ringCenterX:ringX,viewportWidth:window.innerWidth,
       stageWidth:stage.width,stageHeight:stage.height};
     });
+    alignmentEvidence=overlap;
     expect(overlap.inside).toBe(true);
     expect(overlap.clipSafe,"contain must preserve entire video without cropping").toBe(true);
     expect(overlap.stageWidth).toBeGreaterThan(1150);
@@ -97,6 +103,15 @@ for(const size of [{name:"desktop 1365",w:1365,h:940},{name:"mobile 390",w:390,h
     await testInfo.attach("desktop-flame-score-ring-overlap",{body:await page.screenshot({fullPage:true}),contentType:"image/png"});
     await testInfo.attach("desktop-matte-rgba",{body:Buffer.from(JSON.stringify({pixels,overlap},null,2)),contentType:"application/json"});
    }
+   // CI proof files must survive independent of Playwright's test-results retention.
+   // Never write user's uploaded MP4/WebM; this test only uses an original synthetic clip.
+   const basename=(size.name.startsWith("desktop")?"desktop":"mobile")+"-"+mode;
+   await mkdir(evidenceDir,{recursive:true});
+   await writeFile(join(evidenceDir,basename+".png"),await page.screenshot({fullPage:true}));
+   await writeFile(join(evidenceDir,basename+".json"),JSON.stringify({
+    fixture:"1280x720 24fps 15s synthetic green screen only",
+    viewport:size,renderer:active,rgba:pixels,geometry:alignmentEvidence
+   },null,2),"utf8");
    expect(errors).toEqual([]);
   });
  }
