@@ -31,7 +31,7 @@ https://developer.apple.com/documentation/webkit/delivering-video-content-for-sa
 WebKit shipped `HTMLVideoElement.requestVideoFrameCallback` in Safari 15.4:
 https://webkit.org/blog/12445/new-webkit-features-in-safari-15-4/
 
-WebKit bug #275908, VP9 with transparency playing with a gray background, is **RESOLVED FIXED in the bug tracker**, but a bug tracker resolution does NOT establish that a particular deployed Safari version or iPhone device has correct VP9-alpha playback:
+WebKit bug #275908, VP9 with transparency playing with a gray background, is **NEW / unresolved in the live Bugzilla status (last modified 2026-10-28)**. Its comments reference a proposed WebKit PR but do not establish a release fix. Target iPhone/macOS Safari must be physically tested; never claim that VP9-alpha playback is proven:
 https://bugs.webkit.org/show_bug.cgi?id=275908
 
 Apple provides HEVC with Alpha support in Safari / Apple devices:
@@ -43,3 +43,12 @@ An actual HEVC-alpha asset is **not** created or distributed here; it requires a
 ### Acceptance / release boundaries
 
 CI creates a 15-second green-screen MP4 *synthetically* with FFmpeg only during CI; it is **not a third-party clip, user footage, or a device benchmark**. All production scoring gates stay locked (Issue #22 OPEN, Dragon Point evidence/calibration unresolved). Keep Draft. Never merge to main, deploy to public CDN, publish real-device scores, or commit user-supplied video without independent rights approval.
+
+### 2026-11-21 WebKit decoded-frame delivery hardening
+
+WebKit Bug #284039 records inconsistent `requestVideoFrameCallback` delivery / frame-perfect synchronization concerns:
+https://bugs.webkit.org/show_bug.cgi?id=284039
+
+The new preview watches for a **260ms** decoded-callback stall and rescues the transparent-keyed Canvas at no faster than once per **110ms**, without generating an additional flame from the dragon. It never claims this restores lost source frames or perfectly matches video hardware display. Synthetic Playwright test stubs the callback so it never runs, then checks the RAF rescue paints and the deterministic counter still completes.
+
+Safari alpha support remains **unverified**; the H.264 greenscreen source processed locally is the fallback. Apple HEVC-alpha is a possible future source only after rights/export validation. No new user media is committed.
