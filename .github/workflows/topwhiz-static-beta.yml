@@ -5,6 +5,7 @@ on:
       - 'beta/**'
       - 'packages/dragon-point/**'
       - 'apps/web/beta-e2e/beta-static.spec.ts'
+      - 'apps/web/beta-e2e/dragon-point-video*.spec.ts'
       - 'apps/web/beta.playwright.config.ts'
       - '.github/workflows/topwhiz-static-beta.yml'
   workflow_dispatch:
@@ -60,3 +61,11 @@ jobs:
           printf '%s\n' "$VIDEO_META" | grep -Fx 'duration=15.000000'
       - name: Real desktop/mobile Chromium catalog and comparison QA
         run: pnpm --filter @topwhiz/web exec playwright test --config=beta.playwright.config.ts
+      - name: Preserve synthetic visual QA screenshots and matte evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dragon-point-visual-qa
+          path: apps/web/test-results/
+          if-no-files-found: warn
+          retention-days: 7
