@@ -59,3 +59,21 @@ test("Reduced motion shows finished fictional count without autoplay",async({pag
  const paused=await page.locator("#video").evaluate((v:HTMLVideoElement)=>v.paused);
  expect(paused).toBe(true);
 });
+test("Safari-like stalled decoded-video callback uses bounded RAF rescue without a frozen dragon",async({page})=>{
+ await page.addInitScript(()=>{
+  (HTMLVideoElement.prototype as any).requestVideoFrameCallback=function(_cb:any){return 12345};
+  (HTMLVideoElement.prototype as any).cancelVideoFrameCallback=function(_id:any){};
+ });
+ const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto(uri);
+ await page.locator("#file").setInputFiles(testFile);
+ await expect.poll(async()=>page.evaluate(()=>(window as any).__dpVideoPreview.ready)).toBe(true);
+ await page.locator("#play").click();
+ await expect.poll(async()=>page.evaluate(()=>(window as any).__dpVideoPreview.rescueFrames),{timeout:10000}).toBeGreaterThan(1);
+ await expect.poll(async()=>page.evaluate(()=>(window as any).__dpVideoPreview.painted),{timeout:10000}).toBeGreaterThan(1);
+ const duration=await page.locator("#video").evaluate((v:HTMLVideoElement)=>v.duration);
+ expect(duration).toBeGreaterThanOrEqual(14.5);
+ await page.evaluate(()=>(window as any).__dpVideoPreview.seek(13));
+ await expect(page.locator("#score")).toHaveText("842");
+ expect(errors).toEqual([]);
+});
