@@ -11,7 +11,7 @@ function refreshCanvas(){const next=c.cloneNode(false);c.replaceWith(next);c=nex
 function alphaSupported(){const x=document.createElement("canvas");x.width=16;x.height=9;const ct=x.getContext("2d",{willReadFrequently:true});if(!ct)return false;ct.drawImage(v,0,0,16,9);const d=ct.getImageData(0,0,16,9).data;const coords=[[0,0],[15,0],[0,8],[15,8]];let transparent=0;for(const [a,b] of coords){if(d[(b*16+a)*4+3]<80)transparent++;}return transparent>=3;}
 function checkFirstAlpha(){if(!alphaPending||v.readyState<2)return true;alphaPending=false;try{if(alphaSupported()) {message.textContent=tr("alpha");return true;}}catch{} failMedia();return false;}
 function failMedia(){v.pause();stop();ready=false;play.disabled=true;pause.disabled=true;message.textContent=tr("unsupported");}
-function drawVideoFrame(){if(v.readyState<2 || !checkFirstAlpha())return;if(!drawKey)return;try{drawKey();painted++}catch(e){if(renderer==="gpu"){try{createCPU();drawKey();painted++;message.textContent=tr("slowCPU");return}catch{}}failMedia();}}
+function drawVideoFrame(force=false){if(v.readyState<2 || !checkFirstAlpha())return;if(!drawKey)return;try{drawKey(force);painted++}catch(e){if(renderer==="gpu"){try{createCPU();drawKey();painted++;message.textContent=tr("slowCPU");return}catch{}}failMedia();}}
 function scheduleDecodedFrame(){if(typeof v.requestVideoFrameCallback!=="function"||videoFrameId||v.paused||v.ended||document.hidden)return;videoFrameId=v.requestVideoFrameCallback(()=>{videoFrameId=0;if(v.paused||v.ended||document.hidden)return;rvfcFrames++;lastDecodedAt=performance.now();drawVideoFrame();scheduleDecodedFrame()})}
 function frame(){const now=performance.now();if(typeof v.requestVideoFrameCallback!=="function"){drawVideoFrame()}else if(renderer!=="alpha"&&v.readyState>=2&&now-lastDecodedAt>260&&now-lastRescueAt>110){lastRescueAt=now;rescueFrames++;drawVideoFrame()}sync();if(!v.paused&&!v.ended&&!document.hidden)raf=requestAnimationFrame(frame);else raf=0;}
 function startFrames(){lastDecodedAt=performance.now();lastRescueAt=lastDecodedAt;scheduleDecodedFrame();if(!raf)raf=requestAnimationFrame(frame);}
@@ -28,7 +28,7 @@ function createGPU(){gl=c.getContext("webgl",{alpha:true,premultipliedAlpha:true
 }
 function createCPU(){refreshCanvas();const mobile=matchMedia("(max-width:750px)").matches;const width=Math.min(mobile?600:800,Math.max(320,Math.round((dragon.clientWidth||720)*Math.min(devicePixelRatio||1,1.5))));c.width=width;c.height=Math.round(width*(v.videoHeight||720)/(v.videoWidth||1280));ctx2d=c.getContext("2d",{willReadFrequently:true});if(!ctx2d)throw Error("Canvas unavailable");
  let prev=0;const delay=1000/(mobile?18:24);
- drawKey=()=>{const now=performance.now();if(now-prev<delay)return;prev=now;ctx2d.clearRect(0,0,c.width,c.height);ctx2d.drawImage(v,0,0,c.width,c.height);const pixels=ctx2d.getImageData(0,0,c.width,c.height),p=pixels.data;
+ drawKey=(force=false)=>{const now=performance.now();if(!force&&now-prev<delay)return;prev=now;ctx2d.clearRect(0,0,c.width,c.height);ctx2d.drawImage(v,0,0,c.width,c.height);const pixels=ctx2d.getImageData(0,0,c.width,c.height),p=pixels.data;
  for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],ex=g-Math.max(r,b);if(ex>10){const a=clamp((68-ex)/58,0,1);p[i+3]=Math.round(p[i+3]*a);p[i+1]=Math.min(g,Math.max(r,b)+12)}}ctx2d.putImageData(pixels,0,0);};
  renderer="cpu";
 }
@@ -44,7 +44,7 @@ v.addEventListener("loadedmetadata",()=>{if(renderer==="none")return;
 v.addEventListener("loadeddata",()=>{if(!ready)return;if(renderer==="alpha")checkFirstAlpha();else drawVideoFrame();});
 v.addEventListener("error",()=>{if(renderer!=="none"){ready=false;play.disabled=true;message.textContent=tr("unsupported")}});
 v.addEventListener("timeupdate",()=>sync());v.addEventListener("seeked",()=>{drawVideoFrame();sync()});v.addEventListener("pause",()=>{stop();sync()});
-v.addEventListener("ended",()=>{stop();sync(v.duration||15);play.textContent=tr("replay");pause.disabled=true});
+v.addEventListener("ended",()=>{stop();drawVideoFrame(true);sync(v.duration||15);play.textContent=tr("replay");pause.disabled=true});
 play.addEventListener("click",async()=>{if(!ready)return;v.pause();stop();v.currentTime=0;value=clamp(Math.trunc(Number(target.value)||0),0,1000);target.value=value;sync(0);if(less.checked){v.currentTime=(Number.isFinite(v.duration)?v.duration:15)-2;sync(v.currentTime);play.textContent=tr("replay");pause.disabled=true;return}try{await v.play();play.textContent=tr("replay");pause.disabled=false;pause.textContent=tr("pause");startFrames()}catch{pause.disabled=true;message.textContent=tr("unsupported")}});
 pause.addEventListener("click",async()=>{if(!ready)return;if(v.paused){try{await v.play();pause.textContent=tr("pause");startFrames()}catch{message.textContent=tr("unsupported")}}else{v.pause();stop();pause.textContent=tr("resume")}});
 target.addEventListener("change",()=>{value=clamp(Math.trunc(Number(target.value)||0),0,1000);target.value=value;sync()});
