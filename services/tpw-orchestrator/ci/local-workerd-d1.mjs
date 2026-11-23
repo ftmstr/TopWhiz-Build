@@ -26,7 +26,11 @@ const makeDoc=async c=>({schemaVersion:'1.0',id:c.id,kind:c.kind,status:'APPROVE
 const platform=await getPlatformProxy({configPath:d1config,persist:false,remoteBindings:false});
 try {
  const db=platform.env.TPW_DB;assert.ok(db&&db.prepare&&db.exec,'Real local workerd D1 binding missing');
- await db.exec(readFileSync(schema,'utf8'));
+ // D1's exec() treats the leading comment / combined migration as an incomplete SQL statement.
+ // Keep the source migration unchanged; prepare each fixed DDL statement independently.
+ const ddl=readFileSync(schema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean);
+ assert.equal(ddl.length,2,'EXPECTED_TWO_D1_MIGRATION_STATEMENTS');
+ for(const statement of ddl)await db.prepare(statement).run();
  const reject={...news,body:'unlicensed body text'};
  const selection=prefilterFeed({items:[news,news,reject]},'news');
  assert.deepEqual(selection.stats,{received:3,rejected:1,duplicates:1});
