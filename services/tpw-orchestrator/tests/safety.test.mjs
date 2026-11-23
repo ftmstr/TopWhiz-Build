@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {generateKeyPairSync,verify} from 'node:crypto';
+import {generateKeyPairSync,verify,sign} from 'node:crypto';
+import {editorialApprovalBytes,verifyEditorialApproval} from '../src/editorial-proof.mjs';
 import {slotForCron,preflightCandidate,publicationGate,safeApprovedPath} from '../src/policy.mjs';
-import {prefilterFeed,boundedJson} from '../src/adapters.mjs';
+import {prefilterFeed,boundedJson,assertTrustedEndpoint} from '../src/adapters.mjs';
 import {candidateDigest,originMatches} from '../src/lineage.mjs';
 import {commitApprovedContent,issueInstallationToken,appJwt} from '../src/github-app.mjs';
 import {executeAgent} from '../src/runner.mjs';
@@ -29,8 +30,10 @@ test('WebCrypto GitHub App JWT validates as RS256 with bounded lifetime',async()
 
 function pilotEnv(){
  const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});
- return {TPW_MODE:'PRIVATE_PILOT',TPW_GITHUB_WRITES:'ENABLED',TPW_RELEASE_GATE:'CLOSED',GITHUB_OWNER:'ftmstr',GITHUB_REPO:'TopWhiz-Content-Private',GITHUB_BRANCH:'content-approved-pilot',TPW_CONTENT_REPO_PRIVATE_CONFIRMED:'YES',GITHUB_APP_ID:'12345',GITHUB_APP_PRIVATE_KEY:privateKey.export({format:'pem',type:'pkcs8'}),GITHUB_INSTALLATION_ID:'23456',GITHUB_REPO_ID:'34567'};
+ const {privateKey:editorSigningKey,publicKey:editorPublicKey}=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+ return {__editorSigningKey:editorSigningKey,TPW_EDITOR_PUBLIC_KEY_SPKI_B64:editorPublicKey.export({format:'der',type:'spki'}).toString('base64'),TPW_MODE:'PRIVATE_PILOT',TPW_GITHUB_WRITES:'ENABLED',TPW_RELEASE_GATE:'CLOSED',GITHUB_OWNER:'ftmstr',GITHUB_REPO:'TopWhiz-Content-Private',GITHUB_BRANCH:'content-approved-pilot',TPW_CONTENT_REPO_PRIVATE_CONFIRMED:'YES',GITHUB_APP_ID:'12345',GITHUB_APP_PRIVATE_KEY:privateKey.export({format:'pem',type:'pkcs8'}),GITHUB_INSTALLATION_ID:'23456',GITHUB_REPO_ID:'34567'};
 }
+async function signedArticle(env,c=cand()){const doc=await article(c);doc.review.signature=sign('sha256',Buffer.from(editorialApprovalBytes(doc)),{key:env.__editorSigningKey,dsaEncoding:'ieee-p1363'}).toString('base64url');return doc;}
 const privateMetadata=()=>({id:34567,name:'TopWhiz-Content-Private',full_name:'ftmstr/TopWhiz-Content-Private',owner:{login:'ftmstr'},private:true,visibility:'private',archived:false});
 function fakeGitHub(metadata,track,sha='b'.repeat(40)){
  return async (url,init)=>{
@@ -43,11 +46,11 @@ function fakeGitHub(metadata,track,sha='b'.repeat(40)){
 }
 test('independent GitHub privacy query before PUT: public metadata blocks write',async()=>{
  const calls=[],env=pilotEnv(),metadata={...privateMetadata(),private:false,visibility:'public'};
- await assert.rejects(commitApprovedContent(env,await article(),fakeGitHub(metadata,calls)),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
+ await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(metadata,calls)),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
  assert.deepEqual(calls.map(x=>x.method),['POST','GET']);
 });
 test('GitHub metadata identity, numeric repo id, archive state and visibility fail closed',async()=>{
- const env=pilotEnv(),doc=await article();
+ const env=pilotEnv(),doc=await signedArticle(env);
  for(const mutate of [x=>x.id=12,x=>x.owner.login='attacker',x=>x.archived=true,x=>x.visibility='public',x=>delete x.private]){
   const obj=privateMetadata();mutate(obj);const calls=[];
   await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(obj,calls)),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
@@ -55,7 +58,7 @@ test('GitHub metadata identity, numeric repo id, archive state and visibility fa
  }
 });
 test('verified private target permits a single synthetic pilot PUT, not main',async()=>{
- const calls=[],env=pilotEnv(),doc=await article();
+ const calls=[],env=pilotEnv(),doc=await signedArticle(env);
  const result=await commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls));
  assert.equal(result.status,'PRIVATE_PILOT_ONLY');assert.equal(result.sha,'b'.repeat(40));
  assert.deepEqual(calls.map(x=>x.method),['POST','GET','PUT']);
@@ -63,11 +66,60 @@ test('verified private target permits a single synthetic pilot PUT, not main',as
 });
 test('GitHub create HTTP 201 without verifiable commit SHA is NOT accepted',async()=>{
  const calls=[],env=pilotEnv();
- await assert.rejects(commitApprovedContent(env,await article(),fakeGitHub(privateMetadata(),calls,'')),/GITHUB_CREATE_RESPONSE_UNVERIFIED/);
+ await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(privateMetadata(),calls,'')),/GITHUB_CREATE_RESPONSE_UNVERIFIED/);
  assert.equal(calls.filter(x=>x.method==='PUT').length,1);
 });
 test('GitHub repo ids must not exceed Javascript safe integer precision',async()=>{
  let attempts=0;
  await assert.rejects(issueInstallationToken({...pilotEnv(),GITHUB_REPO_ID:'99999999999999999999'},async()=>{attempts++;throw Error('NO_FETCH')}),/BAD_GITHUB_IDS/);
  assert.equal(attempts,0);
+});
+
+test('pinned feed host allowlist rejects unconfigured and SSRF-like endpoints before fetch',async()=>{
+ const url='https://feeds.example.org/news.json';
+ assert.equal(assertTrustedEndpoint(url,url,'feeds.example.org'),url);
+ let n=0,net=async()=>{n++;return new Response(JSON.stringify({items:[]}),{headers:{'Content-Type':'application/json'}})};
+ for(const [bad,allow,host] of [
+  [url,url,undefined],
+  [url,url,'other.example.org'],
+  ['https://user:pass@feeds.example.org/news.json','https://user:pass@feeds.example.org/news.json','feeds.example.org'],
+  ['https://feeds.example.org:444/news.json','https://feeds.example.org:444/news.json','feeds.example.org'],
+  ['https://127.0.0.1/news.json','https://127.0.0.1/news.json','127.0.0.1'],
+  ['https://localhost/news.json','https://localhost/news.json','localhost'],
+  ['https://feeds.example.org/news.json#frag','https://feeds.example.org/news.json#frag','feeds.example.org'],
+  ['http://feeds.example.org/news.json','http://feeds.example.org/news.json','feeds.example.org']
+ ])await assert.rejects(boundedJson(bad,allow,net,host),/ENDPOINT_NOT_ALLOWLISTED/);
+ assert.equal(n,0);
+ const ok=await boundedJson(url,url,net,'feeds.example.org');assert.deepEqual(ok,{items:[]});assert.equal(n,1);
+});
+test('source adapter refuses an observed redirected final response',async()=>{
+ const url='https://feeds.example.org/items';let response=new Response(JSON.stringify({items:[]}),{headers:{'Content-Type':'application/json'}});
+ Object.defineProperty(response,'url',{value:'https://attacker.example.org/payload'});
+ await assert.rejects(boundedJson(url,url,async()=>response,'feeds.example.org'),/BAD_FEED_HTTP/);
+});
+test('pilot refuses unsigned editorial decisions before GitHub token issuance',async()=>{
+ const env=pilotEnv(),calls=[];
+ await assert.rejects(commitApprovedContent(env,await article(),fakeGitHub(privateMetadata(),calls)),/EDITOR_PROOF_ENCODING_INVALID/);
+ assert.equal(calls.length,0);
+});
+test('pinned ECDSA P-256 editor approval verifies, tampered TR/EN body fails',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env);
+ assert.equal(await verifyEditorialApproval(doc,env.TPW_EDITOR_PUBLIC_KEY_SPKI_B64),true);
+ const bad=structuredClone(doc);bad.title.en='An altered English headline';
+ await assert.rejects(verifyEditorialApproval(bad,env.TPW_EDITOR_PUBLIC_KEY_SPKI_B64),/EDITOR_SIGNATURE_INVALID/);
+});
+test('signed approval cannot be replayed on a different candidate digest or factual evidence',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env);
+ for(const field of ['sourceDigest','evidenceHash','reviewedAt']){
+  const altered=structuredClone(doc);
+  if(field==='sourceDigest')altered.sourceDigest='e'.repeat(64);
+  if(field==='evidenceHash')altered.review.evidenceHash='e'.repeat(64);
+  if(field==='reviewedAt')altered.review.reviewedAt='2026-11-23T01:00:00Z';
+  await assert.rejects(verifyEditorialApproval(altered,env.TPW_EDITOR_PUBLIC_KEY_SPKI_B64),/EDITOR_SIGNATURE_INVALID/);
+ }
+});
+test('separately generated editor signing key cannot impersonate the pinned editor',async()=>{
+ const env=pilotEnv(),other=pilotEnv(),doc=await signedArticle(other),calls=[];
+ await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls)),/EDITOR_SIGNATURE_INVALID/);
+ assert.equal(calls.length,0);
 });
