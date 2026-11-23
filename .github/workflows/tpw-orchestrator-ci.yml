@@ -29,7 +29,7 @@ jobs:
       - name: Release gates remain closed
         run: |
           node - <<'NODE'
-          const c=require('./services/tpw-orchestrator/wrangler.jsonc');
+          const fs=require('fs'); const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/wrangler.jsonc','utf8'));
           if(c.triggers.crons.length || c.vars.TPW_MODE!=='CLOSED' || c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1);
           console.log('CI-ONLY; no cron, no GitHub writes, no deploy');
           NODE
