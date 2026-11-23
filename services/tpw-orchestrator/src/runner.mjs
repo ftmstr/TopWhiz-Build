@@ -35,7 +35,7 @@ export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),now
    if(env.TPW_MODE==='PRIVATE_PILOT'&&env.TPW_GITHUB_WRITES==='ENABLED'){
     // No network write after the lease is lost or expired. GitHub 201 ACK loss still requires manual reconciliation.
     await assertStageLease(env.TPW_DB,owned.id,owned.leaseToken,nowFn());
-    await commitApprovedContent(env,article,fetcher);writes++;
+    await commitApprovedContent(env,article,fetcher,()=>assertStageLease(env.TPW_DB,owned.id,owned.leaseToken,nowFn()));writes++;
    }
    decision='APPROVED';
   }catch{
