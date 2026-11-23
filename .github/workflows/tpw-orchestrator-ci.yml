@@ -21,7 +21,7 @@ jobs:
           node-version: '22'
       - name: Validate Worker source syntax
         run: |
-          for file in services/tpw-orchestrator/src/*.mjs services/tpw-orchestrator/scripts/*.mjs; do node --check "$file"; done
+          for file in services/tpw-orchestrator/src/*.mjs services/tpw-orchestrator/scripts/*.mjs services/tpw-orchestrator/ci/*.mjs; do node --check "$file"; done
       - name: Run offline adversarial smoke tests
         run: node --test services/tpw-orchestrator/tests/*.test.mjs
       - name: Reject unapproved JSON from content-approved
@@ -33,3 +33,32 @@ jobs:
           if(c.triggers.crons.length || c.vars.TPW_MODE!=='CLOSED' || c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1);
           console.log('CI-ONLY; no cron, no GitHub writes, no deploy');
           NODE
+
+  workerd-d1-local:
+    needs: synthetic-safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Frozen dependency install (test only, no deployment)
+        run: pnpm install --frozen-lockfile
+      - name: Assert local configs do not register Cron or permit external writes
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          for(const name of ['wrangler.ci-local.jsonc','wrangler.ci-d1.jsonc']){
+            const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/'+name,'utf8'));
+            if(c.triggers.crons.length || c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1);
+          }
+          NODE
+      - name: Real local workerd Cron/Workflow and isolated D1 acceptance
+        run: node services/tpw-orchestrator/ci/local-workerd-d1.mjs
