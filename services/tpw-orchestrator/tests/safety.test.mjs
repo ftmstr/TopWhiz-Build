@@ -39,6 +39,7 @@ function fakeGitHub(metadata,track,sha='b'.repeat(40)){
  return async (url,init)=>{
   track.push({url,method:init.method,body:init.body});
   if(url.endsWith('/access_tokens'))return new Response(JSON.stringify({token:'ghs_synthetic_pilot_token'}),{status:201});
+  if(init.method==='GET'&&url.includes('/contents/'))return new Response(null,{status:404});
   if(init.method==='GET')return new Response(JSON.stringify(metadata),{status:200});
   if(init.method==='PUT')return new Response(JSON.stringify({commit:{sha}}),{status:201});
   throw new Error('UNEXPECTED_EXTERNAL_ACCESS');
@@ -46,27 +47,27 @@ function fakeGitHub(metadata,track,sha='b'.repeat(40)){
 }
 test('independent GitHub privacy query before PUT: public metadata blocks write',async()=>{
  const calls=[],env=pilotEnv(),metadata={...privateMetadata(),private:false,visibility:'public'};
- await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(metadata,calls)),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
+ await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(metadata,calls),async()=>{}),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
  assert.deepEqual(calls.map(x=>x.method),['POST','GET']);
 });
 test('GitHub metadata identity, numeric repo id, archive state and visibility fail closed',async()=>{
  const env=pilotEnv(),doc=await signedArticle(env);
  for(const mutate of [x=>x.id=12,x=>x.owner.login='attacker',x=>x.archived=true,x=>x.visibility='public',x=>delete x.private]){
   const obj=privateMetadata();mutate(obj);const calls=[];
-  await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(obj,calls)),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
+  await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(obj,calls),async()=>{}),/GITHUB_TARGET_NOT_PRIVATE_VERIFIED/);
   assert.equal(calls.filter(x=>x.method==='PUT').length,0);
  }
 });
 test('verified private target permits a single synthetic pilot PUT, not main',async()=>{
  const calls=[],env=pilotEnv(),doc=await signedArticle(env);
- const result=await commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls));
+ const result=await commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls),async()=>{});
  assert.equal(result.status,'PRIVATE_PILOT_ONLY');assert.equal(result.sha,'b'.repeat(40));
- assert.deepEqual(calls.map(x=>x.method),['POST','GET','PUT']);
- assert.equal(JSON.parse(calls[2].body).branch,'content-approved-pilot');
+ assert.deepEqual(calls.map(x=>x.method),['POST','GET','GET','PUT']);
+ assert.equal(JSON.parse(calls[3].body).branch,'content-approved-pilot');
 });
 test('GitHub create HTTP 201 without verifiable commit SHA is NOT accepted',async()=>{
  const calls=[],env=pilotEnv();
- await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(privateMetadata(),calls,'')),/GITHUB_CREATE_RESPONSE_UNVERIFIED/);
+ await assert.rejects(commitApprovedContent(env,await signedArticle(env),fakeGitHub(privateMetadata(),calls,''),async()=>{}),/GITHUB_CREATE_RESPONSE_UNVERIFIED/);
  assert.equal(calls.filter(x=>x.method==='PUT').length,1);
 });
 test('GitHub repo ids must not exceed Javascript safe integer precision',async()=>{
@@ -99,7 +100,7 @@ test('source adapter refuses an observed redirected final response',async()=>{
 });
 test('pilot refuses unsigned editorial decisions before GitHub token issuance',async()=>{
  const env=pilotEnv(),calls=[];
- await assert.rejects(commitApprovedContent(env,await article(),fakeGitHub(privateMetadata(),calls)),/EDITOR_PROOF_ENCODING_INVALID/);
+ await assert.rejects(commitApprovedContent(env,await article(),fakeGitHub(privateMetadata(),calls),async()=>{}),/EDITOR_PROOF_ENCODING_INVALID/);
  assert.equal(calls.length,0);
 });
 test('pinned ECDSA P-256 editor approval verifies, tampered TR/EN body fails',async()=>{
@@ -120,6 +121,71 @@ test('signed approval cannot be replayed on a different candidate digest or fact
 });
 test('separately generated editor signing key cannot impersonate the pinned editor',async()=>{
  const env=pilotEnv(),other=pilotEnv(),doc=await signedArticle(other),calls=[];
- await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls)),/EDITOR_SIGNATURE_INVALID/);
+ await assert.rejects(commitApprovedContent(env,doc,fakeGitHub(privateMetadata(),calls),async()=>{}),/EDITOR_SIGNATURE_INVALID/);
+ assert.equal(calls.length,0);
+});
+
+function githubAckLossSimulator(calls,{existingPayload=null,commitAckLost=true}={}){
+ let existing=existingPayload;
+ const blob='d'.repeat(40);
+ return async(url,init)=>{
+  calls.push({url,method:init.method});
+  if(url.endsWith('/access_tokens'))return new Response(JSON.stringify({token:'ghs_synthetic_pilot_token'}),{status:201});
+  if(init.method==='GET'&&!url.includes('/contents/'))return new Response(JSON.stringify(privateMetadata()),{status:200});
+  if(init.method==='GET'&&url.includes('/contents/')){
+   if(!existing)return new Response(null,{status:404});
+   const path=url.split('/contents/')[1].split('?')[0];
+   return new Response(JSON.stringify({type:'file',encoding:'base64',size:Buffer.from(existing,'base64').length,path,sha:blob,content:existing}),{status:200});
+  }
+  if(init.method==='PUT'&&url.includes('/contents/')){
+   if(existing)return new Response(JSON.stringify({message:'already exists'}),{status:422});
+   existing=JSON.parse(init.body).content;
+   if(commitAckLost)throw Error('SIMULATED_COMMIT_SUCCEEDED_ACK_LOST');
+   return new Response(JSON.stringify({commit:{sha:'b'.repeat(40)}}),{status:201});
+  }
+  throw Error('UNEXPECTED_REQUEST');
+ };
+}
+test('lost GitHub 201 ACK reconciles exact signed content and NEVER retries PUT',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ const fetcher=githubAckLossSimulator(calls);
+ const first=await commitApprovedContent(env,doc,fetcher,async()=>{});
+ assert.equal(first.status,'ACK_LOST_MATCH_RECONCILED');
+ assert.equal(first.sha,null);assert.match(first.blobSha,/^[a-f0-9]{40}$/);
+ assert.equal(calls.filter(x=>x.method==='PUT').length,1);
+ const second=await commitApprovedContent(env,doc,fetcher,async()=>{});
+ assert.equal(second.status,'EXISTING_IDENTICAL_VERIFIED');
+ assert.equal(calls.filter(x=>x.method==='PUT').length,1);
+});
+test('pre-existing conflicting immutable content denies any GitHub update',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ const fetcher=githubAckLossSimulator(calls,{existingPayload:Buffer.from('malicious conflict').toString('base64')});
+ await assert.rejects(commitApprovedContent(env,doc,fetcher,async()=>{}),/GITHUB_PATH_CONFLICT/);
+ assert.equal(calls.filter(x=>x.method==='PUT').length,0);
+});
+test('lost ACK with no independently readable exact blob remains uncertain and does not retry',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ const f=githubAckLossSimulator(calls,{commitAckLost:true});
+ const fetcher=async(url,init)=>{
+  if(init.method==='GET'&&url.includes('/contents/')&&calls.some(x=>x.method==='PUT')){
+   calls.push({url,method:init.method});
+   return new Response(null,{status:404});
+  }
+  return f(url,init);
+ };
+ await assert.rejects(commitApprovedContent(env,doc,fetcher,async()=>{}),/GITHUB_COMMIT_ACK_UNCERTAIN/);
+ assert.equal(calls.filter(x=>x.method==='PUT').length,1);
+});
+test('expired lease immediately before GitHub create-only PUT denies write after auth',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ const fetcher=githubAckLossSimulator(calls,{commitAckLost:false});
+ let checks=0;
+ await assert.rejects(commitApprovedContent(env,doc,fetcher,async()=>{checks++;throw Error('LEASE_LOST_NO_GITHUB_WRITE')}),/LEASE_LOST_NO_GITHUB_WRITE/);
+ assert.equal(checks,1);
+ assert.equal(calls.filter(x=>x.method==='PUT').length,0);
+});
+test('pilot writer requires D1 lease guard rather than trusting a caller-supplied flag',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ await assert.rejects(commitApprovedContent(env,doc,githubAckLossSimulator(calls)),/D1_LEASE_GUARD_REQUIRED/);
  assert.equal(calls.length,0);
 });
