@@ -1,0 +1,21 @@
+{
+  "name": "topwhiz-tpw-orchestrator",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-23",
+  "workers_dev": false,
+  "triggers": {
+    "crons": []
+  },
+  "vars": {
+    "TPW_MODE": "CLOSED",
+    "TPW_RELEASE_GATE": "CLOSED",
+    "TPW_GITHUB_WRITES": "DISABLED"
+  },
+  "workflows": [
+    {
+      "binding": "TPW_AGENT_WORKFLOW",
+      "name": "topwhiz-tpw-agent",
+      "class_name": "TPWAgentWorkflow"
+    }
+  ]
+}
