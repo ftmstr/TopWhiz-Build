@@ -8,7 +8,7 @@ import {join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {preflightCandidate} from '../src/policy.mjs';
 import {prefilterFeed} from '../src/adapters.mjs';
-import {stageCandidates,readStage,finishStage,cleanupStage} from '../src/staging.mjs';
+import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from '../src/staging.mjs';
 import {executeAgent} from '../src/runner.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
@@ -37,22 +37,44 @@ try {
  assert.equal(await stageCandidates(db,selection.approved,time),1);
  assert.equal(await stageCandidates(db,selection.approved,time),0);
  assert.equal((await readStage(db,time+1)).length,1);
- await finishStage(db,news.id,'QUARANTINED');
+ const claimed=await claimStage(db,news.id,'11111111-1111-4111-8111-111111111111',time+1);
+ assert.equal(claimed?.id,news.id);
+ await finishStage(db,news.id,'QUARANTINED',claimed.leaseToken,time+2);
  const row=await db.prepare('SELECT metadata_json,source_url,state FROM tpw_stage WHERE candidate_id=?').bind(news.id).first();
  assert.deepEqual([row.metadata_json,row.source_url,row.state],['{}','','QUARANTINED']);
  await cleanupStage(db,time+3*3600_000);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,0);
- const env={TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_DB:db,TPW1_FEED_URL:'https://feeds.example.org/ci-news',TPW3_FEED_URL:'https://feeds.example.org/ci-device',TPW_EDITOR_API_URL:'https://editor.example.org/ci-validate',TPW_EDITOR_API_TOKEN:'ci-synthetic-only'};
+ const env={TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_DB:db,TPW1_FEED_URL:'https://feeds.example.org/ci-news',TPW1_FEED_HOST:'feeds.example.org',TPW3_FEED_URL:'https://feeds.example.org/ci-device',TPW3_FEED_HOST:'feeds.example.org',TPW_EDITOR_API_URL:'https://editor.example.org/ci-validate',TPW_EDITOR_ALLOWED_HOST:'editor.example.org',TPW_EDITOR_API_TOKEN:'ci-synthetic-only'};
  const called=[];
  const mock=async(url,init)=>{called.push(url);const c=url===env.TPW1_FEED_URL?{items:[news]}:url===env.TPW3_FEED_URL?{items:[device]}:url===env.TPW_EDITOR_API_URL?await makeDoc(JSON.parse(init.body).candidate):null;if(!c)throw Error('UNAUTHORIZED_NETWORK');return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})};
- assert.equal((await executeAgent({agent:'TPW1',env,fetcher:mock,clock:time})).accepted,1);
- assert.equal((await executeAgent({agent:'TPW3',env,fetcher:mock,clock:time})).accepted,1);
- const r=await executeAgent({agent:'TPW2',env,fetcher:mock,clock:time});
+ assert.equal((await executeAgent({agent:'TPW1',env,fetcher:mock,clock:time,nowFn:()=>time+1})).accepted,1);
+ assert.equal((await executeAgent({agent:'TPW3',env,fetcher:mock,clock:time,nowFn:()=>time+1})).accepted,1);
+ const r=await executeAgent({agent:'TPW2',env,fetcher:mock,clock:time,nowFn:()=>time+2});
  assert.equal(r.approved,2);assert.equal(r.githubWrites,0);assert.equal(r.quarantined,0);
  assert.equal(called.length,4);assert.ok(called.every(x=>!x.includes('github.com')));
  assert.equal((await db.prepare("SELECT count(*) AS n FROM tpw_stage WHERE state='APPROVED'").first()).n,2);
  await cleanupStage(db,time+1);
+ assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,2,'scrubbed terminal IDs must persist as anti-replay tombstones');
+ assert.equal(await stageCandidates(db,[news,device],time+1),0,'terminal IDs cannot be immediately re-staged');
+ await cleanupStage(db,time+3*3600_000);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,0);
+ // Two independent TPW2 runs read the same PENDING row, but only one D1 CAS claim may proceed.
+ assert.equal(await stageCandidates(db,[news],time+1),1);
+ const both=await Promise.all([
+  claimStage(db,news.id,'22222222-2222-4222-8222-222222222222',time+2),
+  claimStage(db,news.id,'33333333-3333-4333-8333-333333333333',time+2)
+ ]);
+ assert.equal(both.filter(Boolean).length,1,'concurrent lease CAS must have one winner');
+ const winner=both.find(Boolean),loser=both.find(x=>!x);
+ assert.equal(loser,null);
+ await assertStageLease(db,news.id,winner.leaseToken,time+2);
+ await assert.rejects(assertStageLease(db,news.id,'44444444-4444-4444-8444-444444444444',time+2),/LEASE_LOST/);
+ await assert.rejects(finishStage(db,news.id,'APPROVED','44444444-4444-4444-8444-444444444444',time+2),/LEASE_LOST/);
+ await cleanupStage(db,time+6*60_000);
+ const expired=await db.prepare('SELECT state,metadata_json,source_url FROM tpw_stage WHERE candidate_id=?').bind(news.id).first();
+ assert.deepEqual([expired.state,expired.metadata_json,expired.source_url],['QUARANTINED','{}','']);
+ assert.equal(await stageCandidates(db,[news],time+6*60_000),0,'expired claim cannot silently requeue or write GitHub');
+ console.log('PASS D1 concurrent claim CAS, wrong-token denial, expired lease -> scrubbed quarantine, anti-replay tombstone');
  console.log('PASS workerd local D1; TPW1+TPW3 staging, TPW2 TR/EN gates, rejected metadata never staged/GitHub, payload TTL cleanup');
 }finally{await platform.dispose()}
 
