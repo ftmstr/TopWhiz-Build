@@ -1,5 +1,6 @@
 /** Restricted GitHub App: no PAT; one separately verified private content repo only. */
 import {publicationGate,safeApprovedPath} from './policy.mjs';
+import {verifyEditorialApproval} from './editorial-proof.mjs';
 function pkcs8(pem){
  if(typeof pem!=='string'||!pem.includes('BEGIN PRIVATE KEY'))throw new Error('PKCS8_KEY_REQUIRED');
  const b64=pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,'');
@@ -39,6 +40,7 @@ export async function commitApprovedContent(env,doc,fetcher=fetch){
  const valid=publicationGate(doc,{releaseGate:'OPEN'});
  if(!valid.ok)throw new Error('CONTENT_INVALID_'+valid.errors.join('_'));
  if(env.GITHUB_OWNER!=='ftmstr'||env.GITHUB_REPO!=='TopWhiz-Content-Private'||env.GITHUB_BRANCH!=='content-approved-pilot'||env.TPW_CONTENT_REPO_PRIVATE_CONFIRMED!=='YES')throw new Error('UNTRUSTED_TARGET');
+ await verifyEditorialApproval(doc,env.TPW_EDITOR_PUBLIC_KEY_SPKI_B64);
  const token=await issueInstallationToken(env,fetcher);await verifyPrivateContentRepository(env,token,fetcher);const path=safeApprovedPath(doc);
  const bytes=new TextEncoder().encode(JSON.stringify(doc,null,2)+'\n');
  const url='https://api.github.com/repos/ftmstr/TopWhiz-Content-Private/contents/'+path;
