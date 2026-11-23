@@ -150,7 +150,8 @@
         "rightsCheck",
         "translationCheck",
         "reviewedAt",
-        "evidenceHash"
+        "evidenceHash",
+        "signature"
       ],
       "properties": {
         "agent": {
@@ -175,6 +176,11 @@
         "evidenceHash": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$",
+          "description": "Detached ECDSA P-256 SHA-256 P1363 signature over domain-separated full approved document; trusted public SPKI pinned outside content"
         }
       }
     },
