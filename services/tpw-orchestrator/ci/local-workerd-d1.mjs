@@ -59,21 +59,22 @@ try {
  await cleanupStage(db,time+3*3600_000);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,0);
  // Two independent TPW2 runs read the same PENDING row, but only one D1 CAS claim may proceed.
- assert.equal(await stageCandidates(db,[news],time+1),1);
+ const leaseStart=time+3*3600_000+1000;
+ assert.equal(await stageCandidates(db,[news],leaseStart),1);
  const both=await Promise.all([
-  claimStage(db,news.id,'22222222-2222-4222-8222-222222222222',time+2),
-  claimStage(db,news.id,'33333333-3333-4333-8333-333333333333',time+2)
+  claimStage(db,news.id,'22222222-2222-4222-8222-222222222222',leaseStart+1000),
+  claimStage(db,news.id,'33333333-3333-4333-8333-333333333333',leaseStart+1000)
  ]);
  assert.equal(both.filter(Boolean).length,1,'concurrent lease CAS must have one winner');
  const winner=both.find(Boolean),loser=both.find(x=>!x);
  assert.equal(loser,null);
- await assertStageLease(db,news.id,winner.leaseToken,time+2);
- await assert.rejects(assertStageLease(db,news.id,'44444444-4444-4444-8444-444444444444',time+2),/LEASE_LOST/);
- await assert.rejects(finishStage(db,news.id,'APPROVED','44444444-4444-4444-8444-444444444444',time+2),/LEASE_LOST/);
- await cleanupStage(db,time+6*60_000);
+ await assertStageLease(db,news.id,winner.leaseToken,leaseStart+1000);
+ await assert.rejects(assertStageLease(db,news.id,'44444444-4444-4444-8444-444444444444',leaseStart+1000),/LEASE_LOST/);
+ await assert.rejects(finishStage(db,news.id,'APPROVED','44444444-4444-4444-8444-444444444444',leaseStart+1000),/LEASE_LOST/);
+ await cleanupStage(db,leaseStart+6*60_000);
  const expired=await db.prepare('SELECT state,metadata_json,source_url FROM tpw_stage WHERE candidate_id=?').bind(news.id).first();
  assert.deepEqual([expired.state,expired.metadata_json,expired.source_url],['QUARANTINED','{}','']);
- assert.equal(await stageCandidates(db,[news],time+6*60_000),0,'expired claim cannot silently requeue or write GitHub');
+ assert.equal(await stageCandidates(db,[news],leaseStart+6*60_000),0,'expired claim cannot silently requeue or write GitHub');
  console.log('PASS D1 concurrent claim CAS, wrong-token denial, expired lease -> scrubbed quarantine, anti-replay tombstone');
  console.log('PASS workerd local D1; TPW1+TPW3 staging, TPW2 TR/EN gates, rejected metadata never staged/GitHub, payload TTL cleanup');
 }finally{await platform.dispose()}
