@@ -1,7 +1,7 @@
 {
   "name": "topwhiz-tpw-ci-isolated",
   "main": "src/index.mjs",
-  "compatibility_date": "2026-11-23",
+  "compatibility_date": "2026-11-11",
   "workers_dev": false,
   "triggers": {
     "crons": []
