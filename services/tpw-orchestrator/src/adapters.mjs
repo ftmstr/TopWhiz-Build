@@ -10,10 +10,18 @@ export async function boundedResponseText(r,max){
  const result=new Uint8Array(n);let i=0;for(const c of chunks){result.set(c,i);i+=c.byteLength}
  return new TextDecoder('utf-8',{fatal:true}).decode(result);
 }
-export async function boundedJson(url,allowUrl,fetcher=fetch){
- if(!url||url!==allowUrl||!url.startsWith('https://'))throw new Error('FEED_NOT_ALLOWLISTED');
+/** Explicit, fixed host trust root. No request is sent to IP literals, credentials, alternate ports or unpinned hosts. */
+export function assertTrustedEndpoint(url,configuredUrl,allowedHost){
+ if(typeof url!=='string'||url!==configuredUrl||typeof allowedHost!=='string'||!/^[a-z0-9](?:[a-z0-9.-]{1,250}[a-z0-9])?$/.test(allowedHost)||allowedHost!==allowedHost.toLowerCase())throw new Error('ENDPOINT_NOT_ALLOWLISTED');
+ let u;
+ try{u=new URL(url)}catch{throw new Error('ENDPOINT_NOT_ALLOWLISTED')}
+ if(u.protocol!=='https:'||u.hostname!==allowedHost||u.port||u.username||u.password||u.hash||u.origin!=='https://'+allowedHost||!u.pathname.startsWith('/')||u.hostname==='localhost'||u.hostname.endsWith('.localhost')||u.hostname.endsWith('.local')||u.hostname.endsWith('.internal')||u.hostname.endsWith('.onion')||/^[0-9.]+$/.test(u.hostname)||u.hostname.includes(':')||!u.hostname.includes('.')||url!==u.href)throw new Error('ENDPOINT_NOT_ALLOWLISTED');
+ return u.href;
+}
+export async function boundedJson(url,allowUrl,fetcher=fetch,allowedHost){
+ assertTrustedEndpoint(url,allowUrl,allowedHost);
  const response=await fetcher(url,{method:'GET',redirect:'error',headers:{Accept:'application/json'}});
- if(!response.ok||response.headers.get('content-type')?.split(';')[0].trim()!=='application/json')throw new Error('BAD_FEED_HTTP');
+ if(!response.ok||(response.url&&response.url!==url)||response.redirected||response.headers.get('content-type')?.split(';')[0].trim()!=='application/json')throw new Error('BAD_FEED_HTTP');
  try{return JSON.parse(await boundedResponseText(response,LIMIT))}catch{throw new Error('INVALID_OR_OVERSIZED_JSON')}
 }
 export function prefilterFeed(feed,kind){
