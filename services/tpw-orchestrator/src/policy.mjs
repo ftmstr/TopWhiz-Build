@@ -34,7 +34,8 @@ export function publicationGate(x,{releaseGate}={}){
  if(!time(x?.publishedAt)||!HASH.test(x?.sourceDigest||''))e.push('PROVENANCE_DIGEST');
  if(!Array.isArray(x?.media)||x.media.length!==0)e.push('MEDIA_NO_GO');
  const r=x?.review;
- if(!exact(r,['agent','decision','factCheck','rightsCheck','translationCheck','reviewedAt','evidenceHash'])||r.agent!=='TPW2'||r.decision!=='APPROVED'||r.factCheck!=='VERIFIED'||r.rightsCheck!=='CLEARED'||r.translationCheck!=='VERIFIED'||!time(r.reviewedAt)||!HASH.test(r.evidenceHash||''))e.push('EDITOR_PROOF');
+ if(!exact(r,['agent','decision','factCheck','rightsCheck','translationCheck','reviewedAt','evidenceHash','signature'])||r.agent!=='TPW2'||r.decision!=='APPROVED'||r.factCheck!=='VERIFIED'||r.rightsCheck!=='CLEARED'||r.translationCheck!=='VERIFIED'||!time(r.reviewedAt)||!HASH.test(r.evidenceHash||''))e.push('EDITOR_PROOF');
+ if(r?.signature!==undefined&&!/^[A-Za-z0-9_-]{86}$/.test(r.signature))e.push('EDITOR_SIGNATURE_FORMAT');
  if(!Array.isArray(x?.sources)||x.sources.length<1||x.sources.length>6)e.push('SOURCES');
  else {
   const pubs=new Set();let primary=false;
