@@ -9,6 +9,14 @@ export async function stageCandidates(db,records,now=Date.now(),scope=null){
   const r=await db.prepare("INSERT OR IGNORE INTO tpw_stage (candidate_id,kind,source_url,metadata_json,observed_at,expires_at,state,run_slot) VALUES (?,?,?,?,?,?,'PENDING',?)")
    .bind(c.id,c.kind,c.source.url,json,c.observedAt,now+TTL,scope?.slot??null).run();
   accepted+=r.meta?.changes||0;
+  // Only a freshly fetched official candidate may move an older, never-claimed PENDING row.
+  // Terminal and PROCESSING rows remain immutable; a changed source cannot reuse an existing id.
+  if(r.meta?.changes===0&&scope?.restage===true){
+   await scope.guard();
+   const moved=await db.prepare("UPDATE tpw_stage SET metadata_json=?,observed_at=?,expires_at=?,run_slot=? WHERE candidate_id=? AND kind=? AND source_url=? AND state='PENDING' AND run_slot IS NOT NULL AND run_slot<? AND expires_at>? AND json_extract(metadata_json,'$.source.publisher')=? AND json_extract(metadata_json,'$.source.rights')=?")
+    .bind(json,c.observedAt,now+TTL,scope.slot,c.id,c.kind,c.source.url,scope.slot,now,c.source.publisher,c.source.rights).run();
+   accepted+=moved.meta?.changes||0;
+  }
  }
  return accepted;
 }

@@ -1,5 +1,6 @@
 /** Scheduled agent tasks; real web release always HARD NO-GO. */
 import {boundedJson,boundedResponseText,prefilterFeed,approveEditorialOutput,assertTrustedEndpoint} from './adapters.mjs';
+import {readOfficialSource} from './official-source.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from './staging.mjs';
 import {candidateDigest,originMatches} from './lineage.mjs';
 import {commitApprovedContent} from './github-app.mjs';
@@ -14,8 +15,10 @@ export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),now
   const key=agent==='TPW1'?'TPW1_FEED_URL':'TPW3_FEED_URL';
   if(!env[key])return {agent,state:'NO_SOURCE_ADAPTER',githubWrites:0};
   const host=agent==='TPW1'?'TPW1_FEED_HOST':'TPW3_FEED_HOST';
-  const p=prefilterFeed(await boundedJson(env[key],env[key],fetcher,env[host]),agent==='TPW1'?'news':'device');
-  const count=await stageCandidates(env.TPW_DB,p.approved,clock,scope);
+  const configured=Boolean(env[agent+'_SOURCE_FORMAT']);
+  if(!configured&&env.TPW_MODE!=='LOCAL_DRY_RUN')throw Error('OFFICIAL_SOURCE_REQUIRED');
+  const p=configured?await readOfficialSource(env,agent,fetcher,clock):prefilterFeed(await boundedJson(env[key],env[key],fetcher,env[host]),agent==='TPW1'?'news':'device');
+  const count=await stageCandidates(env.TPW_DB,p.approved,clock,{...scope,restage:configured});
   return {agent,state:'STAGED_METADATA',accepted:count,discarded:p.stats.rejected,githubWrites:0};
  }
  if(agent!=='TPW2')throw new Error('UNKNOWN_AGENT');

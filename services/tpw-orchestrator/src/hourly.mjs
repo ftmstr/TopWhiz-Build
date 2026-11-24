@@ -8,14 +8,21 @@ export function slotWindow(agent,slot){
  if(!Number.isFinite(t)||new Date(t).toISOString()!==iso)throw Error('INVALID_RUN_SLOT');
  return {start:t+minutes[agent]*60_000,end:t+3600_000};
 }
+export const RUN_RETENTION_MS=30*24*3600_000;
+export async function pruneHourlyRuns(db,now){
+ if(!Number.isSafeInteger(now))throw Error('RUN_CLOCK_INVALID');
+ const r=await db.prepare("DELETE FROM tpw_hourly_run WHERE state IN ('SUCCEEDED','FAILED') AND finished_at<? AND NOT EXISTS (SELECT 1 FROM tpw_stage WHERE run_slot=tpw_hourly_run.slot)").bind(now-RUN_RETENTION_MS).run();
+ return r.meta?.changes||0;
+}
 export async function executeHourly({agent,slot,env,fetcher=fetch,nowFn=Date.now}){
  if(env.TPW_MODE==='CLOSED')return {agent,state:'DISABLED_NO_GO',githubWrites:0};
  if(!['LOCAL_DRY_RUN','PRIVATE_PILOT'].includes(env.TPW_MODE)||env.TPW_RELEASE_GATE!=='CLOSED'||!env.TPW_DB)throw Error('RUN_CONFIG_INVALID');
  const db=env.TPW_DB,{start,end}=slotWindow(agent,slot),now=nowFn();
  if(!Number.isSafeInteger(now))throw Error('RUN_CLOCK_INVALID');
+ if(now<start||now>=end)return {agent,slot,state:'OUTSIDE_SLOT',githubWrites:0};
+ await pruneHourlyRuns(db,now);
  // Terminal failure is permanent for a slot. A crashed owner is never stolen/replayed.
  await db.prepare("UPDATE tpw_hourly_run SET state='FAILED',finished_at=? WHERE state='RUNNING' AND deadline<=?").bind(now,now).run();
- if(now<start||now>=end)return {agent,slot,state:'OUTSIDE_SLOT',githubWrites:0};
  const owner=crypto.randomUUID();
  const claim=await db.prepare("INSERT OR IGNORE INTO tpw_hourly_run(slot,agent,state,owner,started_at,deadline) SELECT ?,?,'RUNNING',?,?,? WHERE (?<>'TPW2' OR (SELECT count(*) FROM tpw_hourly_run WHERE slot=? AND agent IN ('TPW1','TPW3') AND state='SUCCEEDED' AND deadline=? AND finished_at<=?)=2)")
  .bind(slot,agent,owner,now,end,agent,slot,end,now).run();
