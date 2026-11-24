@@ -9,11 +9,12 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {preflightCandidate} from '../src/policy.mjs';
 import {prefilterFeed} from '../src/adapters.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from '../src/staging.mjs';
-import {executeAgent} from '../src/runner.mjs';
+import {executeHourly,slotWindow} from '../src/hourly.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const schema=fileURLToPath(new URL('../migrations/0001_tpw_stage.sql',import.meta.url));
+const hourlySchema=fileURLToPath(new URL('../migrations/0002_tpw_hourly.sql',import.meta.url));
 const d1config=fileURLToPath(new URL('../wrangler.ci-d1.jsonc',import.meta.url));
 const localconfig=fileURLToPath(new URL('../wrangler.ci-local.jsonc',import.meta.url));
 const webRequire=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
@@ -31,6 +32,7 @@ try {
  const ddl=readFileSync(schema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean);
  assert.equal(ddl.length,2,'EXPECTED_TWO_D1_MIGRATION_STATEMENTS');
  for(const statement of ddl)await db.prepare(statement).run();
+ for(const statement of readFileSync(hourlySchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  const reject={...news,body:'unlicensed body text'};
  const selection=prefilterFeed({items:[news,news,reject]},'news');
  assert.deepEqual(selection.stats,{received:3,rejected:1,duplicates:1});
@@ -47,11 +49,19 @@ try {
  const env={TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_DB:db,TPW1_FEED_URL:'https://feeds.example.org/ci-news',TPW1_FEED_HOST:'feeds.example.org',TPW3_FEED_URL:'https://feeds.example.org/ci-device',TPW3_FEED_HOST:'feeds.example.org',TPW_EDITOR_API_URL:'https://editor.example.org/ci-validate',TPW_EDITOR_ALLOWED_HOST:'editor.example.org',TPW_EDITOR_API_TOKEN:'ci-synthetic-only'};
  const called=[];
  const mock=async(url,init)=>{called.push(url);const c=url===env.TPW1_FEED_URL?{items:[news]}:url===env.TPW3_FEED_URL?{items:[device]}:url===env.TPW_EDITOR_API_URL?await makeDoc(JSON.parse(init.body).candidate):null;if(!c)throw Error('UNAUTHORIZED_NETWORK');return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})};
- assert.equal((await executeAgent({agent:'TPW1',env,fetcher:mock,clock:time,nowFn:()=>time+1})).accepted,1);
- assert.equal((await executeAgent({agent:'TPW3',env,fetcher:mock,clock:time,nowFn:()=>time+1})).accepted,1);
- const r=await executeAgent({agent:'TPW2',env,fetcher:mock,clock:time,nowFn:()=>time+2});
+ const slot='2026112300',call=(agent,minute,fetcher=mock,s=slot)=>executeHourly({agent,slot:s,env,fetcher,nowFn:()=>slotWindow(agent,s).end-3600_000+minute*60_000+1});
+ assert.equal((await call('TPW2',40)).state,'DEPENDENCIES_NOT_READY');
+ assert.equal(called.length,0);
+ assert.equal((await call('TPW1',0)).accepted,1);
+ assert.equal((await call('TPW1',1)).state,'DUPLICATE_SUCCEEDED');
+ assert.equal((await call('TPW2',40)).state,'DEPENDENCIES_NOT_READY');
+ assert.equal((await call('TPW3',20)).accepted,1);
+ const r=await call('TPW2',40);
  assert.equal(r.approved,2);assert.equal(r.githubWrites,0);assert.equal(r.quarantined,0);
- assert.equal(called.length,4);assert.ok(called.every(x=>!x.includes('github.com')));
+ assert.equal(called.length,4);
+ assert.equal(r.runState,'SUCCEEDED');
+ assert.equal((await call('TPW2',41)).state,'DUPLICATE_SUCCEEDED');
+ assert.equal((await db.prepare("SELECT count(*) AS n FROM tpw_hourly_run WHERE slot=? AND state='SUCCEEDED'").bind(slot).first()).n,3);assert.ok(called.every(x=>!x.includes('github.com')));
  assert.equal((await db.prepare("SELECT count(*) AS n FROM tpw_stage WHERE state='APPROVED'").first()).n,2);
  await cleanupStage(db,time+1);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,2,'scrubbed terminal IDs must persist as anti-replay tombstones');
@@ -75,6 +85,22 @@ try {
  const expired=await db.prepare('SELECT state,metadata_json,source_url FROM tpw_stage WHERE candidate_id=?').bind(news.id).first();
  assert.deepEqual([expired.state,expired.metadata_json,expired.source_url],['QUARANTINED','{}','']);
  assert.equal(await stageCandidates(db,[news],leaseStart+6*60_000),0,'expired claim cannot silently requeue or write GitHub');
+ const next='2026112301';
+ const empty=async()=>new Response(JSON.stringify({items:[]}),{headers:{'Content-Type':'application/json'}});
+ const race=await Promise.all([call('TPW1',0,empty,next),call('TPW1',0,empty,next)]);
+ assert.equal(race.filter(x=>x.runState==='SUCCEEDED').length,1);
+ assert.equal(race.filter(x=>x.state.startsWith('DUPLICATE_')).length,1);
+ assert.equal((await call('TPW3',20,async()=>{throw Error('SYNTHETIC_FEED_FAILURE')},next)).runState,'FAILED');
+ assert.equal((await call('TPW3',21,empty,next)).state,'DUPLICATE_FAILED');
+ assert.equal((await call('TPW2',40,empty,next)).state,'DEPENDENCIES_NOT_READY');
+ assert.equal((await call('TPW2',60,empty,next)).state,'OUTSIDE_SLOT');
+ assert.throws(()=>slotWindow('TPW1','2026023000'),/INVALID_RUN_SLOT/);
+ // An abandoned run remains terminal failure rather than being stolen.
+ const abandoned='2026112302',start=slotWindow('TPW1',abandoned).start;
+ await db.prepare("INSERT INTO tpw_hourly_run(slot,agent,state,owner,started_at,deadline) VALUES (?,'TPW1','RUNNING','abandoned',?,?)").bind(abandoned,start,start+3600_000).run();
+ await call('TPW1',0,empty,'2026112303');
+ assert.equal((await db.prepare("SELECT state FROM tpw_hourly_run WHERE slot=? AND agent='TPW1'").bind(abandoned).first()).state,'FAILED');
+ console.log('PASS same-slot D1 dependencies, duplicate CAS, failed feed, expired run, late trigger and abandoned owner');
  console.log('PASS D1 concurrent claim CAS, wrong-token denial, expired lease -> scrubbed quarantine, anti-replay tombstone');
  console.log('PASS workerd local D1; TPW1+TPW3 staging, TPW2 TR/EN gates, rejected metadata never staged/GitHub, payload TTL cleanup');
 }finally{await platform.dispose()}
@@ -89,6 +115,7 @@ function wranglerSync(a){
 }
 try{
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',schema]);
+ wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',hourlySchema]);
  worker=spawn('pnpm',args('dev','--config',localconfig,'--local','--test-scheduled','--ip','127.0.0.1','--port',String(port),'--persist-to',tmp),{cwd:root,env:ciEnv,stdio:['ignore','pipe','pipe']});
  for(const stream of [worker.stdout,worker.stderr])stream.on('data',data=>{log=(log+String(data)).slice(-12000)});
  let ready=false;

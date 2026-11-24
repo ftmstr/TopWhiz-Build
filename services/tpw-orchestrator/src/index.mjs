@@ -1,7 +1,7 @@
 /** Cloudflare Workers TPW orchestrator. Default CLOSED; never exposes public endpoint. */
 import { WorkflowEntrypoint } from 'cloudflare:workers';
 import { slotForCron } from './policy.mjs';
-import { executeAgent } from './runner.mjs';
+import { executeHourly } from './hourly.mjs';
 export class TPWAgentWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
     const {agent, slot} = event.payload || {};
@@ -10,7 +10,11 @@ export class TPWAgentWorkflow extends WorkflowEntrypoint {
     }
     return step.do('execute-' + agent + '-' + slot,
       {retries:{limit:2, delay:'30 seconds', backoff:'exponential'}},
-      () => executeAgent({agent, env:this.env}));
+      async () => {
+        const result=await executeHourly({agent,slot,env:this.env});
+        if(result.state==='DEPENDENCIES_NOT_READY')throw Error('HOURLY_DEPENDENCIES_NOT_READY');
+        return result;
+      });
   }
 }
 export default {

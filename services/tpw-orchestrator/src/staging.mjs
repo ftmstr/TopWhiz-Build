@@ -1,26 +1,27 @@
 /** D1 stores only filtered metadata. A processing lease prevents concurrent TPW2 runs from editing the same candidate. */
 const TTL=2*60*60*1000,LEASE_MS=5*60*1000;
-export async function stageCandidates(db,records,now=Date.now()){
+export async function stageCandidates(db,records,now=Date.now(),scope=null){
  if(!db)throw new Error('STAGING_DB_UNAVAILABLE');
  let accepted=0;
  for(const c of records){
+  if(scope)await scope.guard();
   const json=JSON.stringify(c);if(json.length>8000)continue;
-  const r=await db.prepare("INSERT OR IGNORE INTO tpw_stage (candidate_id,kind,source_url,metadata_json,observed_at,expires_at,state) VALUES (?,?,?,?,?,?,'PENDING')")
-   .bind(c.id,c.kind,c.source.url,json,c.observedAt,now+TTL).run();
+  const r=await db.prepare("INSERT OR IGNORE INTO tpw_stage (candidate_id,kind,source_url,metadata_json,observed_at,expires_at,state,run_slot) VALUES (?,?,?,?,?,?,'PENDING',?)")
+   .bind(c.id,c.kind,c.source.url,json,c.observedAt,now+TTL,scope?.slot??null).run();
   accepted+=r.meta?.changes||0;
  }
  return accepted;
 }
-export async function readStage(db,now=Date.now()){
+export async function readStage(db,now=Date.now(),slot=null){
  if(!db)throw new Error('STAGING_DB_UNAVAILABLE');
- const r=await db.prepare("SELECT candidate_id,metadata_json FROM tpw_stage WHERE state='PENDING' AND expires_at>? ORDER BY observed_at ASC LIMIT 30").bind(now).all();
+ const r=await db.prepare("SELECT candidate_id,metadata_json FROM tpw_stage WHERE state='PENDING' AND expires_at>? AND run_slot IS ? ORDER BY observed_at ASC LIMIT 60").bind(now,slot).all();
  return (r.results||[]).map(x=>({id:x.candidate_id,candidate:JSON.parse(x.metadata_json)}));
 }
 const tokenValid=t=>typeof t==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(t);
-export async function claimStage(db,id,token,now=Date.now()){
+export async function claimStage(db,id,token,now=Date.now(),slot=null){
  if(!db||!tokenValid(token)||!Number.isFinite(now))throw new Error('LEASE_INPUT_INVALID');
- const result=await db.prepare("UPDATE tpw_stage SET state='PROCESSING',lease_owner=?,lease_until=? WHERE candidate_id=? AND state='PENDING' AND expires_at>?")
-  .bind(token,now+LEASE_MS,id,now).run();
+ const result=await db.prepare("UPDATE tpw_stage SET state='PROCESSING',lease_owner=?,lease_until=? WHERE candidate_id=? AND state='PENDING' AND expires_at>? AND run_slot IS ?")
+  .bind(token,now+LEASE_MS,id,now,slot).run();
  if(result.meta?.changes!==1)return null;
  const row=await db.prepare("SELECT candidate_id,metadata_json FROM tpw_stage WHERE candidate_id=? AND state='PROCESSING' AND lease_owner=?").bind(id,token).first();
  if(!row)throw new Error('LEASE_CLAIM_LOST');
