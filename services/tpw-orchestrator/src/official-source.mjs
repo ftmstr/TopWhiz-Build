@@ -1,5 +1,7 @@
 /** Bounded, metadata-only source adapters. No live source is configured in this repository. */
 import {assertTrustedEndpoint,boundedResponseText,prefilterFeed} from './adapters.mjs';
+import {assertPilotCatalogSource} from './source-catalog.mjs';
+import {resolveReviewedAlias} from './source-identity.mjs';
 const MAX=256*1024, atomNS='http://www.w3.org/2005/Atom';
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const exact=(x,keys)=>plain(x)&&Object.keys(x).every(k=>keys.includes(k));
@@ -68,7 +70,12 @@ function configFor(env,agent){
  return {format,kind,endpoint,host,sourceHost,publisher,brand};
 }
 export async function readOfficialSource(env,agent,fetcher=fetch,now=Date.now()){
+ if(env.TPW_MODE==='PRIVATE_PILOT')assertPilotCatalogSource();
  const cfg=configFor(env,agent);
+ const rawAliases=env[agent+'_SOURCE_ALIASES_JSON'];
+ if(rawAliases!==undefined&&(env.TPW_MODE!=='LOCAL_DRY_RUN'||typeof rawAliases!=='string'||rawAliases.length>16384))throw Error('ALIAS_CONFIG');
+ const aliases=rawAliases===undefined?[]:JSON.parse(rawAliases);
+ resolveReviewedAlias('https://'+cfg.sourceHost+'/',cfg.sourceHost,aliases);
  if(!Number.isSafeInteger(now))throw Error('SOURCE_CLOCK');
  const xml=cfg.format==='RSS'||cfg.format==='ATOM';
  const mime=xml?['application/rss+xml','application/atom+xml','application/xml','text/xml']:['application/json'];
@@ -79,11 +86,11 @@ export async function readOfficialSource(env,agent,fetcher=fetch,now=Date.now())
  if(xml)rows=parseNewsXML(raw,cfg.format);
  else{const doc=JSON.parse(raw);if(!exact(doc,['items'])||!Array.isArray(doc.items))throw Error('SOURCE_API_CONTRACT');rows=doc.items}
  if(rows.length>30)throw Error('SOURCE_ITEM_LIMIT');
- const items=[];
+ const items=[],identities=new Map();
  for(const x of rows){
   if(!exact(x,cfg.kind==='news'?['title','url']:['title','url','device'])||!clean(x.title)||!clean(x.url))throw Error('SOURCE_ROW');
   assertTrustedEndpoint(x.url,x.url,cfg.sourceHost);
-  const url=x.url;
+  const url=resolveReviewedAlias(x.url,cfg.sourceHost,aliases);
   // Source identity is pinned by operator configuration, never accepted from feed claims.
   const out={kind:cfg.kind,source:{url,publisher:cfg.publisher,rights:'LINK_ONLY',type:'PRIMARY'},observedAt:new Date(now).toISOString(),title:x.title};
   if(cfg.kind==='device'){
@@ -92,6 +99,9 @@ export async function readOfficialSource(env,agent,fetcher=fetch,now=Date.now())
    out.device={brand:d.brand,model:d.model,sku:d.sku,region:d.region};
   }
   out.id=await idFor(cfg.kind,cfg.kind==='news'?[url]:[out.device.brand,out.device.sku,out.device.region]);
+  const comparable=JSON.stringify([out.source.url,out.title,out.device??null]);
+  if(identities.has(out.id)&&identities.get(out.id)!==comparable)throw Error('SOURCE_IDENTITY_CONFLICT');
+  identities.set(out.id,comparable);
   items.push(out);
  }
  const result=prefilterFeed({items},cfg.kind);
