@@ -43,7 +43,7 @@ export async function executeHourly({agent,slot,env,fetcher=fetch,nowFn=Date.now
  };
  try{
   await guard();
-  const result=await executeAgent({agent,env,fetcher,clock:now,nowFn,scope:{slot,guard}});
+  const result=await executeAgent({agent,env,fetcher,clock:now,nowFn,scope:{slot,guard,owner}});
   const success=agent==='TPW2'?result.state==='NO_PUBLICATION':result.state==='STAGED_METADATA';
   if(success)await guard();
   await finish(success?'SUCCEEDED':'FAILED');

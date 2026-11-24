@@ -1,5 +1,6 @@
 /** Scheduled agent tasks; real web release always HARD NO-GO. */
 import {boundedJson,boundedResponseText,prefilterFeed,approveEditorialOutput,assertTrustedEndpoint} from './adapters.mjs';
+import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from './revision-ledger.mjs';
 import {readOfficialSource} from './official-source.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from './staging.mjs';
 import {candidateDigest,originMatches} from './lineage.mjs';
@@ -34,11 +35,17 @@ export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),now
   let decision='QUARANTINED';
   try{
    await scope.guard();
-   const r=await fetcher(env.TPW_EDITOR_API_URL,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TPW_EDITOR_API_TOKEN},body:JSON.stringify({schemaVersion:'1.0',candidate:owned.candidate})});
+   const prior=owned.candidate.kind==='device'?await readRevisionHead(env.TPW_DB,await deviceVariantKey(owned.candidate)):null;
+   const r=await fetcher(env.TPW_EDITOR_API_URL,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TPW_EDITOR_API_TOKEN},body:JSON.stringify({schemaVersion:'1.0',candidate:owned.candidate,...(owned.candidate.kind==='device'?{previousRevision:prior?.revision_hash??null}:{})})});
    if(!r.ok||r.redirected||(r.url&&r.url!==env.TPW_EDITOR_API_URL))throw new Error('EDITOR_HTTP');
    const article=JSON.parse(await boundedResponseText(r,65536));
    if(article.id!==owned.id||article.kind!==owned.candidate.kind||article.sourceDigest!==await candidateDigest(owned.candidate)||!originMatches(owned.candidate,article))throw new Error('SOURCE_LINEAGE_MISMATCH');
    if(!approveEditorialOutput(article).ok)throw new Error('EDITOR_POLICY');
+   if(article.kind==='device'){
+    // Devices never use the immutable news-style GitHub path. Local D1 receipt only.
+    await appendReviewedRevision({env,owned,article,expectedHead:prior?.revision_hash??null,scope,nowFn});
+    approved++;continue;
+   }
    if(env.TPW_MODE==='PRIVATE_PILOT'&&env.TPW_GITHUB_WRITES==='ENABLED'){
     // No network write after the lease is lost or expired. GitHub 201 ACK loss still requires manual reconciliation.
     await assertStageLease(env.TPW_DB,owned.id,owned.leaseToken,nowFn());
