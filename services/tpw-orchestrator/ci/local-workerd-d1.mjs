@@ -11,12 +11,14 @@ import {prefilterFeed} from '../src/adapters.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from '../src/staging.mjs';
 import {executeHourly,slotWindow,pruneHourlyRuns,RUN_RETENTION_MS} from '../src/hourly.mjs';
 import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from '../src/revision-ledger.mjs';
+import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const schema=fileURLToPath(new URL('../migrations/0001_tpw_stage.sql',import.meta.url));
 const hourlySchema=fileURLToPath(new URL('../migrations/0002_tpw_hourly.sql',import.meta.url));
 const revisionSchema=fileURLToPath(new URL('../migrations/0003_tpw_revisions.sql',import.meta.url));
+const proofSchema=fileURLToPath(new URL('../migrations/0004_tpw_revision_proofs.sql',import.meta.url));
 const d1config=fileURLToPath(new URL('../wrangler.ci-d1.jsonc',import.meta.url));
 const localconfig=fileURLToPath(new URL('../wrangler.ci-local.jsonc',import.meta.url));
 const webRequire=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
@@ -26,6 +28,14 @@ const source={url:'https://official.example.org/synthetic',publisher:'Synthetic 
 const news={id:'news_workerd_ci_001',kind:'news',source,observedAt:at,title:'Synthetic news for the local workerd D1 test'};
 const device={id:'device_workerd_ci_001',kind:'device',source,observedAt:at,title:'Synthetic device for the local workerd D1 test',device:{brand:'Example',model:'Example P',sku:'EX-001',region:'TR'}};
 const makeDoc=async c=>({schemaVersion:'1.0',id:c.id,kind:c.kind,status:'APPROVED',title:{tr:'Sentetik teknik duyuru',en:'Synthetic technical announcement'},summary:{tr:'Bu yalnızca yerel çalıştırma için hazırlanmış sentetik bir kayıttır.',en:'This record exists only for synthetic local acceptance testing.'},body:{tr:'Tamamen kurgusal bir metindir; gerçek bir marka, ürün, olay veya haber iddiası içermez.',en:'This entirely synthetic sample does not make any real product, manufacturer or news claim.'},sources:[{...c.source,checkedAt:at,claimHash:hash},{url:'https://independent.example.net/lab',publisher:'Synthetic laboratory',rights:'LINK_ONLY',type:'INDEPENDENT',checkedAt:at,claimHash:hash}],review:{agent:'TPW2',decision:'APPROVED',factCheck:'VERIFIED',rightsCheck:'CLEARED',translationCheck:'VERIFIED',reviewedAt:at,evidenceHash:hash},media:[],publishedAt:at,sourceDigest:await candidateDigest(c),...(c.kind==='device'?{device:{...c.device,specifications:{screen:{value:'6.3',unit:'inch',sourceHash:hash}}}}:{})});
+const editorKeys=await crypto.subtle.generateKey('Ed25519',true,['sign','verify']);
+const licenseKeys=await crypto.subtle.generateKey('Ed25519',true,['sign','verify']);
+const sign=async(key,msg)=>b64url(await crypto.subtle.sign('Ed25519',key,new TextEncoder().encode(JSON.stringify(msg))));
+const makeProof=async(article,previous,slot)=>{
+ const expiresAt=time+24*3600_000;
+ const grants=await Promise.all(article.sources.map(async s=>({expiresAt,signature:await sign(licenseKeys.privateKey,grantMessage(s,expiresAt))})));
+ return {grants,editorSignature:await sign(editorKeys.privateKey,editorMessage(article,previous,slot,grants))};
+};
 const platform=await getPlatformProxy({configPath:d1config,persist:false,remoteBindings:false});
 try {
  const db=platform.env.TPW_DB;assert.ok(db&&db.prepare&&db.exec,'Real local workerd D1 binding missing');
@@ -36,6 +46,7 @@ try {
  for(const statement of ddl)await db.prepare(statement).run();
  for(const statement of readFileSync(hourlySchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  for(const statement of readFileSync(revisionSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
+ for(const statement of readFileSync(proofSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  const reject={...news,body:'unlicensed body text'};
  const selection=prefilterFeed({items:[news,news,reject]},'news');
  assert.deepEqual(selection.stats,{received:3,rejected:1,duplicates:1});
@@ -50,8 +61,16 @@ try {
  await cleanupStage(db,time+3*3600_000);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_stage').first()).n,0);
  const env={TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_DB:db,TPW1_FEED_URL:'https://feeds.example.org/ci-news',TPW1_FEED_HOST:'feeds.example.org',TPW3_FEED_URL:'https://feeds.example.org/ci-device',TPW3_FEED_HOST:'feeds.example.org',TPW_EDITOR_API_URL:'https://editor.example.org/ci-validate',TPW_EDITOR_ALLOWED_HOST:'editor.example.org',TPW_EDITOR_API_TOKEN:'ci-synthetic-only'};
+ env.TPW_EDITOR_PUBLIC_KEY=b64url(await crypto.subtle.exportKey('raw',editorKeys.publicKey));
+ env.TPW_LICENSE_PUBLIC_KEY=b64url(await crypto.subtle.exportKey('raw',licenseKeys.publicKey));
  const called=[];
- const mock=async(url,init)=>{called.push(url);const c=url===env.TPW1_FEED_URL?{items:[news]}:url===env.TPW3_FEED_URL?{items:[device]}:url===env.TPW_EDITOR_API_URL?await makeDoc(JSON.parse(init.body).candidate):null;if(!c)throw Error('UNAUTHORIZED_NETWORK');return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})};
+ const mock=async(url,init)=>{called.push(url);let c;
+ if(url===env.TPW1_FEED_URL)c={items:[news]};
+ else if(url===env.TPW3_FEED_URL)c={items:[device]};
+ else if(url===env.TPW_EDITOR_API_URL){const q=JSON.parse(init.body),article=await makeDoc(q.candidate);c=q.candidate.kind==='device'?{article,proof:await makeProof(article,q.previousRevision,'2026112300')}:article}
+ else throw Error('UNAUTHORIZED_NETWORK');
+ return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})
+ };
  const slot='2026112300',call=(agent,minute,fetcher=mock,s=slot)=>executeHourly({agent,slot:s,env,fetcher,nowFn:()=>slotWindow(agent,s).end-3600_000+minute*60_000+1});
  assert.equal((await call('TPW2',40)).state,'DEPENDENCIES_NOT_READY');
  assert.equal(called.length,0);
@@ -136,12 +155,28 @@ try {
  const oy=await claimStage(db,y.id,'77777777-7777-4777-8777-777777777777',revAt,revSlot);
  const ax=await makeDoc(x),ay=await makeDoc(y);
  ax.device.specifications.screen.value='6.4';ay.device.specifications.screen.value='6.5';
- const attempt=(owned,article)=>appendReviewedRevision({env,owned,article,expectedHead:first.revision_hash,scope,nowFn:()=>revAt+1});
+ const attempt=async(owned,article,proof=undefined,dbOverride=db)=>appendReviewedRevision({env:{...env,TPW_DB:dbOverride},owned,article,expectedHead:first.revision_hash,scope,proof:proof??await makeProof(article,first.revision_hash,revSlot),nowFn:()=>revAt+1});
  const rightsBad=structuredClone(ax);rightsBad.sources[1].rights='PERMISSION_GRANTED';
  await assert.rejects(attempt(ox,rightsBad),/REVISION_RIGHTS_UNVERIFIED/);
- const outcomes=await Promise.allSettled([attempt(ox,ax),attempt(oy,ay)]);
+ const px=await makeProof(ax,first.revision_hash,revSlot),py=await makeProof(ay,first.revision_hash,revSlot);
+ const bad=structuredClone(px);bad.editorSignature=py.editorSignature;
+ await assert.rejects(attempt(ox,ax,bad),/REVISION_SIGNATURE_INVALID/);
+ const token=await candidateDigest(grantMessage(ax.sources[0],px.grants[0].expiresAt));
+ await db.prepare('INSERT INTO tpw_revision_revocations(token,revoked_at) VALUES(?,?)').bind(token,revAt).run();
+ await assert.rejects(attempt(ox,ax,px));
+ assert.equal((await readRevisionHead(db,variant)).revision_hash,first.revision_hash);
+ await db.prepare('DELETE FROM tpw_revision_revocations WHERE token=?').bind(token).run(); // isolated fixture reset only
+ let lost=0;
+ const ackLoss={prepare:db.prepare.bind(db),batch:async stmts=>{await db.batch(stmts);lost++;throw Error('SYNTHETIC_ACK_LOST')}};
+ const outcomes=await Promise.allSettled([attempt(ox,ax,px,ackLoss),attempt(oy,ay,py,ackLoss)]);
  assert.equal(outcomes.filter(z=>z.status==='fulfilled').length,1);
  assert.equal(outcomes.filter(z=>z.status==='rejected').length,1);
+ assert.equal(lost,1);
+ const win=outcomes[0].status==='fulfilled'?[ox,ax,px]:[oy,ay,py];
+ assert.equal(outcomes.find(z=>z.status==='fulfilled').value.reconciled,true);
+ assert.equal((await attempt(...win)).reconciled,true);
+ assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_revision_operations').first()).n,2);
+ console.log('PASS signed editor previous-head binding, independent issuer, revocation fence, real D1 commit then simulated ACK loss, exact idempotent receipt');
  const head=await readRevisionHead(db,variant);
  assert.notEqual(head.revision_hash,first.revision_hash);
  const chain=await db.prepare('SELECT previous_hash FROM tpw_device_revisions WHERE revision_hash=?').bind(head.revision_hash).first();
@@ -168,6 +203,7 @@ try{
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',schema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',hourlySchema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',revisionSchema]);
+ wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',proofSchema]);
  worker=spawn('pnpm',args('dev','--config',localconfig,'--local','--test-scheduled','--ip','127.0.0.1','--port',String(port),'--persist-to',tmp),{cwd:root,env:ciEnv,stdio:['ignore','pipe','pipe']});
  for(const stream of [worker.stdout,worker.stderr])stream.on('data',data=>{log=(log+String(data)).slice(-12000)});
  let ready=false;
