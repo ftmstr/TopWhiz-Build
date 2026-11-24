@@ -67,7 +67,7 @@ try {
  const mock=async(url,init)=>{called.push(url);let c;
  if(url===env.TPW1_FEED_URL)c={items:[news]};
  else if(url===env.TPW3_FEED_URL)c={items:[device]};
- else if(url===env.TPW_EDITOR_API_URL){const q=JSON.parse(init.body),article=await makeDoc(q.candidate);c=q.candidate.kind==='device'?{article,proof:await makeProof(article,q.previousRevision,'2026112300')}:article}
+ else if(url===env.TPW_EDITOR_API_URL){const q=JSON.parse(init.body),article=await makeDoc(q.candidate);c=q.candidate.kind==='device'?{article,proof:await makeProof(article,q.previousRevision,q.slot)}:article}
  else throw Error('UNAUTHORIZED_NETWORK');
  return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})
  };
