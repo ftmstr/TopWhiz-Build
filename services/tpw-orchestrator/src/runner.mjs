@@ -1,5 +1,6 @@
 /** Scheduled agent tasks; real web release always HARD NO-GO. */
 import {boundedJson,boundedResponseText,prefilterFeed,approveEditorialOutput,assertTrustedEndpoint} from './adapters.mjs';
+import {readAuthorityEpoch} from './revision-authority.mjs';
 import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from './revision-ledger.mjs';
 import {readOfficialSource} from './official-source.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from './staging.mjs';
@@ -36,7 +37,8 @@ export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),now
   try{
    await scope.guard();
    const prior=owned.candidate.kind==='device'?await readRevisionHead(env.TPW_DB,await deviceVariantKey(owned.candidate)):null;
-   const r=await fetcher(env.TPW_EDITOR_API_URL,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TPW_EDITOR_API_TOKEN},body:JSON.stringify({schemaVersion:'1.0',candidate:owned.candidate,...(owned.candidate.kind==='device'?{previousRevision:prior?.revision_hash??null,slot:scope.slot}:{})})});
+   const authorityEpoch=owned.candidate.kind==='device'?await readAuthorityEpoch(env.TPW_DB):null;
+   const r=await fetcher(env.TPW_EDITOR_API_URL,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TPW_EDITOR_API_TOKEN},body:JSON.stringify({schemaVersion:'1.0',candidate:owned.candidate,...(owned.candidate.kind==='device'?{previousRevision:prior?.revision_hash??null,slot:scope.slot,authorityEpoch}:{})})});
    if(!r.ok||r.redirected||(r.url&&r.url!==env.TPW_EDITOR_API_URL))throw new Error('EDITOR_HTTP');
    const response=JSON.parse(await boundedResponseText(r,65536));
    const article=owned.candidate.kind==='device'?response.article:response;

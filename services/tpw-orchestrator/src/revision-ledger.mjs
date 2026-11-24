@@ -27,9 +27,9 @@ export async function appendReviewedRevision({env,owned,article,expectedHead,sco
  const verified=await verifyRevisionProofs(env,article,expectedHead,scope.slot,proof,nowFn());
  const op=await digest(['TPW_REVISION_OPERATION_V1',owned.id,scope.slot,expectedHead,article.sourceDigest,verified.proofHash]);
  const reconcile=async()=>{
-  const row=await db.prepare('SELECT revision_hash,candidate_id,run_slot,proof_hash,outcome FROM tpw_revision_operations WHERE operation_hash=?').bind(op).first();
+  const row=await db.prepare('SELECT revision_hash,candidate_id,run_slot,proof_hash,outcome,authority_epoch FROM tpw_revision_operations WHERE operation_hash=?').bind(op).first();
   if(!row)return null;
-  if(row.candidate_id!==owned.id||row.run_slot!==scope.slot||row.proof_hash!==verified.proofHash||!HASH.test(row.revision_hash))throw Error('REVISION_RECEIPT_MISMATCH');
+  if(row.candidate_id!==owned.id||row.run_slot!==scope.slot||row.proof_hash!==verified.proofHash||row.authority_epoch!==verified.epoch||!HASH.test(row.revision_hash))throw Error('REVISION_RECEIPT_MISMATCH');
   return {state:row.outcome,revisionHash:row.revision_hash,reconciled:true};
  };
  const priorReceipt=await reconcile();if(priorReceipt)return priorReceipt;
@@ -43,8 +43,8 @@ export async function appendReviewedRevision({env,owned,article,expectedHead,sco
  if(!Number.isSafeInteger(now)||now>=verified.expiresAt)throw Error('REVISION_CLOCK_OR_GRANT_EXPIRED');
  // The final D1 batch includes the exact stage lease, TPW2 run owner, previous head, revision,
  // evidence and stage acknowledgement. A NOT NULL violation on any failed guard rolls back the batch.
- const fence="NOT EXISTS (SELECT 1 FROM tpw_revision_revocations WHERE token IN ("+verified.tokens.map(()=>'?').join(',')+")) AND EXISTS (SELECT 1 FROM tpw_stage WHERE candidate_id=? AND run_slot=? AND state='PROCESSING' AND lease_owner=? AND lease_until>? AND expires_at>?) AND EXISTS (SELECT 1 FROM tpw_hourly_run WHERE slot=? AND agent='TPW2' AND owner=? AND state='RUNNING' AND deadline>?) AND ((SELECT revision_hash FROM tpw_revision_heads WHERE variant_key=?) IS ?)";
- const args=[...verified.tokens,owned.id,scope.slot,owned.leaseToken,now,now,scope.slot,scope.owner,now,v.variantKey,expectedHead];
+ const fence="(SELECT epoch FROM tpw_revision_authority WHERE singleton=1)=? AND NOT EXISTS (SELECT 1 FROM tpw_revision_revocations WHERE token IN ("+verified.tokens.map(()=>'?').join(',')+")) AND EXISTS (SELECT 1 FROM tpw_stage WHERE candidate_id=? AND run_slot=? AND state='PROCESSING' AND lease_owner=? AND lease_until>? AND expires_at>?) AND EXISTS (SELECT 1 FROM tpw_hourly_run WHERE slot=? AND agent='TPW2' AND owner=? AND state='RUNNING' AND deadline>?) AND ((SELECT revision_hash FROM tpw_revision_heads WHERE variant_key=?) IS ?)";
+ const args=[verified.epoch,...verified.tokens,owned.id,scope.slot,owned.leaseToken,now,now,scope.slot,scope.owner,now,v.variantKey,expectedHead];
  const stmts=[db.prepare("INSERT INTO tpw_device_variants(variant_key,brand,sku,region) VALUES(CASE WHEN "+fence+" THEN ? ELSE NULL END,?,?,?) ON CONFLICT(variant_key) DO NOTHING").bind(...args,v.variantKey,d.brand,d.sku,d.region)];
  if(!unchanged){
   stmts.push(db.prepare('INSERT INTO tpw_device_revisions(revision_hash,variant_key,previous_hash,data_hash,evidence_hash,spec_json,recorded_at) VALUES(?,?,?,?,?,?,?)').bind(revisionHash,v.variantKey,expectedHead,v.dataHash,v.evidenceHash,specJson,now));
@@ -52,7 +52,7 @@ export async function appendReviewedRevision({env,owned,article,expectedHead,sco
   for(const s of rights)stmts.push(db.prepare("INSERT INTO tpw_source_rights(revision_hash,source_url,publisher,claim_hash,scope) VALUES(?,?,?,?,'SYNTHETIC_LINK_ONLY')").bind(revisionHash,s.url,s.publisher,s.claimHash));
   stmts.push(db.prepare('INSERT INTO tpw_revision_heads(variant_key,revision_hash) VALUES(?,?) ON CONFLICT(variant_key) DO UPDATE SET revision_hash=excluded.revision_hash').bind(v.variantKey,revisionHash));
  }
- stmts.push(db.prepare('INSERT INTO tpw_revision_operations(operation_hash,revision_hash,candidate_id,run_slot,proof_hash,outcome,recorded_at) VALUES(?,?,?,?,?,?,?)').bind(op,unchanged?expectedHead:revisionHash,owned.id,scope.slot,verified.proofHash,unchanged?'UNCHANGED':'APPENDED',now));
+ stmts.push(db.prepare('INSERT INTO tpw_revision_operations(operation_hash,revision_hash,candidate_id,run_slot,proof_hash,outcome,recorded_at,authority_epoch) VALUES(?,?,?,?,?,?,?,?)').bind(op,unchanged?expectedHead:revisionHash,owned.id,scope.slot,verified.proofHash,unchanged?'UNCHANGED':'APPENDED',now,verified.epoch));
  stmts.push(db.prepare("UPDATE tpw_stage SET state='APPROVED',metadata_json='{}',source_url='',lease_owner=NULL,lease_until=NULL WHERE candidate_id=? AND lease_owner=? AND state='PROCESSING'").bind(owned.id,owned.leaseToken));
  try{
   const results=await db.batch(stmts);

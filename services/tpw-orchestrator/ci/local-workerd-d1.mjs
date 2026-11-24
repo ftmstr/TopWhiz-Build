@@ -11,6 +11,8 @@ import {prefilterFeed} from '../src/adapters.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from '../src/staging.mjs';
 import {executeHourly,slotWindow,pruneHourlyRuns,RUN_RETENTION_MS} from '../src/hourly.mjs';
 import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from '../src/revision-ledger.mjs';
+import {canonicalBytes} from '../src/canonical.mjs';
+import {applyRevocation,revokeMessage,readAuthorityEpoch} from '../src/revision-authority.mjs';
 import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
@@ -19,6 +21,7 @@ const schema=fileURLToPath(new URL('../migrations/0001_tpw_stage.sql',import.met
 const hourlySchema=fileURLToPath(new URL('../migrations/0002_tpw_hourly.sql',import.meta.url));
 const revisionSchema=fileURLToPath(new URL('../migrations/0003_tpw_revisions.sql',import.meta.url));
 const proofSchema=fileURLToPath(new URL('../migrations/0004_tpw_revision_proofs.sql',import.meta.url));
+const authoritySchema=fileURLToPath(new URL('../migrations/0005_tpw_revision_authority.sql',import.meta.url));
 const d1config=fileURLToPath(new URL('../wrangler.ci-d1.jsonc',import.meta.url));
 const localconfig=fileURLToPath(new URL('../wrangler.ci-local.jsonc',import.meta.url));
 const webRequire=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
@@ -30,11 +33,11 @@ const device={id:'device_workerd_ci_001',kind:'device',source,observedAt:at,titl
 const makeDoc=async c=>({schemaVersion:'1.0',id:c.id,kind:c.kind,status:'APPROVED',title:{tr:'Sentetik teknik duyuru',en:'Synthetic technical announcement'},summary:{tr:'Bu yalnızca yerel çalıştırma için hazırlanmış sentetik bir kayıttır.',en:'This record exists only for synthetic local acceptance testing.'},body:{tr:'Tamamen kurgusal bir metindir; gerçek bir marka, ürün, olay veya haber iddiası içermez.',en:'This entirely synthetic sample does not make any real product, manufacturer or news claim.'},sources:[{...c.source,checkedAt:at,claimHash:hash},{url:'https://independent.example.net/lab',publisher:'Synthetic laboratory',rights:'LINK_ONLY',type:'INDEPENDENT',checkedAt:at,claimHash:hash}],review:{agent:'TPW2',decision:'APPROVED',factCheck:'VERIFIED',rightsCheck:'CLEARED',translationCheck:'VERIFIED',reviewedAt:at,evidenceHash:hash},media:[],publishedAt:at,sourceDigest:await candidateDigest(c),...(c.kind==='device'?{device:{...c.device,specifications:{screen:{value:'6.3',unit:'inch',sourceHash:hash}}}}:{})});
 const editorKeys=await crypto.subtle.generateKey('Ed25519',true,['sign','verify']);
 const licenseKeys=await crypto.subtle.generateKey('Ed25519',true,['sign','verify']);
-const sign=async(key,msg)=>b64url(await crypto.subtle.sign('Ed25519',key,new TextEncoder().encode(JSON.stringify(msg))));
-const makeProof=async(article,previous,slot)=>{
- const expiresAt=time+24*3600_000;
+const adminKeys=await crypto.subtle.generateKey('Ed25519',true,['sign','verify']);
+const sign=async(key,msg)=>b64url(await crypto.subtle.sign('Ed25519',key,canonicalBytes(msg)));
+const makeProof=async(article,previous,slot,epoch=0,expiresAt=time+24*3600_000)=>{
  const grants=await Promise.all(article.sources.map(async s=>({expiresAt,signature:await sign(licenseKeys.privateKey,grantMessage(s,expiresAt))})));
- return {grants,editorSignature:await sign(editorKeys.privateKey,editorMessage(article,previous,slot,grants))};
+ return {epoch,grants,editorSignature:await sign(editorKeys.privateKey,editorMessage(article,previous,slot,grants,epoch))};
 };
 const platform=await getPlatformProxy({configPath:d1config,persist:false,remoteBindings:false});
 try {
@@ -47,6 +50,7 @@ try {
  for(const statement of readFileSync(hourlySchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  for(const statement of readFileSync(revisionSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  for(const statement of readFileSync(proofSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
+ for(const statement of readFileSync(authoritySchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  const reject={...news,body:'unlicensed body text'};
  const selection=prefilterFeed({items:[news,news,reject]},'news');
  assert.deepEqual(selection.stats,{received:3,rejected:1,duplicates:1});
@@ -63,11 +67,12 @@ try {
  const env={TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_DB:db,TPW1_FEED_URL:'https://feeds.example.org/ci-news',TPW1_FEED_HOST:'feeds.example.org',TPW3_FEED_URL:'https://feeds.example.org/ci-device',TPW3_FEED_HOST:'feeds.example.org',TPW_EDITOR_API_URL:'https://editor.example.org/ci-validate',TPW_EDITOR_ALLOWED_HOST:'editor.example.org',TPW_EDITOR_API_TOKEN:'ci-synthetic-only'};
  env.TPW_EDITOR_PUBLIC_KEY=b64url(await crypto.subtle.exportKey('raw',editorKeys.publicKey));
  env.TPW_LICENSE_PUBLIC_KEY=b64url(await crypto.subtle.exportKey('raw',licenseKeys.publicKey));
+ env.TPW_REVOCATION_PUBLIC_KEY=b64url(await crypto.subtle.exportKey('raw',adminKeys.publicKey));
  const called=[];
  const mock=async(url,init)=>{called.push(url);let c;
  if(url===env.TPW1_FEED_URL)c={items:[news]};
  else if(url===env.TPW3_FEED_URL)c={items:[device]};
- else if(url===env.TPW_EDITOR_API_URL){const q=JSON.parse(init.body),article=await makeDoc(q.candidate);c=q.candidate.kind==='device'?{article,proof:await makeProof(article,q.previousRevision,q.slot)}:article}
+ else if(url===env.TPW_EDITOR_API_URL){const q=JSON.parse(init.body),article=await makeDoc(q.candidate);c=q.candidate.kind==='device'?{article,proof:await makeProof(article,q.previousRevision,q.slot,q.authorityEpoch)}:article}
  else throw Error('UNAUTHORIZED_NETWORK');
  return new Response(JSON.stringify(c),{headers:{'Content-Type':'application/json'}})
  };
@@ -158,14 +163,33 @@ try {
  const attempt=async(owned,article,proof=undefined,dbOverride=db)=>appendReviewedRevision({env:{...env,TPW_DB:dbOverride},owned,article,expectedHead:first.revision_hash,scope,proof:proof??await makeProof(article,first.revision_hash,revSlot),nowFn:()=>revAt+1});
  const rightsBad=structuredClone(ax);rightsBad.sources[1].rights='PERMISSION_GRANTED';
  await assert.rejects(attempt(ox,rightsBad),/REVISION_RIGHTS_UNVERIFIED/);
- const px=await makeProof(ax,first.revision_hash,revSlot),py=await makeProof(ay,first.revision_hash,revSlot);
+ let px=await makeProof(ax,first.revision_hash,revSlot),py=await makeProof(ay,first.revision_hash,revSlot);
  const bad=structuredClone(px);bad.editorSignature=py.editorSignature;
  await assert.rejects(attempt(ox,ax,bad),/REVISION_SIGNATURE_INVALID/);
  const token=await candidateDigest(grantMessage(ax.sources[0],px.grants[0].expiresAt));
- await db.prepare('INSERT INTO tpw_revision_revocations(token,revoked_at) VALUES(?,?)').bind(token,revAt).run();
+ const command=revokeMessage(token,0);
+ const adminSig=await sign(adminKeys.privateKey,command);
+ const wrongSig=await sign(editorKeys.privateKey,command);
+ await assert.rejects(applyRevocation({env,token,epoch:0,signature:wrongSig,nowFn:()=>revAt}),/REVISION_SIGNATURE_INVALID/);
+ assert.equal(await readAuthorityEpoch(db),0);
+ await applyRevocation({env,token,epoch:0,signature:adminSig,nowFn:()=>revAt});
+ assert.equal(await readAuthorityEpoch(db),1);
+ await assert.rejects(applyRevocation({env,token,epoch:0,signature:adminSig,nowFn:()=>revAt}));
+ const unrelated=await candidateDigest(['unrelated synthetic token']);
+ const staleSig=await sign(adminKeys.privateKey,revokeMessage(unrelated,0));
+ await assert.rejects(applyRevocation({env,token:unrelated,epoch:0,signature:staleSig,nowFn:()=>revAt}));
  await assert.rejects(attempt(ox,ax,px));
+ const sameGrant=await makeProof(ax,first.revision_hash,revSlot,1);
+ await assert.rejects(attempt(ox,ax,sameGrant));
  assert.equal((await readRevisionHead(db,variant)).revision_hash,first.revision_hash);
- await db.prepare('DELETE FROM tpw_revision_revocations WHERE token=?').bind(token).run(); // isolated fixture reset only
+ assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_revision_authority_events').first()).n,1);
+ // Exact revoked grant stays revoked. A newly issued grant has its own expiry and signature.
+ const freshExpiry=time+25*3600_000;
+ const staleEpoch=await makeProof(ax,first.revision_hash,revSlot,0,freshExpiry);
+ await assert.rejects(attempt(ox,ax,staleEpoch));
+ px=await makeProof(ax,first.revision_hash,revSlot,1,freshExpiry);
+ py=await makeProof(ay,first.revision_hash,revSlot,1,freshExpiry);
+ console.log('PASS independent signed revocation admin, monotonic epoch CAS, stale proof and revoked grant denial without deletion');
  let lost=0;
  const ackLoss={prepare:db.prepare.bind(db),batch:async stmts=>{await db.batch(stmts);lost++;throw Error('SYNTHETIC_ACK_LOST')}};
  const outcomes=await Promise.allSettled([attempt(ox,ax,px,ackLoss),attempt(oy,ay,py,ackLoss)]);
@@ -204,6 +228,7 @@ try{
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',hourlySchema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',revisionSchema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',proofSchema]);
+ wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',authoritySchema]);
  worker=spawn('pnpm',args('dev','--config',localconfig,'--local','--test-scheduled','--ip','127.0.0.1','--port',String(port),'--persist-to',tmp),{cwd:root,env:ciEnv,stdio:['ignore','pipe','pipe']});
  for(const stream of [worker.stdout,worker.stderr])stream.on('data',data=>{log=(log+String(data)).slice(-12000)});
  let ready=false;
