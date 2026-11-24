@@ -189,3 +189,38 @@ test('pilot writer requires D1 lease guard rather than trusting a caller-supplie
  await assert.rejects(commitApprovedContent(env,doc,githubAckLossSimulator(calls)),/D1_LEASE_GUARD_REQUIRED/);
  assert.equal(calls.length,0);
 });
+
+// Structural evidence binding regressions; not factual or licensing certification.
+test('TPW news corroboration denies same host, normalized publisher and second primary',async()=>{
+ const original=await article();
+ assert.equal(publicationGate(original,{releaseGate:'OPEN'}).ok,true);
+ for(const mutate of [
+  a=>a.sources[1].url=a.sources[0].url,
+  a=>a.sources[1].url='https://www.vendor.example.org/another',
+  a=>a.sources[1].publisher='  VENDOR  ',
+  a=>a.sources[1].type='PRIMARY'
+ ]){
+  const a=deep(original);mutate(a);
+  assert.ok(publicationGate(a,{releaseGate:'OPEN'}).errors.includes('CORROBORATION_REQUIRED'));
+ }
+});
+test('candidate, approved record and Git path require kind-specific id',async()=>{
+ const c=cand();c.id='device_fixture_001';
+ assert.equal(preflightCandidate(c).ok,false);
+ const a=await article(c);
+ assert.equal(publicationGate(a,{releaseGate:'OPEN'}).ok,false);
+ assert.throws(()=>safeApprovedPath(a),/UNSAFE_CONTENT_PATH/);
+});
+test('device spec hashes must reference a source manifest claim',async()=>{
+ const c={...cand(),id:'device_fixture_001',kind:'device',device:{brand:'Example',model:'Example P',sku:'EX-001',region:'TR'}};
+ const a=await article(c);a.device={...c.device,specifications:{screen:{value:'6.3',unit:'inch',sourceHash:sha}}};
+ assert.equal(publicationGate(a,{releaseGate:'OPEN'}).ok,true);
+ a.device.specifications.screen.sourceHash='e'.repeat(64);
+ assert.ok(publicationGate(a,{releaseGate:'OPEN'}).errors.includes('SPEC_SOURCE_NOT_IN_MANIFEST'));
+});
+test('editor cannot silently upgrade source rights relative to staged candidate',async()=>{
+ const c=cand(),a=await article(c);
+ assert.equal(originMatches(c,a),true);
+ a.sources[0].rights='PERMISSION_GRANTED';
+ assert.equal(originMatches(c,a),false);
+});
