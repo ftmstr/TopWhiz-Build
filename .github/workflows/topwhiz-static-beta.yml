@@ -5,6 +5,7 @@ on:
       - 'beta/**'
       - 'packages/dragon-point/**'
       - 'apps/web/beta-e2e/beta-static.spec.ts'
+      - 'apps/web/beta-e2e/dragon-point-video*.spec.ts'
       - 'apps/web/beta.playwright.config.ts'
       - '.github/workflows/topwhiz-static-beta.yml'
   workflow_dispatch:
@@ -15,14 +16,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, node24
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5, node24
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Validate static beta without dependencies or external network
         run: |
           node --check beta/assets/site.js
           node --check beta/assets/dragon-point.mjs
+          node --check beta/dragon-point-video/assets/scene.js
+          node --check beta/dragon-point-video/assets/timing.mjs
           node --check packages/dragon-point/engine.mjs
           cmp packages/dragon-point/engine.mjs beta/assets/dragon-point.mjs
           node --check beta/tests/static-beta.test.mjs
@@ -33,11 +37,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, node24
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5, node24
         with:
           version: 10.18.3
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5, node24
         with:
           node-version: '22'
           cache: pnpm
@@ -45,5 +49,33 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Generate synthetic 15-second green-screen fixture (not user footage)
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y ffmpeg; }
+          mkdir -p apps/web/beta-e2e/fixtures
+          ffmpeg -nostdin -hide_banner -loglevel error -y -f lavfi -i color=c=0x00FF00:s=1280x720:r=24:d=15 -vf "drawbox=x=50:y=210:w=300:h=270:color=red:t=fill,drawbox=x=680:y=315:w=600:h=110:color=orange:t=fill,drawbox=x=770:y=345:w=480:h=40:color=0xFFF1A6:t=fill,drawbox=x=661:y=325:w=12:h=85:color=0x8CB43C:t=fill" -pix_fmt yuv420p -c:v libx264 -preset ultrafast -crf 36 -movflags +faststart apps/web/beta-e2e/fixtures/dragon-video-synthetic-ci.mp4
+          VIDEO_META="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height,avg_frame_rate,duration -of default=noprint_wrappers=1 apps/web/beta-e2e/fixtures/dragon-video-synthetic-ci.mp4)"
+          printf '%s\n' "$VIDEO_META"
+          printf '%s\n' "$VIDEO_META" | grep -Fx 'width=1280'
+          printf '%s\n' "$VIDEO_META" | grep -Fx 'height=720'
+          printf '%s\n' "$VIDEO_META" | grep -Fx 'avg_frame_rate=24/1'
+          printf '%s\n' "$VIDEO_META" | grep -Fx 'duration=15.000000'
       - name: Real desktop/mobile Chromium catalog and comparison QA
         run: pnpm --filter @topwhiz/web exec playwright test --config=beta.playwright.config.ts
+      - name: Validate synthetic screenshot and matte evidence exist
+        if: success()
+        run: |
+          for view in desktop mobile; do
+            for mode in gpu cpu; do
+              test -s "apps/web/visual-qa-evidence/${view}-${mode}.png"
+              test -s "apps/web/visual-qa-evidence/${view}-${mode}.json"
+            done
+          done
+      - name: Preserve synthetic visual QA screenshots and matte evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, node24
+        with:
+          name: dragon-point-visual-qa
+          path: apps/web/visual-qa-evidence/
+          if-no-files-found: error
+          retention-days: 7
