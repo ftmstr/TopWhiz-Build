@@ -77,3 +77,56 @@ test("Safari-like stalled decoded-video callback uses bounded RAF rescue without
  await expect(page.locator("#score")).toHaveText("842");
  expect(errors).toEqual([]);
 });
+
+for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:390,height:844}]) {
+ test("Dragon Point Canvas painted counts writes, not throttled requests "+size.name,async({page})=>{
+  await page.setViewportSize({width:size.width,height:size.height});
+  await page.addInitScript(()=>{
+   const get=HTMLCanvasElement.prototype.getContext as any;
+   HTMLCanvasElement.prototype.getContext=function(this:HTMLCanvasElement,type:any,...args:any[]){
+    if(type==="webgl"||type==="experimental-webgl")return null;
+    return get.apply(this,[type,...args]);
+   } as any;
+   const nativePut=CanvasRenderingContext2D.prototype.putImageData as any;
+   let writes=0;
+   CanvasRenderingContext2D.prototype.putImageData=function(this:CanvasRenderingContext2D,...args:any[]){
+    const result=nativePut.apply(this,args);
+    if(this.canvas.id==="key")writes++;
+    return result;
+   } as any;
+   // Keep actual Chromium video decoding and native Canvas writes. Control only
+   // callback delivery and clock during a synchronous, deliberately throttled burst.
+   let pending:((now:number,metadata:any)=>void)|null=null,id=0;
+   (HTMLVideoElement.prototype as any).requestVideoFrameCallback=function(cb:any){pending=cb;return ++id};
+   (HTMLVideoElement.prototype as any).cancelVideoFrameCallback=function(token:number){if(token===id)pending=null};
+   (window as any).__dpPaintQA={burst(){
+    const realNow=performance.now.bind(performance);
+    const now=realNow()+1000;
+    const previous=Object.getOwnPropertyDescriptor(performance,"now");
+    const beforeWrites=writes,beforePainted=(window as any).__dpVideoPreview.painted;
+    Object.defineProperty(performance,"now",{configurable:true,value:()=>now});
+    try{
+     for(let i=0;i<10;i++){
+      const cb=pending;
+      if(!cb)throw Error("Missing scheduled frame callback");
+      pending=null;cb(now,{});
+     }
+     return {writes:writes-beforeWrites,painted:(window as any).__dpVideoPreview.painted-beforePainted};
+    }finally{
+     if(previous)Object.defineProperty(performance,"now",previous);
+     else delete (performance as any).now;
+    }
+   }};
+  });
+  await page.goto(uri);
+  await page.locator("#file").setInputFiles(testFile);
+  await expect.poll(async()=>page.evaluate(()=>(window as any).__dpVideoPreview.renderer)).toBe("cpu");
+  await expect(page.locator("#play")).toBeEnabled();
+  await page.locator("#play").click();
+  await expect.poll(async()=>page.locator("#video").evaluate((v:HTMLVideoElement)=>v.currentTime),{timeout:10000}).toBeGreaterThan(0.08);
+  const result=await page.evaluate(()=>(window as any).__dpPaintQA.burst());
+  expect(result.writes).toBe(1);
+  expect(result.painted).toBe(result.writes);
+  await page.locator("#video").evaluate((v:HTMLVideoElement)=>v.pause());
+ });
+}
