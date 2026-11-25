@@ -101,7 +101,7 @@ for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:
    (HTMLVideoElement.prototype as any).cancelVideoFrameCallback=function(token:number){if(token===id)pending=null};
    (window as any).__dpPaintQA={burst(){
     const realNow=performance.now.bind(performance);
-    const now=realNow()+1000;
+    let now=realNow()+1000;
     const previous=Object.getOwnPropertyDescriptor(performance,"now");
     const beforeWrites=writes,beforePainted=(window as any).__dpVideoPreview.painted;
     Object.defineProperty(performance,"now",{configurable:true,value:()=>now});
@@ -111,7 +111,21 @@ for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:
       if(!cb)throw Error("Missing scheduled frame callback");
       pending=null;cb(now,{});
      }
-     return {writes:writes-beforeWrites,painted:(window as any).__dpVideoPreview.painted-beforePainted};
+     const burst={writes:writes-beforeWrites,painted:(window as any).__dpVideoPreview.painted-beforePainted};
+     const start=now+1000, cadenceWrites=writes, cadencePainted=(window as any).__dpVideoPreview.painted;
+     for(let i=0;i<48;i++){
+      now=start+i*1000/24;
+      const cb=pending;if(!cb)throw Error("Missing cadence callback");
+      pending=null;cb(now,{});
+     }
+     const cadence={writes:writes-cadenceWrites,painted:(window as any).__dpVideoPreview.painted-cadencePainted};
+     now+=1000;
+     const gapWrites=writes,gapPainted=(window as any).__dpVideoPreview.painted;
+     for(let i=0;i<10;i++){
+      const cb=pending;if(!cb)throw Error("Missing gap callback");
+      pending=null;cb(now,{});
+     }
+     return {...burst,cadence,gap:{writes:writes-gapWrites,painted:(window as any).__dpVideoPreview.painted-gapPainted}};
     }finally{
      if(previous)Object.defineProperty(performance,"now",previous);
      else delete (performance as any).now;
@@ -127,6 +141,10 @@ for (const size of [{name:"desktop",width:1365,height:900},{name:"mobile",width:
   const result=await page.evaluate(()=>(window as any).__dpPaintQA.burst());
   expect(result.writes).toBe(1);
   expect(result.painted).toBe(result.writes);
+  // 48 evenly spaced 24 FPS callbacks: desktop keeps all, mobile keeps 3/4.
+  expect(result.cadence.writes).toBe(size.name==="mobile"?36:48);
+  expect(result.cadence.painted).toBe(result.cadence.writes);
+  expect(result.gap).toEqual({writes:1,painted:1});
   await page.locator("#video").evaluate((v:HTMLVideoElement)=>v.pause());
  });
 }

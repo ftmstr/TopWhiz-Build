@@ -27,8 +27,9 @@ function createGPU(){gl=c.getContext("webgl",{alpha:true,premultipliedAlpha:true
  renderer="gpu";
 }
 function createCPU(){refreshCanvas();const mobile=matchMedia("(max-width:750px)").matches;const width=Math.min(mobile?600:800,Math.max(320,Math.round((dragon.clientWidth||720)*Math.min(devicePixelRatio||1,1.5))));c.width=width;c.height=Math.round(width*(v.videoHeight||720)/(v.videoWidth||1280));ctx2d=c.getContext("2d",{willReadFrequently:true});if(!ctx2d)throw Error("Canvas unavailable");
- let prev=0;const delay=1000/(mobile?18:24);
- drawKey=(force=false)=>{const now=performance.now();if(!force&&now-prev<delay)return false;prev=now;ctx2d.clearRect(0,0,c.width,c.height);ctx2d.drawImage(v,0,0,c.width,c.height);const pixels=ctx2d.getImageData(0,0,c.width,c.height),p=pixels.data;
+ let nextPaint=null;const delay=1000/(mobile?18:24);
+ // Preserve phase for ordinary callback jitter; re-anchor after a missed period or forced draw.
+ drawKey=(force=false)=>{const now=performance.now();if(!force&&nextPaint!==null&&now+0.001<nextPaint)return false;nextPaint=(force||nextPaint===null||now-nextPaint>=delay?now:nextPaint)+delay;ctx2d.clearRect(0,0,c.width,c.height);ctx2d.drawImage(v,0,0,c.width,c.height);const pixels=ctx2d.getImageData(0,0,c.width,c.height),p=pixels.data;
  for(let i=0;i<p.length;i+=4){const r=p[i],g=p[i+1],b=p[i+2],ex=g-Math.max(r,b);if(ex>10){const a=clamp((68-ex)/58,0,1);p[i+3]=Math.round(p[i+3]*a);p[i+1]=Math.min(g,Math.max(r,b)+12)}}ctx2d.putImageData(pixels,0,0);return true;};
  renderer="cpu";
 }
