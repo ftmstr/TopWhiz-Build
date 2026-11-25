@@ -14,6 +14,8 @@ import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from '../src/r
 import {canonicalBytes} from '../src/canonical.mjs';
 import {applyRevocation,revokeMessage,readAuthorityEpoch} from '../src/revision-authority.mjs';
 import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
+import {inspectSetup,loadClosedConfigs} from '../scripts/pilot-preflight.mjs';
+import {readLocalMetrics,renderPilotPanel} from '../scripts/pilot-panel.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
@@ -208,6 +210,14 @@ try {
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_device_revisions').first()).n,2);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_revision_approvals').first()).n,2);
  assert.equal((await db.prepare('SELECT count(*) AS n FROM tpw_source_rights').first()).n,4);
+ const setup=inspectSetup(loadClosedConfigs(),env),metrics=await readLocalMetrics(db);
+ assert.equal(setup.closedConfig,true);
+ assert.equal(metrics.status,'LOCAL_READ_OK');
+ assert.equal(metrics.epoch,1);assert.equal(metrics.revisions,2);assert.equal(metrics.operations,2);assert.equal(metrics.revocations,1);
+ const panel=renderPilotPanel(setup,metrics);
+ assert.ok(panel.includes('HARD NO-GO')&&panel.includes('LOCAL_READ_OK')===false);
+ for(const secret of [env.TPW_EDITOR_API_TOKEN,env.TPW_EDITOR_PUBLIC_KEY,device.source.url,device.id,revOwner])assert.ok(!panel.includes(secret));
+ console.log('PASS closed pilot local D1 aggregate panel, no secret or raw candidate disclosure');
  console.log('PASS device revision D1 atomic chain, concurrent expected-head CAS, TPW2 receipt and synthetic rights denial');
  console.log('PASS official-source re-observation moves only older pending candidate; terminal tombstone denied; 30-day terminal retention');
  console.log('PASS same-slot D1 dependencies, duplicate CAS, failed feed, expired run, late trigger and abandoned owner');

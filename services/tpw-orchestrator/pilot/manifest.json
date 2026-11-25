@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "profile": "LOCAL_INSPECTION_ONLY",
+  "release": "HARD_NO_GO",
+  "groups": [
+    {
+      "id": "bindings",
+      "label": "Cloudflare bindings",
+      "kind": "binding",
+      "names": [
+        "TPW_DB",
+        "TPW_AGENT_WORKFLOW"
+      ]
+    },
+    {
+      "id": "news",
+      "label": "TPW1 source metadata",
+      "kind": "variable",
+      "names": [
+        "TPW1_FEED_URL",
+        "TPW1_FEED_HOST",
+        "TPW1_SOURCE_FORMAT",
+        "TPW1_SOURCE_HOST",
+        "TPW1_SOURCE_PUBLISHER"
+      ]
+    },
+    {
+      "id": "device",
+      "label": "TPW3 source metadata",
+      "kind": "variable",
+      "names": [
+        "TPW3_FEED_URL",
+        "TPW3_FEED_HOST",
+        "TPW3_SOURCE_FORMAT",
+        "TPW3_SOURCE_HOST",
+        "TPW3_SOURCE_PUBLISHER",
+        "TPW3_SOURCE_BRAND"
+      ]
+    },
+    {
+      "id": "editor",
+      "label": "TPW2 editor",
+      "kind": "mixed",
+      "names": [
+        "TPW_EDITOR_API_URL",
+        "TPW_EDITOR_ALLOWED_HOST",
+        "TPW_EDITOR_API_TOKEN"
+      ]
+    },
+    {
+      "id": "keys",
+      "label": "Verification public keys",
+      "kind": "public_key",
+      "names": [
+        "TPW_EDITOR_PUBLIC_KEY",
+        "TPW_LICENSE_PUBLIC_KEY",
+        "TPW_REVOCATION_PUBLIC_KEY",
+        "TPW_EDITOR_PUBLIC_KEY_SPKI_B64"
+      ]
+    },
+    {
+      "id": "github",
+      "label": "Future private GitHub App",
+      "kind": "mixed",
+      "names": [
+        "GITHUB_APP_ID",
+        "GITHUB_APP_PRIVATE_KEY",
+        "GITHUB_INSTALLATION_ID",
+        "GITHUB_REPO_ID",
+        "GITHUB_OWNER",
+        "GITHUB_REPO",
+        "GITHUB_BRANCH",
+        "TPW_CONTENT_REPO_PRIVATE_CONFIRMED"
+      ]
+    }
+  ],
+  "secretNames": [
+    "TPW_EDITOR_API_TOKEN",
+    "GITHUB_APP_PRIVATE_KEY"
+  ],
+  "optional": [
+    "TPW1_SOURCE_ALIASES_JSON",
+    "TPW3_SOURCE_ALIASES_JSON"
+  ],
+  "migrations": [
+    "0001_tpw_stage.sql",
+    "0002_tpw_hourly.sql",
+    "0003_tpw_revisions.sql",
+    "0004_tpw_revision_proofs.sql",
+    "0005_tpw_revision_authority.sql"
+  ],
+  "blockers": [
+    "ISSUE_22_OPEN",
+    "NO_APPROVED_SOURCE_CONNECTOR",
+    "REAL_EDITOR_NOT_VERIFIED",
+    "REAL_LICENSE_AUTHORITY_NOT_VERIFIED",
+    "REMOTE_D1_IAM_NOT_VERIFIED",
+    "PRIVATE_GITHUB_TARGET_NOT_VERIFIED",
+    "MEDIA_BRAND_DP_ACCEPTANCE_OPEN"
+  ],
+  "fixed": {
+    "TPW_MODE": "CLOSED",
+    "TPW_RELEASE_GATE": "CLOSED",
+    "TPW_GITHUB_WRITES": "DISABLED"
+  },
+  "futureTarget": {
+    "owner": "ftmstr",
+    "repository": "TopWhiz-Content-Private",
+    "branch": "content-approved-pilot",
+    "status": "NOT_VERIFIED"
+  }
+}
