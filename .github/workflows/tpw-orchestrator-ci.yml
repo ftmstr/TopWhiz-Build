@@ -37,7 +37,7 @@ jobs:
   workerd-d1-local:
     needs: synthetic-safety
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -62,3 +62,21 @@ jobs:
           NODE
       - name: Real local workerd Cron/Workflow and isolated D1 acceptance
         run: node services/tpw-orchestrator/ci/local-workerd-d1.mjs
+      - name: Run standalone synthetic pilot and persistent CLI acceptance
+        run: node services/tpw-orchestrator/scripts/pilot-demo.mjs --out "$RUNNER_TEMP/topwhiz-pilot-demo"
+      - name: Install frozen Playwright Chromium
+        run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Real Chromium local operations panel acceptance
+        run: node services/tpw-orchestrator/ci/pilot-chromium.mjs "$RUNNER_TEMP/topwhiz-pilot-demo"
+      - name: Upload redacted synthetic pilot evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-local-pilot-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-pilot-demo/operations.html
+            ${{ runner.temp }}/topwhiz-pilot-demo/operations.json
+            ${{ runner.temp }}/topwhiz-pilot-demo/README.txt
+            ${{ runner.temp }}/topwhiz-pilot-demo/desktop.png
+            ${{ runner.temp }}/topwhiz-pilot-demo/mobile.png
+            ${{ runner.temp }}/topwhiz-pilot-demo/chromium-evidence.json
