@@ -8,6 +8,7 @@ test('closed setup inventory has 28 distinct names and never authorizes pilot',(
  assert.equal(x.closedConfig,true);assert.equal(x.pilot,'BLOCKED');assert.equal(x.release,'HARD_NO_GO');
 });
 test('config preflight denies routes, cron, unsafe mode, inline secrets and remote D1',()=>{
+ assert.equal(inspectSetup({},{}).closedConfig,false);
  const cases=[['wrangler.jsonc',c=>c.routes=['*']],['wrangler.jsonc',c=>c.triggers.crons=['0 * * * *']],['wrangler.jsonc',c=>c.vars.TPW_MODE='PRIVATE_PILOT'],['wrangler.jsonc',c=>c.vars.TPW_EDITOR_API_TOKEN='SECRET_CANARY'],['wrangler.ci-local.jsonc',c=>c.d1_databases[0].database_id='real-id']];
  for(const [n,change] of cases){const c=loadClosedConfigs()[n];change(c);const result=validateClosedConfig(n,c);assert.equal(result.ok,false);assert.ok(!JSON.stringify(result).includes('SECRET_CANARY'))}
 });

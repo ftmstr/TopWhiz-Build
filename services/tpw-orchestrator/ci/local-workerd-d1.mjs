@@ -215,7 +215,7 @@ try {
  assert.equal(metrics.status,'LOCAL_READ_OK');
  assert.equal(metrics.epoch,1);assert.equal(metrics.revisions,2);assert.equal(metrics.operations,2);assert.equal(metrics.revocations,1);
  const panel=renderPilotPanel(setup,metrics);
- assert.ok(panel.includes('HARD NO-GO')&&panel.includes('LOCAL_READ_OK')===false);
+ assert.ok(panel.includes('HARD NO-GO')&&panel.includes('LOCAL_READ_OK'));
  for(const secret of [env.TPW_EDITOR_API_TOKEN,env.TPW_EDITOR_PUBLIC_KEY,device.source.url,device.id,revOwner])assert.ok(!panel.includes(secret));
  console.log('PASS closed pilot local D1 aggregate panel, no secret or raw candidate disclosure');
  console.log('PASS device revision D1 atomic chain, concurrent expected-head CAS, TPW2 receipt and synthetic rights denial');

@@ -17,11 +17,11 @@ export function validateClosedConfig(name,c){
  if(!safeKeys(c?.vars,['TPW_MODE','TPW_RELEASE_GATE','TPW_GITHUB_WRITES'])||c.vars.TPW_MODE!==p.mode||c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')e.push('RELEASE_CONFIG_DENIED');
  if(p.workflow){
   const w=c?.workflows?.[0];
-  if(!Array.isArray(c.workflows)||c.workflows.length!==1||!safeKeys(w,['binding','name','class_name'])||w.binding!=='TPW_AGENT_WORKFLOW'||w.name!==p.workflow||w.class_name!=='TPWAgentWorkflow')e.push('WORKFLOW_DENIED');
+  if(!Array.isArray(c?.workflows)||c.workflows.length!==1||!safeKeys(w,['binding','name','class_name'])||w.binding!=='TPW_AGENT_WORKFLOW'||w.name!==p.workflow||w.class_name!=='TPWAgentWorkflow')e.push('WORKFLOW_DENIED');
  }
  if(p.d1){
   const d=c?.d1_databases?.[0];
-  if(!Array.isArray(c.d1_databases)||c.d1_databases.length!==1||!safeKeys(d,['binding','database_name','database_id'])||d.binding!=='TPW_DB'||d.database_name!=='topwhiz-tpw-synthetic-ci'||d.database_id!=='00000000-0000-0000-0000-000000000165')e.push('D1_BINDING_DENIED');
+  if(!Array.isArray(c?.d1_databases)||c.d1_databases.length!==1||!safeKeys(d,['binding','database_name','database_id'])||d.binding!=='TPW_DB'||d.database_name!=='topwhiz-tpw-synthetic-ci'||d.database_id!=='00000000-0000-0000-0000-000000000165')e.push('D1_BINDING_DENIED');
  }
  return {ok:e.length===0,errors:e};
 }
