@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'services/tpw-orchestrator/**'
+      - 'local-text/**'
       - 'packages/tpw-content/**'
       - 'content-approved/**'
       - 'docs/TPW_CLOUDFLARE_IMPLEMENTATION_20261123.md'
@@ -80,3 +81,14 @@ jobs:
             ${{ runner.temp }}/topwhiz-pilot-demo/desktop.png
             ${{ runner.temp }}/topwhiz-pilot-demo/mobile.png
             ${{ runner.temp }}/topwhiz-pilot-demo/chromium-evidence.json
+      - name: Real Chromium isolated text-only site acceptance
+        run: node services/tpw-orchestrator/ci/local-text-chromium.mjs "$RUNNER_TEMP/topwhiz-local-text"
+      - name: Preserve local text-only synthetic screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-local-text-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-local-text/desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/mobile.png
+            ${{ runner.temp }}/topwhiz-local-text/evidence.json
