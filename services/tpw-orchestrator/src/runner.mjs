@@ -1,10 +1,10 @@
 /** Scheduled agent tasks; real web release always HARD NO-GO. */
-import {boundedJson,boundedResponseText,prefilterFeed,approveEditorialOutput,assertTrustedEndpoint} from './adapters.mjs';
+import {boundedJson,prefilterFeed,assertTrustedEndpoint} from './adapters.mjs';
 import {readAuthorityEpoch} from './revision-authority.mjs';
 import {appendReviewedRevision,deviceVariantKey,readRevisionHead} from './revision-ledger.mjs';
 import {readOfficialSource} from './official-source.mjs';
 import {stageCandidates,readStage,claimStage,assertStageLease,finishStage,cleanupStage} from './staging.mjs';
-import {candidateDigest,originMatches} from './lineage.mjs';
+import {requestEditorialReview} from './editor-client.mjs';
 import {commitApprovedContent} from './github-app.mjs';
 export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),nowFn=Date.now,scope}){
  if(env.TPW_MODE==='CLOSED')return {agent,state:'DISABLED_NO_GO',githubWrites:0};
@@ -38,12 +38,8 @@ export async function executeAgent({agent,env,fetcher=fetch,clock=Date.now(),now
    await scope.guard();
    const prior=owned.candidate.kind==='device'?await readRevisionHead(env.TPW_DB,await deviceVariantKey(owned.candidate)):null;
    const authorityEpoch=owned.candidate.kind==='device'?await readAuthorityEpoch(env.TPW_DB):null;
-   const r=await fetcher(env.TPW_EDITOR_API_URL,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TPW_EDITOR_API_TOKEN},body:JSON.stringify({schemaVersion:'1.0',candidate:owned.candidate,...(owned.candidate.kind==='device'?{previousRevision:prior?.revision_hash??null,slot:scope.slot,authorityEpoch}:{})})});
-   if(!r.ok||r.redirected||(r.url&&r.url!==env.TPW_EDITOR_API_URL))throw new Error('EDITOR_HTTP');
-   const response=JSON.parse(await boundedResponseText(r,65536));
-   const article=owned.candidate.kind==='device'?response.article:response;
-   if(article.id!==owned.id||article.kind!==owned.candidate.kind||article.sourceDigest!==await candidateDigest(owned.candidate)||!originMatches(owned.candidate,article))throw new Error('SOURCE_LINEAGE_MISMATCH');
-   if(!approveEditorialOutput(article).ok)throw new Error('EDITOR_POLICY');
+   const response=await requestEditorialReview({env,candidate:owned.candidate,previousRevision:prior?.revision_hash??null,slot:scope.slot,authorityEpoch,fetcher});
+   const {article}=response;
    if(article.kind==='device'){
     // Devices never use the immutable news-style GitHub path. Local D1 receipt only.
     await appendReviewedRevision({env,owned,article,expectedHead:prior?.revision_hash??null,scope,proof:response.proof,nowFn});

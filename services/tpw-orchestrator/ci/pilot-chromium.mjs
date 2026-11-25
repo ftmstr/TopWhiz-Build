@@ -29,8 +29,10 @@ try{
   const layout=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
   assert.ok(layout.scroll<=layout.viewport+1,'HORIZONTAL_OVERFLOW');
   assert.equal(external.length,0);assert.equal(errors.length,0);
+  const inventoryLayout=await page.locator('table.inventory tbody tr').first().evaluate(el=>getComputedStyle(el).display);
+  assert.equal(inventoryLayout,name==='mobile'?'block':'table-row');
   await page.screenshot({path:join(out,name+'.png'),fullPage:true});
-  evidence.push({name,width,height,layout,externalRequests:0,pageErrors:0,inventoryRows:28});
+  evidence.push({name,width,height,layout,externalRequests:0,pageErrors:0,inventoryRows:28,inventoryLayout});
   await page.close();
  }
 }finally{await browser.close()}
