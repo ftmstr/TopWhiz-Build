@@ -14,6 +14,8 @@ try{
   await page.route('**/*',route=>{if(![url,url+'site.js',url+'site.css',url+'favicon.ico'].includes(route.request().url())){unexpected.push(route.request().url());return route.abort()}return route.continue()});
   await page.goto(url);await page.locator('#articles article').first().waitFor();
   assert.equal(await page.locator('#articles article').count(),3);assert.equal(await page.locator('#devices article').count(),4);
+  const phoneColumns=await page.locator('#devices').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);assert.equal(phoneColumns,name==='mobile'?2:4);
+  assert.equal(await page.locator('#devices button[aria-pressed=true]').count(),2);
   await page.locator('#category').selectOption('trdef');assert.equal(await page.locator('#articles article').count(),1);
   await page.locator('#articles summary').click();assert.equal(await page.locator('#articles details').getAttribute('open'),'');
   await page.locator('#en').click();assert.equal(await page.locator('html').getAttribute('lang'),'en');assert.match(await page.locator('#articles h3').innerText(),/Fictional/);
@@ -30,7 +32,7 @@ try{
   const layout=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
   assert.ok(layout.scroll<=layout.viewport+1);assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
   await page.locator('#tr').click();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:join(out,name+'.png'),fullPage:true});
-  evidence.push({name,width,height,layout,externalRequests:unexpected.length,pageErrors:errors.length,news:3,phones:4,languageSwitch:true,comparison:true,mediaElements:0});
+  evidence.push({name,width,height,layout,externalRequests:unexpected.length,pageErrors:errors.length,news:3,phones:4,languageSwitch:true,comparison:true,mediaElements:0,phoneColumns});
   await page.close();
  }
 }finally{await browser.close();await new Promise(r=>server.close(r))}
