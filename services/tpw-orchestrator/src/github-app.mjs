@@ -47,6 +47,9 @@ async function readExactContent(url,token,path,expectedBase64,expectedBytes,fetc
 export async function commitApprovedContent(env,doc,fetcher=fetch,verifyBeforeWrite){
  if(env.TPW_MODE!=='PRIVATE_PILOT'||env.TPW_GITHUB_WRITES!=='ENABLED'||env.TPW_RELEASE_GATE!=='CLOSED')throw new Error('WRITES_CLOSED');
  if(typeof verifyBeforeWrite!=='function')throw new Error('D1_LEASE_GUARD_REQUIRED');
+ // Bind validation, signature, path and serialized payload to a private JSON snapshot.
+ // Caller-owned objects can change while token issuance or repository verification awaits I/O.
+ doc=JSON.parse(JSON.stringify(doc));
  const valid=publicationGate(doc,{releaseGate:'OPEN'});
  if(!valid.ok)throw new Error('CONTENT_INVALID_'+valid.errors.join('_'));
  if(env.GITHUB_OWNER!=='ftmstr'||env.GITHUB_REPO!=='TopWhiz-Content-Private'||env.GITHUB_BRANCH!=='content-approved-pilot'||env.TPW_CONTENT_REPO_PRIVATE_CONFIRMED!=='YES')throw new Error('UNTRUSTED_TARGET');

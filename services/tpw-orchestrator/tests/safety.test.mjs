@@ -224,3 +224,31 @@ test('editor cannot silently upgrade source rights relative to staged candidate'
  a.sources[0].rights='PERMISSION_GRANTED';
  assert.equal(originMatches(c,a),false);
 });
+
+test('GitHub writer preserves the signed snapshot across async caller mutations',async()=>{
+ const env=pilotEnv(),doc=await signedArticle(env),calls=[];
+ const original=JSON.stringify(doc,null,2)+'\n',originalId=doc.id;
+ const transport=fakeGitHub(privateMetadata(),calls);
+ const fetcher=async(url,init)=>{
+  if(url.endsWith('/access_tokens')){
+   // The original caller object changes after editorial signature verification.
+   doc.id='news_unsigned_mutation_001';
+   doc.status='REJECTED';
+   doc.title.en='Unsigned changed headline';
+   doc.body.tr='Unsigned changed body';
+  }
+  return transport(url,init);
+ };
+ const result=await commitApprovedContent(env,doc,fetcher,async()=>{
+  doc.sources[0].url='https://unsigned.example.org/changed';
+ });
+ assert.equal(doc.status,'REJECTED');
+ assert.equal(result.path,'content-approved/news/'+originalId+'.json');
+ const puts=calls.filter(x=>x.method==='PUT');
+ assert.equal(puts.length,1);
+ assert.ok(puts[0].url.endsWith('/'+originalId+'.json'));
+ const payload=JSON.parse(puts[0].body);
+ assert.equal(Buffer.from(payload.content,'base64').toString('utf8'),original);
+ assert.equal(payload.message,'content(tpw): approved '+originalId+' [PILOT / NO DEPLOY]');
+ assert.equal(await verifyEditorialApproval(JSON.parse(original),env.TPW_EDITOR_PUBLIC_KEY_SPKI_B64),true);
+});
