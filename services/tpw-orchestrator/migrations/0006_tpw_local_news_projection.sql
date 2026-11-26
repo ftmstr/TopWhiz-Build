@@ -1,0 +1,5 @@
+-- Local synthetic only. Historical receipts are not publication permission.
+CREATE TABLE tpw_news_projection_ops (operation_id TEXT PRIMARY KEY NOT NULL, generation INTEGER NOT NULL UNIQUE CHECK(generation>0), commit_sha TEXT NOT NULL UNIQUE, run_id INTEGER NOT NULL, manifest_hash TEXT NOT NULL, previous_op TEXT REFERENCES tpw_news_projection_ops(operation_id), record_count INTEGER NOT NULL CHECK(record_count BETWEEN 1 AND 30));
+CREATE TABLE tpw_news_projection_rows (operation_id TEXT NOT NULL REFERENCES tpw_news_projection_ops(operation_id), path TEXT NOT NULL, sha256 TEXT NOT NULL, document_json TEXT NOT NULL, PRIMARY KEY(operation_id,path));
+CREATE TABLE tpw_news_projection_head (singleton INTEGER PRIMARY KEY CHECK(singleton=1), generation INTEGER NOT NULL CHECK(generation>=0), operation_id TEXT REFERENCES tpw_news_projection_ops(operation_id), CHECK((generation=0 AND operation_id IS NULL) OR (generation>0 AND operation_id IS NOT NULL)));
+INSERT INTO tpw_news_projection_head(singleton,generation,operation_id) VALUES(1,0,NULL);

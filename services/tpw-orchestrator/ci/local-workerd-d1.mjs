@@ -17,6 +17,7 @@ import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
 import {inspectSetup,loadClosedConfigs} from '../scripts/pilot-preflight.mjs';
 import {readLocalMetrics,renderPilotPanel} from '../scripts/pilot-panel.mjs';
 import {candidateDigest} from '../src/lineage.mjs';
+import {testNewsProjection} from './news-projection-d1.mjs';
 if(process.env.CI!=='true')throw new Error('CI_ONLY_TEST');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const schema=fileURLToPath(new URL('../migrations/0001_tpw_stage.sql',import.meta.url));
@@ -272,6 +273,9 @@ try {
  console.log('PASS same-slot D1 dependencies, duplicate CAS, failed feed, expired run, late trigger and abandoned owner');
  console.log('PASS D1 concurrent claim CAS, wrong-token denial, expired lease -> scrubbed quarantine, anti-replay tombstone');
  console.log('PASS workerd local D1; TPW1+TPW3 staging, TPW2 TR/EN gates, rejected metadata never staged/GitHub, payload TTL cleanup');
+ const projectionSchema=fileURLToPath(new URL('../migrations/0006_tpw_local_news_projection.sql',import.meta.url));
+ for(const statement of readFileSync(projectionSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
+ await testNewsProjection(db,makeDoc,news);
 }finally{await platform.dispose()}
 
 const tmp=mkdtempSync(join(tmpdir(),'topwhiz-workerd-'));
