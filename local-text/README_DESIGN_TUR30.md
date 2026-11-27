@@ -1,0 +1,5 @@
+# TUR30 local editorial design
+
+Scope: existing local-text signed D1 preview, not a production Next.js redesign or live deployment. Red/yellow/blue typographic placeholder; no real logo or media. Editorial desks, phone atlas, comparison, mobile menu, session-only dark/light, TR/EN and locked Dragon Point methodology card. The approved news schema has no category; signed mode keeps filters disabled and explains why. Standalone fictional mode supports category tabs. No score, ranking, real news or price. No new dependencies, no CSP or server changes.
+
+Preserve TUR29 helper pinned app SHA 65a79089bd1226cd31c495a89f191cba2f08c8ad; it does NOT show TUR30 design. Existing helper and firewall tests remain in place. New cross-platform test runs the current exact checkout with its sealed integrity manifest and signed D1 server. Eight screenshots per platform (desktop/mobile x TR/EN x dark/light) with sha256, no external page requests or JS errors, no horizontal overflow, category gate and mobile menu acceptance. CI only; physical Windows, Safari, default browser association, full host offline remain unverified. Issue #22 OPEN, LGPL/AGPL NOT_APPROVED, HARD NO-GO.

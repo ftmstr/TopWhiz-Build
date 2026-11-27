@@ -113,6 +113,17 @@ jobs:
             ${{ runner.temp }}/topwhiz-local-text/unified-desktop.png
             ${{ runner.temp }}/topwhiz-local-text/unified-mobile.png
 
+      - name: TUR30 exact checkout signed D1 design acceptance (Ubuntu)
+        run: node services/tpw-orchestrator/ci/tur30-design-chromium.mjs "$RUNNER_TEMP/topwhiz-tur30-ubuntu"
+      - name: Upload TUR30 Ubuntu synthetic design evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur30-ubuntu-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-tur30-ubuntu/*.png
+            ${{ runner.temp }}/topwhiz-tur30-ubuntu/evidence.json
+
   windows-unified-demo:
     needs: synthetic-safety
     runs-on: windows-2025
@@ -204,3 +215,18 @@ jobs:
             ${{ runner.temp }}/topwhiz-windows-visual/mobile-tr.png
             ${{ runner.temp }}/topwhiz-windows-visual/mobile-en.png
             ${{ runner.temp }}/topwhiz-windows-visual/evidence.json
+      - name: TUR30 exact checkout signed D1 design acceptance (Windows)
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
+        shell: pwsh
+        run: |
+          node services/tpw-orchestrator/ci/tur30-design-chromium.mjs (Join-Path $env:RUNNER_TEMP 'topwhiz-tur30-windows')
+          if ($LASTEXITCODE -ne 0) { throw 'TUR30_DESIGN_FAILED' }
+      - name: Upload TUR30 Windows synthetic design evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur30-windows-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-tur30-windows/*.png
+            ${{ runner.temp }}/topwhiz-tur30-windows/evidence.json
