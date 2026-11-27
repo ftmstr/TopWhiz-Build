@@ -6,7 +6,7 @@ import {editorialApprovalBytes} from '../src/editorial-proof.mjs';
 import {syncManifestMessage} from '../src/sync-manifest.mjs';
 import {verifySyntheticGitHubEvidence} from '../src/sync-github-evidence.mjs';
 import {generationMessage,projectLocalNews,readLocalNewsProjection} from '../src/news-projection.mjs';
-export async function testNewsProjection(db,makeDoc,news){
+export function createNewsProjectionFixture(db,makeDoc,news){
  const ci=generateKeyPairSync('ed25519'),authority=generateKeyPairSync('ed25519'),editor=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
  const pin=k=>k.publicKey.export({type:'spki',format:'der'}).subarray(-32).toString('base64url');
  const env={TPW_DB:db,TPW_MODE:'LOCAL_DRY_RUN',TPW_RELEASE_GATE:'CLOSED',TPW_GITHUB_WRITES:'DISABLED',TPW_SYNC_CI_PUBLIC_KEY:pin(ci),TPW_SYNC_AUTHORITY_PUBLIC_KEY:pin(authority),TPW_SYNC_REPO_ID:111,TPW_SYNC_WORKFLOW_ID:222,TPW_EDITOR_PUBLIC_KEY_SPKI_B64:editor.publicKey.export({type:'spki',format:'der'}).toString('base64')};
@@ -35,6 +35,10 @@ export async function testNewsProjection(db,makeDoc,news){
   const generationSignature=sign(null,canonicalBytes(generationMessage(generation,previousOperation,commit,verified.manifestHash,verified.operationId,verified.evidenceHash)),authority.privateKey).toString('base64url');
   return {...f,generation,previousOperation,generationSignature,verified,jobs,files};
  };
+ return {env,signed,authority,ci,pin};
+}
+export async function testNewsProjection(db,makeDoc,news){
+ const {env,signed,authority,ci,pin}=createNewsProjectionFixture(db,makeDoc,news);
  const count=async table=>(await db.prepare('SELECT count(*) AS n FROM '+table).first()).n;
  const a=await signed(1,null,'a',101);
  assert.equal((await readLocalNewsProjection(env)).length,0);

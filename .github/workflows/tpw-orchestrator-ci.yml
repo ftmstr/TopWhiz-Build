@@ -92,3 +92,5 @@ jobs:
             ${{ runner.temp }}/topwhiz-local-text/desktop.png
             ${{ runner.temp }}/topwhiz-local-text/mobile.png
             ${{ runner.temp }}/topwhiz-local-text/evidence.json
+            ${{ runner.temp }}/topwhiz-local-text/projection-desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/projection-mobile.png
