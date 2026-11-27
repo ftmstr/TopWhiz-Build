@@ -10,7 +10,7 @@ import {setTimeout as sleep} from 'node:timers/promises';
 const require=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
 const {chromium}=require('@playwright/test');
 const root=fileURLToPath(new URL('../../../',import.meta.url));
-const git=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'});assert.equal(git.status,0);const sha=git.stdout.trim();assert.match(sha,/^[a-f0-9]{40}$/);
+const git=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'});assert.equal(git.status,0);const sha=git.stdout.trim();assert.match(sha,/^[a-f0-9]{40}$/);assert.ok(process.env.TOPWHIZ_EXPECTED_HEAD,'EXPECTED_HEAD_REQUIRED');assert.equal(sha,process.env.TOPWHIZ_EXPECTED_HEAD,'EXACT_PR_HEAD_REQUIRED');
 const out=process.argv[2];assert.ok(out);mkdirSync(out,{recursive:true});
 const child=spawn(process.execPath,[fileURLToPath(new URL('../scripts/unified-demo.mjs',import.meta.url))],{cwd:root,stdio:['pipe','pipe','pipe'],windowsHide:true});
 let output='',errors='',exit,url,browser,version;
@@ -27,10 +27,15 @@ try{
   await page.route('**/*',route=>{if(![url,url+'site.js',url+'site.css',url+'favicon.ico'].includes(route.request().url())){external.push(route.request().url());return route.abort()}return route.continue()});
   try{
    const res=await page.goto(url);assert.equal(res.status(),200);assert.match(res.headers()['content-security-policy'],/connect-src 'none'/);
-   assert.equal(await page.locator('html').getAttribute('data-design'),'tur30');
+   assert.equal(await page.locator('html').getAttribute('data-design'),'tur31');
    assert.equal(await page.locator('#articles article').count(),2);assert.equal(await page.locator('#devices article').count(),2);
    assert.equal(await page.locator('#category').isDisabled(),true);assert.equal(await page.locator('[data-category]:disabled').count(),4);
    assert.equal(await page.locator('#category-note').isVisible(),true);
+   assert.equal(await page.locator('.category-tabs').isVisible(),false);assert.equal(await page.locator('#category').isVisible(),false);
+   assert.equal(await page.locator('#articles article[data-category=uncategorized]').count(),2);
+   assert.equal(await page.locator('#devices').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
+   assert.equal(await page.locator('#devices .spec-coverage').count(),2);
+   assert.equal(await page.locator('#compare-coverage').isVisible(),true);
    assert.match(await page.locator('#comparison').innerText(),/EX-001 \/ TR/);assert.match(await page.locator('#comparison').innerText(),/EX-001 \/ US/);
    assert.match(await page.locator('#comparison').innerText(),/6\.7 inch/);assert.doesNotMatch(await page.locator('#comparison').innerText(),/6\.1 inch/);
    if(name==='mobile'){
@@ -50,6 +55,8 @@ try{
      assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
      assert.match(await page.locator('#articles h3').first().innerText(),lang==='tr'?/Kurgusal CURRENT/:/Fictional CURRENT/);
      assert.match(await page.locator('#comparison').innerText(),lang==='tr'?/Bilinmiyor/:/Unknown/);
+     assert.match(await page.locator('#compare-coverage-text').innerText(),lang==='tr'?/1 \/ 7 bilinen teknik alan/:/1 \/ 7 known specification fields/);
+     assert.match(await page.locator('#compare-coverage').innerText(),lang==='tr'?/puan veya sıralama değildir/:/not a score or ranking/);
      assert.match(await page.locator('#dragon').innerText(),lang==='tr'?/Puanlar kullanılamıyor/:/Scores unavailable/);
      assert.equal(await page.locator('.method-stats strong').allTextContents().then(x=>x.join(',')),'8,37,1000');
      assert.equal(await page.locator('img,video,audio,iframe,svg,canvas,object,embed,form').count(),0);
@@ -70,6 +77,6 @@ try{
  const done=await Promise.race([exited,sleep(20000,undefined,{ref:false}).then(()=>{throw Error('TUR30_STOP_TIMEOUT')})]);
  assert.equal(done.code,0);assert.equal(done.signal,null);assert.match(output,/TOPWHIZ_STOPPED/);
  await assert.rejects(fetch(url,{signal:AbortSignal.timeout(5000)}));assert.equal(evidence.length,8);
- writeFileSync(join(out,'evidence.json'),JSON.stringify({head:sha,platform:process.platform,chromium:version,design:'tur30',physicalWindows:'NOT_RUN',hostOffline:'NOT_VERIFIED',stopAndClosedPort:true,evidence},null,2)+'\n');
- console.log('PASS TUR30 exact checkout signed D1 design '+process.platform+' eight TR/EN dark/light desktop/mobile screenshots; menu and category gate preserved');
+ writeFileSync(join(out,'evidence.json'),JSON.stringify({head:sha,platform:process.platform,chromium:version,design:'tur31',physicalWindows:'NOT_RUN',hostOffline:'NOT_VERIFIED',stopAndClosedPort:true,evidence},null,2)+'\n');
+ console.log('PASS TUR31 exact PR HEAD signed D1 design '+process.platform+' eight TR/EN dark/light desktop/mobile screenshots; menu and category gate preserved');
 }finally{if(browser)await browser.close();if(!exit){child.stdin.write('stop\n');await Promise.race([exited,sleep(5000,undefined,{ref:false})]);if(!exit&&child.pid){if(process.platform==='win32')spawnSync('taskkill.exe',['/pid',String(child.pid),'/t','/f'],{stdio:'ignore'});else child.kill();}}}
