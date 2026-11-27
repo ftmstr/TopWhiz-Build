@@ -20,7 +20,7 @@ try{
   const phoneColumns=await page.locator('#devices').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);assert.equal(phoneColumns,name==='mobile'?2:4);
   assert.equal(await page.locator('#devices button[aria-pressed=true]').count(),2);
   await page.locator('[data-desk=tech]').click();assert.equal(await page.locator('#category').inputValue(),'tech');assert.equal(await page.locator('#articles article').count(),1);
-  await page.locator('[data-category=trdef]').click();assert.equal(await page.locator('#category').inputValue(),'trdef');assert.equal(await page.locator('[data-category=trdef]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#articles article').count(),1);
+  await page.locator('button[data-category=trdef]').click();assert.equal(await page.locator('#category').inputValue(),'trdef');assert.equal(await page.locator('button[data-category=trdef]').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#articles article').count(),1);
   await page.locator('#articles summary').click();assert.equal(await page.locator('#articles details').getAttribute('open'),'');
   await page.locator('#en').click();assert.equal(await page.locator('html').getAttribute('lang'),'en');assert.match(await page.locator('#articles h3').innerText(),/Fictional/);
   await page.locator('#category').selectOption('globaldef');assert.match(await page.locator('#articles h3').innerText(),/international/);
