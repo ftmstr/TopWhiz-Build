@@ -87,7 +87,8 @@
     "0002_tpw_hourly.sql",
     "0003_tpw_revisions.sql",
     "0004_tpw_revision_proofs.sql",
-    "0005_tpw_revision_authority.sql"
+    "0005_tpw_revision_authority.sql",
+    "0008_tpw_device_evidence.sql"
   ],
   "blockers": [
     "ISSUE_22_OPEN",

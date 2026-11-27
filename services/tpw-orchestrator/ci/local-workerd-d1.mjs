@@ -25,6 +25,7 @@ const hourlySchema=fileURLToPath(new URL('../migrations/0002_tpw_hourly.sql',imp
 const revisionSchema=fileURLToPath(new URL('../migrations/0003_tpw_revisions.sql',import.meta.url));
 const proofSchema=fileURLToPath(new URL('../migrations/0004_tpw_revision_proofs.sql',import.meta.url));
 const authoritySchema=fileURLToPath(new URL('../migrations/0005_tpw_revision_authority.sql',import.meta.url));
+const deviceEvidenceSchema=fileURLToPath(new URL('../migrations/0008_tpw_device_evidence.sql',import.meta.url));
 const d1config=fileURLToPath(new URL('../wrangler.ci-d1.jsonc',import.meta.url));
 const localconfig=fileURLToPath(new URL('../wrangler.ci-local.jsonc',import.meta.url));
 const webRequire=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
@@ -54,6 +55,7 @@ try {
  for(const statement of readFileSync(revisionSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  for(const statement of readFileSync(proofSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  for(const statement of readFileSync(authoritySchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
+ for(const statement of readFileSync(deviceEvidenceSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  const reject={...news,body:'unlicensed body text'};
  const selection=prefilterFeed({items:[news,news,reject]},'news');
  assert.deepEqual(selection.stats,{received:3,rejected:1,duplicates:1});
@@ -294,6 +296,7 @@ try{
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',revisionSchema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',proofSchema]);
  wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',authoritySchema]);
+ wranglerSync(['d1','execute','topwhiz-tpw-synthetic-ci','--config',localconfig,'--local','--persist-to',tmp,'--file',deviceEvidenceSchema]);
  worker=spawn('pnpm',args('dev','--config',localconfig,'--local','--test-scheduled','--ip','127.0.0.1','--port',String(port),'--persist-to',tmp),{cwd:root,env:ciEnv,stdio:['ignore','pipe','pipe']});
  for(const stream of [worker.stdout,worker.stderr])stream.on('data',data=>{log=(log+String(data)).slice(-12000)});
  let ready=false;

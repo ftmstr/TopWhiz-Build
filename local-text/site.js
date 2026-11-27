@@ -25,23 +25,33 @@ if(projection){
  document.getElementById('category').disabled=true;
 }
 I.tr.uncategorized='Kategori belirtilmemiş';I.en.uncategorized='Uncategorized';
-const phones=[
+let phones=[
 {id:'a',name:'Demo Orion A1',spec:[6.2,'Demo Chip A',8,128,4600,178,'5G']},
 {id:'b',name:'Demo Orion Max',spec:[6.8,'Demo Chip B',12,256,5200,212,'5G']},
 {id:'c',name:'Demo Vega Lite',spec:[6.4,'Demo Chip C',6,128,5000,190,'4G']},
 {id:'d',name:'Demo Nova X',spec:[6.7,'Demo Chip D',12,512,5100,203,'5G']}
 ];
 const fields=['screen','chip','ram','storage','battery','weight','network'];
+const phoneProjection=document.getElementById('phone-projection-data');
+if(phoneProjection){
+ phones=[];
+ try{
+  const p=JSON.parse(phoneProjection.content.textContent);
+  if(p.status!=='LOCAL_SYNTHETIC_DEVICES'||!Array.isArray(p.phones)||!p.phones.length||p.phones.length>30||!p.phones.every(x=>typeof x.id==='string'&&typeof x.name==='string'&&Array.isArray(x.spec)&&x.spec.length===7&&x.spec.every(v=>v===null||typeof v==='string')))throw Error('BAD_PHONE_SNAPSHOT');
+  phones=p.phones;
+ }catch{}
+}
+I.tr.unknown='Bilinmiyor';I.en.unknown='Unknown';
 let lang='tr';
 const $=id=>document.getElementById(id),t=k=>I[lang][k],el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
 const fold=s=>s.toLocaleLowerCase(lang==='tr'?'tr-TR':'en-US').trim();
 const matches=(s,q)=>fold(s).includes(fold(q));
-function formatted(v,i){const n=x=>new Intl.NumberFormat(lang==='tr'?'tr-TR':'en-US').format(x);return [()=>n(v)+' '+t('inch'),()=>v,()=>n(v)+' GB',()=>n(v)+' GB',()=>n(v)+' mAh',()=>n(v)+' g',()=>v][i]()}
+function formatted(v,i){if(v===null||v===undefined)return t('unknown');if(phoneProjection)return v;const n=x=>new Intl.NumberFormat(lang==='tr'?'tr-TR':'en-US').format(x);return [()=>n(v)+' '+t('inch'),()=>v,()=>n(v)+' GB',()=>n(v)+' GB',()=>n(v)+' mAh',()=>n(v)+' g',()=>v][i]()}
 function renderNews(){const q=$('news-search').value,c=$('category').value,items=stories.filter(s=>(c==='all'||c===s.cat)&&matches(s[lang].join(' ')+' '+t(s.cat),q));$('news-count').textContent=items.length+' '+t('count')+(projection?(projectedGeneration===null?(lang==='tr'?' · Veri kullanılamıyor':' · Data unavailable'):(lang==='tr'?' · Yerel nesil ':' · Local generation ')+projectedGeneration):'');const list=$('articles');list.replaceChildren();for(const s of items){const card=el('article',undefined,'card');card.append(el('small',t('fiction')+' · '+t(s.cat)),el('h3',s[lang][0]),el('p',s[lang][1]));const d=el('details');d.append(el('summary',t('read')),el('p',s[lang][2]));card.append(d);list.append(card)}if(!items.length)list.append(el('p',t('none')))}
-function renderPhones(){const list=$('devices'),items=phones.filter(p=>matches(p.name+' '+p.spec[1],$('phone-search').value));list.replaceChildren();$('phone-count').textContent=items.length+' '+t('count');for(const p of items){const c=el('article',undefined,'card');c.append(el('small',t('fiction')),el('h3',p.name),el('p',formatted(p.spec[0],0)+' · '+formatted(p.spec[2],2)+' RAM · '+formatted(p.spec[4],4)));const selected=[$('left').value,$('right').value].includes(p.id);const b=el('button',t(selected?'selected':'add'));b.type='button';b.setAttribute('aria-pressed',String(selected));b.addEventListener('click',()=>{if($('left').value!==p.id)$('right').value=p.id;else if($('right').value===p.id)$('right').value=phones.find(x=>x.id!==p.id).id;renderCompare();renderPhones();$('left').focus();$('compare').scrollIntoView()});c.append(b);list.append(c)}if(!items.length)list.append(el('p',t('none')))}
-function renderCompare(){const a=phones.find(p=>p.id===$('left').value),b=phones.find(p=>p.id===$('right').value),root=$('comparison'),status=$('compare-status');root.replaceChildren();if(!a||!b||a===b){status.textContent=t('same');return}status.textContent='';const table=el('table'),head=el('thead'),tr=el('tr');for(const label of [t('feature'),a.name,b.name]){const th=el('th',label);th.scope='col';tr.append(th)}head.append(tr);table.append(head);const body=el('tbody');let count=0;fields.forEach((f,i)=>{const different=a.spec[i]!==b.spec[i];if($('diff').checked&&!different)return;const row=el('tr',undefined,different?'different':'');const th=el('th',t(f));th.scope='row';row.append(th,el('td',formatted(a.spec[i],i)),el('td',formatted(b.spec[i],i)));body.append(row);count++});table.append(body);root.append(table);if(!count)status.textContent=t('noDiff')}
+function renderPhones(){const list=$('devices'),items=phones.filter(p=>matches(p.name+' '+p.spec[1],$('phone-search').value));list.replaceChildren();$('phone-count').textContent=items.length+' '+t('count');for(const p of items){const c=el('article',undefined,'card');c.append(el('small',t('fiction')),el('h3',p.name),el('p',formatted(p.spec[0],0)+' · '+formatted(p.spec[2],2)+' RAM · '+formatted(p.spec[4],4)));const selected=[$('left').value,$('right').value].includes(p.id);const b=el('button',t(selected?'selected':'add'));b.type='button';b.setAttribute('aria-pressed',String(selected));b.addEventListener('click',()=>{if($('left').value!==p.id)$('right').value=p.id;else if($('right').value===p.id)$('right').value=phones.find(x=>x.id!==p.id)?.id??'';renderCompare();renderPhones();$('left').focus();$('compare').scrollIntoView()});c.append(b);list.append(c)}if(!items.length)list.append(el('p',t('none')))}
+function renderCompare(){const a=phones.find(p=>p.id===$('left').value),b=phones.find(p=>p.id===$('right').value),root=$('comparison'),status=$('compare-status');root.replaceChildren();if(!a||!b||a===b){status.textContent=t('same');return}status.textContent='';const table=el('table'),head=el('thead'),tr=el('tr');for(const label of [t('feature'),a.name,b.name]){const th=el('th',label);th.scope='col';tr.append(th)}head.append(tr);table.append(head);const body=el('tbody');let count=0;fields.forEach((f,i)=>{const different=a.spec[i]!==null&&b.spec[i]!==null&&a.spec[i]!==b.spec[i];if($('diff').checked&&!different)return;const row=el('tr',undefined,different?'different':'');const th=el('th',t(f));th.scope='row';row.append(th,el('td',formatted(a.spec[i],i)),el('td',formatted(b.spec[i],i)));body.append(row);count++});table.append(body);root.append(table);if(!count)status.textContent=t('noDiff')}
 function setLang(l){lang=l;document.documentElement.lang=l;document.title='TOPWHIZ | '+(l==='tr'?'Yerel sentetik demo':'Local synthetic demo');document.querySelectorAll('[data-i]').forEach(n=>{n.textContent=t(n.dataset.i)});for(const id of ['tr','en'])$(id).setAttribute('aria-pressed',String(id===l));renderNews();renderPhones();renderCompare()}
-for(const id of ['left','right'])for(const p of phones){const o=el('option',p.name);o.value=p.id;$(id).append(o)}$('left').value='a';$('right').value='b';
+for(const id of ['left','right'])for(const p of phones){const o=el('option',p.name);o.value=p.id;$(id).append(o)}$('left').value=phones[0]?.id??'';$('right').value=phones[1]?.id??'';
 for(const id of ['tr','en'])$(id).addEventListener('click',()=>setLang(id));
 $('category').addEventListener('change',renderNews);$('news-search').addEventListener('input',renderNews);$('phone-search').addEventListener('input',renderPhones);
 for(const id of ['left','right'])$(id).addEventListener('change',()=>{renderCompare();renderPhones()});$('diff').addEventListener('change',renderCompare);

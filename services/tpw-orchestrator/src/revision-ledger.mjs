@@ -20,6 +20,8 @@ function syntheticRights(doc){
 }
 export async function appendReviewedRevision({env,owned,article,expectedHead,scope,proof,nowFn=Date.now}){
  if(env.TPW_MODE!=='LOCAL_DRY_RUN'||env.TPW_RELEASE_GATE!=='CLOSED'||env.TPW_GITHUB_WRITES!=='DISABLED')throw Error('REVISION_LOCAL_ONLY');
+ // Capture caller-owned data before signature checks and asynchronous D1 calls.
+ article=JSON.parse(JSON.stringify(article));proof=JSON.parse(JSON.stringify(proof??null));
  const db=env.TPW_DB,c=owned.candidate;
  if(!publicationGate(article,{releaseGate:'OPEN'}).ok||article.id!==owned.id||c.id!==owned.id||article.sourceDigest!==await candidateDigest(c)||!originMatches(c,article))throw Error('REVISION_APPROVAL_INVALID');
  const rights=syntheticRights(article),v=await variantRevision(article),d=article.device;
@@ -48,6 +50,7 @@ export async function appendReviewedRevision({env,owned,article,expectedHead,sco
  const stmts=[db.prepare("INSERT INTO tpw_device_variants(variant_key,brand,sku,region) VALUES(CASE WHEN "+fence+" THEN ? ELSE NULL END,?,?,?) ON CONFLICT(variant_key) DO NOTHING").bind(...args,v.variantKey,d.brand,d.sku,d.region)];
  if(!unchanged){
   stmts.push(db.prepare('INSERT INTO tpw_device_revisions(revision_hash,variant_key,previous_hash,data_hash,evidence_hash,spec_json,recorded_at) VALUES(?,?,?,?,?,?,?)').bind(revisionHash,v.variantKey,expectedHead,v.dataHash,v.evidenceHash,specJson,now));
+  stmts.push(db.prepare('INSERT INTO tpw_device_evidence(revision_hash,article_json,proof_json) VALUES(?,?,?)').bind(revisionHash,JSON.stringify(article),JSON.stringify(proof)));
   stmts.push(db.prepare('INSERT INTO tpw_revision_approvals(revision_hash,review_hash,candidate_hash,run_slot,approved_at) VALUES(?,?,?,?,?)').bind(revisionHash,reviewHash,article.sourceDigest,scope.slot,now));
   for(const s of rights)stmts.push(db.prepare("INSERT INTO tpw_source_rights(revision_hash,source_url,publisher,claim_hash,scope) VALUES(?,?,?,?,'SYNTHETIC_LINK_ONLY')").bind(revisionHash,s.url,s.publisher,s.claimHash));
   stmts.push(db.prepare('INSERT INTO tpw_revision_heads(variant_key,revision_hash) VALUES(?,?) ON CONFLICT(variant_key) DO UPDATE SET revision_hash=excluded.revision_hash').bind(v.variantKey,revisionHash));

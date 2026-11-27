@@ -4,6 +4,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {startLocalText} from '../../../local-text/server.mjs';
 import {testProjectionPreview} from './projection-preview-chromium.mjs';
+import {testDevicePreview} from './device-preview-chromium.mjs';
 const require=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
 const {chromium}=require('@playwright/test');
 const out=process.argv[2];assert.ok(out);mkdirSync(out,{recursive:true});
@@ -37,6 +38,7 @@ try{
   await page.close();
  }
  evidence.push(...await testProjectionPreview(browser,out));
+ evidence.push(...await testDevicePreview(browser,out));
 }finally{await browser.close();await new Promise(r=>server.close(r))}
 writeFileSync(join(out,'evidence.json'),JSON.stringify(evidence,null,2)+'\n');
 console.log('PASS isolated text-only TR/EN technology/defence news, search, comparison, no media/external links, desktop/mobile Chromium');
