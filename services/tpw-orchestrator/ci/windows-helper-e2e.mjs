@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
 import {existsSync,readFileSync} from 'node:fs';
-import {join} from 'node:path';
+import {join,resolve,relative,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {setTimeout as sleep} from 'node:timers/promises';
 import net from 'node:net';
@@ -37,6 +37,15 @@ try{
   await sleep(100);
  }
  assert.match(out,mode==='install'?/TOPWHIZ_HELPER_FRESH_INSTALL/:/TOPWHIZ_HELPER_REUSE/);
+ if(mode==='install'&&process.env.TOPWHIZ_COLD_STORE){
+  const cmd=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','pnpm','store','path'],{cwd:dest,encoding:'utf8'});
+  assert.equal(cmd.status,0,cmd.stderr);
+  const actual=resolve(cmd.stdout.trim().split(/\r?\n/).at(-1)),base=resolve(process.env.TOPWHIZ_COLD_STORE);
+  const rel=relative(base,actual);assert.ok(rel===''||(!rel.startsWith('..')&&!isAbsolute(rel)),'store path outside isolated root');
+  const progress=out.replace(/\x1b\[[0-9;]*[A-Za-z]/g,'').split(/\r?\n/).filter(s=>/reused 0, downloaded [1-9]\d*, added \d+, done/.test(s));
+  assert.ok(progress.length,'cold store download completion with reused 0 not observed');
+  console.log('PASS cold isolated pnpm store: '+actual+'; '+progress.at(-1));
+ }
  if(mode==='reuse')assert.doesNotMatch(out,/TOPWHIZ_HELPER_FRESH_INSTALL/);
  const res=await fetch(url,{signal:AbortSignal.timeout(10000)});
  assert.equal(res.status,200);assert.match(res.headers.get('content-security-policy'),/connect-src 'none'/);

@@ -172,6 +172,31 @@ jobs:
           $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
           if (Test-Path -LiteralPath $env:LOCALAPPDATA) { throw 'HELPER_TEST_DIRECTORY_EXISTS' }
           New-Item -ItemType Directory -Path $env:LOCALAPPDATA | Out-Null
+          $env:TOPWHIZ_COLD_STORE = Join-Path $env:RUNNER_TEMP 'topwhiz-tur27-empty-pnpm-store'
+          if (Test-Path -LiteralPath $env:TOPWHIZ_COLD_STORE) { throw 'COLD_STORE_ALREADY_EXISTS' }
+          $env:npm_config_store_dir = $env:TOPWHIZ_COLD_STORE
+          New-Item -ItemType Directory -Path $env:TOPWHIZ_COLD_STORE | Out-Null
+          if (@(Get-ChildItem -LiteralPath $env:TOPWHIZ_COLD_STORE -Force).Count -ne 0) { throw 'COLD_STORE_NOT_EMPTY' }
+          Write-Host 'PASS empty isolated pnpm store before helper install'
           node services/tpw-orchestrator/ci/windows-helper-e2e.mjs install
           if ($LASTEXITCODE -ne 0) { throw 'HELPER_INSTALL_FAILED' }
           & services/tpw-orchestrator/ci/windows-helper-firewall.ps1
+      - name: Install pinned Windows Chromium (CI only)
+        run: pnpm --filter @topwhiz/web exec playwright install chromium
+      - name: Windows launcher and real Chromium TR EN desktop mobile acceptance
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
+          node services/tpw-orchestrator/ci/windows-launcher-chromium.mjs (Join-Path $env:RUNNER_TEMP 'topwhiz-windows-visual')
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_VISUAL_FAILED' }
+      - name: Upload four synthetic Windows screenshots and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-windows-visual-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-windows-visual/desktop-tr.png
+            ${{ runner.temp }}/topwhiz-windows-visual/desktop-en.png
+            ${{ runner.temp }}/topwhiz-windows-visual/mobile-tr.png
+            ${{ runner.temp }}/topwhiz-windows-visual/mobile-en.png
+            ${{ runner.temp }}/topwhiz-windows-visual/evidence.json
