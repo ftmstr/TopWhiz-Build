@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0.." || exit /b 1
 where node >nul 2>&1 || exit /b 1
 where pnpm >nul 2>&1 || exit /b 1
-pnpm --filter @topwhiz/web licenses list --json > "%TEMP%\topwhiz-demo-licenses.json"
+call pnpm --filter @topwhiz/web licenses list --json > "%TEMP%\topwhiz-demo-licenses.json"
 if errorlevel 1 exit /b 1
 node scripts\tur011-license-gate.mjs "%TEMP%\topwhiz-demo-licenses.json" > "%TEMP%\topwhiz-demo-license-report.txt"
 if errorlevel 1 exit /b 1
