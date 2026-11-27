@@ -18,6 +18,20 @@ function syntheticRights(doc){
  const seen=new Set();
  return doc.sources.map(s=>{const k=JSON.stringify([s.url,s.claimHash]);if(seen.has(k))throw Error('REVISION_DUPLICATE_RIGHTS');seen.add(k);return s});
 }
+// A data/evidence hash match alone cannot keep an expired or pre-migration proof current.
+// Only an independently reverified, identically authorized immutable head is reusable.
+async function reusableHeadEvidence(db,env,current,variant,verified,now){
+ if(current?.data_hash!==variant.dataHash||current?.evidence_hash!==variant.evidenceHash)return false;
+ const row=await db.prepare('SELECT r.previous_hash,a.run_slot,e.article_json,e.proof_json FROM tpw_device_revisions r JOIN tpw_revision_approvals a ON a.revision_hash=r.revision_hash JOIN tpw_device_evidence e ON e.revision_hash=r.revision_hash WHERE r.revision_hash=?').bind(current.revision_hash).first();
+ if(!row)return false;
+ try{
+  const article=JSON.parse(row.article_json),proof=JSON.parse(row.proof_json);
+  syntheticRights(article);
+  const v=await variantRevision(article),old=await verifyRevisionProofs(env,article,row.previous_hash,row.run_slot,proof,now);
+  const hash=await digest([v.variantKey,row.previous_hash,v.dataHash,v.evidenceHash,await digest(article.review),article.sourceDigest,old.proofHash]);
+  return hash===current.revision_hash&&v.variantKey===variant.variantKey&&v.dataHash===variant.dataHash&&v.evidenceHash===variant.evidenceHash&&old.epoch===verified.epoch&&old.expiresAt===verified.expiresAt&&JSON.stringify([...old.tokens].sort())===JSON.stringify([...verified.tokens].sort());
+ }catch{return false}
+}
 export async function appendReviewedRevision({env,owned,article,expectedHead,scope,proof,nowFn=Date.now}){
  if(env.TPW_MODE!=='LOCAL_DRY_RUN'||env.TPW_RELEASE_GATE!=='CLOSED'||env.TPW_GITHUB_WRITES!=='DISABLED')throw Error('REVISION_LOCAL_ONLY');
  // Capture caller-owned data before signature checks and asynchronous D1 calls.
@@ -37,7 +51,7 @@ export async function appendReviewedRevision({env,owned,article,expectedHead,sco
  const priorReceipt=await reconcile();if(priorReceipt)return priorReceipt;
  const current=await readRevisionHead(db,v.variantKey);
  if((current?.revision_hash??null)!==expectedHead)throw Error('REVISION_CAS_LOST');
- const unchanged=current?.data_hash===v.dataHash&&current?.evidence_hash===v.evidenceHash;
+ const unchanged=await reusableHeadEvidence(db,env,current,v,verified,nowFn());
  const reviewHash=await digest(article.review),revisionHash=await digest([v.variantKey,expectedHead,v.dataHash,v.evidenceHash,reviewHash,article.sourceDigest,verified.proofHash]);
  const specJson=JSON.stringify(Object.fromEntries(Object.keys(d.specifications).sort().map(k=>[k,d.specifications[k]])));
  await scope.guard();
