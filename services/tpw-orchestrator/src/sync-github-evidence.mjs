@@ -46,5 +46,5 @@ export async function verifySyntheticGitHubEvidence({env,expectedCommit,expected
  }
  const verified=await verifyOfflineManifest({env:pins,expectedCommit,expectedRunId,manifest:m,signature,files});
  const evidenceHash=await canonicalHash(['TPW_SYNTHETIC_GITHUB_EVIDENCE_V1',repoId,workflowId,expectedCommit,treeSha,expectedRunId,run.run_attempt,result.jobs.map(j=>[j.name,j.id]).sort((a,b)=>a[0]<b[0]?-1:1),verified.manifestHash,verified.operationId]);
- return {status:'SYNTHETIC_API_EVIDENCE_VALIDATED',commit:expectedCommit,treeSha,runId:expectedRunId,attempt:run.run_attempt,manifestHash:verified.manifestHash,operationId:verified.operationId,evidenceHash,publication:'HARD_NO_GO'};
+ return {status:'SYNTHETIC_API_EVIDENCE_VALIDATED',commit:expectedCommit,treeSha,runId:expectedRunId,attempt:run.run_attempt,manifestHash:verified.manifestHash,operationId:verified.operationId,evidenceHash,records:verified.records,publication:'HARD_NO_GO'};
 }

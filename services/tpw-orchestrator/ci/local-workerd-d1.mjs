@@ -275,6 +275,8 @@ try {
  console.log('PASS workerd local D1; TPW1+TPW3 staging, TPW2 TR/EN gates, rejected metadata never staged/GitHub, payload TTL cleanup');
  const projectionSchema=fileURLToPath(new URL('../migrations/0006_tpw_local_news_projection.sql',import.meta.url));
  for(const statement of readFileSync(projectionSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
+ const evidenceSchema=fileURLToPath(new URL('../migrations/0007_tpw_projection_evidence.sql',import.meta.url));
+ for(const statement of readFileSync(evidenceSchema,'utf8').replace(/^--[^\n]*$/gm,'').split(';').map(x=>x.trim()).filter(Boolean))await db.prepare(statement).run();
  await testNewsProjection(db,makeDoc,news);
 }finally{await platform.dispose()}
 
