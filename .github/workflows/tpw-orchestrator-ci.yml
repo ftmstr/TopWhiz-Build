@@ -65,6 +65,18 @@ jobs:
         run: node services/tpw-orchestrator/ci/local-workerd-d1.mjs
       - name: Run standalone synthetic pilot and persistent CLI acceptance
         run: node services/tpw-orchestrator/scripts/pilot-demo.mjs --out "$RUNNER_TEMP/topwhiz-pilot-demo"
+      - name: Unified demo checkout integrity and lifecycle acceptance
+        run: |
+          pnpm --filter @topwhiz/web licenses list --json > "$RUNNER_TEMP/topwhiz-demo-licenses.json"
+          node scripts/tur011-license-gate.mjs "$RUNNER_TEMP/topwhiz-demo-licenses.json" > "$RUNNER_TEMP/topwhiz-demo-license-report.txt"
+          node -e "const fs=require('fs');fs.writeFileSync('services/tpw-orchestrator/unified-demo-licenses.json',JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1],'utf8').split(/\r?\n/)[0])))" "$RUNNER_TEMP/topwhiz-demo-license-report.txt"
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs --seal
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
+          node services/tpw-orchestrator/ci/unified-demo-lifecycle.mjs
+          printf '\nTAMPER\n' >> local-text/site.css
+          if node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs; then exit 1; fi
+          git restore -- local-text/site.css
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
       - name: Install frozen Playwright Chromium
         run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
       - name: Real Chromium local operations panel acceptance
