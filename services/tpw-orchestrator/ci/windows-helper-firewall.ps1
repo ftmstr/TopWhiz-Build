@@ -17,7 +17,8 @@ try {
  foreach ($program in @($nodeExe) + $native) {
   $name = "TOPWHIZ-LOCAL-CI-$([guid]::NewGuid())"
   $rules.Add($name)
-  New-NetFirewallRule -Name $name -DisplayName $name -Direction Outbound -Action Block -Program $program -RemoteAddress @('0.0.0.0-126.255.255.255','128.0.0.0-255.255.255.255','::/0') -Profile Any -Enabled True | Out-Null
+  # Windows rejects IPv6 /0; use an explicit inclusive range excluding unspecified and loopback.
+  New-NetFirewallRule -Name $name -DisplayName $name -Direction Outbound -Action Block -Program $program -RemoteAddress @('0.0.0.0-126.255.255.255','128.0.0.0-255.255.255.255','::2-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff') -Profile Any -Enabled True | Out-Null
   $active = Get-NetFirewallRule -PolicyStore ActiveStore -Name $name
   if ($active.Enabled -ne 'True' -or $active.Action -ne 'Block' -or $active.Direction -ne 'Outbound') { throw 'FIREWALL_RULE_NOT_ACTIVE' }
   $filter = $active | Get-NetFirewallApplicationFilter
