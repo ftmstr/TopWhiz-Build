@@ -9,7 +9,7 @@ import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
 import {stageCandidates,claimStage} from '../src/staging.mjs';
 import {slotWindow} from '../src/hourly.mjs';
 import {appendReviewedRevision} from '../src/revision-ledger.mjs';
-import {createNewsProjectionFixture} from './news-projection-d1.mjs';
+import {createNewsProjectionFixture} from '../ci/news-projection-d1.mjs';
 import {projectLocalNews} from '../src/news-projection.mjs';
 import {startUnifiedPreview} from '../src/local-unified-view.mjs';
 const require=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
