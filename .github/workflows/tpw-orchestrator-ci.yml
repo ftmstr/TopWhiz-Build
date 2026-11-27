@@ -96,3 +96,5 @@ jobs:
             ${{ runner.temp }}/topwhiz-local-text/projection-mobile.png
             ${{ runner.temp }}/topwhiz-local-text/devices-desktop.png
             ${{ runner.temp }}/topwhiz-local-text/devices-mobile.png
+            ${{ runner.temp }}/topwhiz-local-text/unified-desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/unified-mobile.png

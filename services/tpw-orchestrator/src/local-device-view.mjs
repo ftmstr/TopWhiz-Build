@@ -27,7 +27,7 @@ export async function loadLocalDeviceView(env,nowFn=Date.now){
  }
  // Detect changes during async validation. This is not a receiver-side revocation fence.
  if(JSON.stringify(await read())!==JSON.stringify(rows)||checks.some(t=>t<=nowFn()))throw Error('DEVICE_VIEW_CHANGED');
- return {status:'LOCAL_SYNTHETIC_DEVICES',phones};
+ return {status:'LOCAL_SYNTHETIC_DEVICES',phones,validUntil:Math.min(...checks)};
 }
 export function startLocalDevicePreview(env,port=0,nowFn=Date.now){
  const pins={...env};
