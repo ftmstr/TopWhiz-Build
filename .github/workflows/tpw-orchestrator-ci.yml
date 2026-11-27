@@ -25,6 +25,8 @@ jobs:
           for file in services/tpw-orchestrator/src/*.mjs services/tpw-orchestrator/scripts/*.mjs services/tpw-orchestrator/ci/*.mjs; do node --check "$file"; done
       - name: Run offline adversarial smoke tests
         run: node --test services/tpw-orchestrator/tests/*.test.mjs
+      - name: Verify exact local-demo-only Windows LGPL classification
+        run: node --test services/tpw-orchestrator/ci/license-review-only.test.mjs
       - name: Reject unapproved JSON from content-approved
         run: node services/tpw-orchestrator/scripts/validate-approved.mjs content-approved
       - name: Release gates remain closed

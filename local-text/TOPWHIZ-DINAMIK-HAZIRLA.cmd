@@ -10,7 +10,7 @@ if errorlevel 1 (
   exit /b 1
 )
 echo DEMO_PREPARE_PHASE: license gate
-node scripts\tur011-license-gate.mjs "%TEMP%\topwhiz-demo-licenses.json" > "%TEMP%\topwhiz-demo-license-report.txt"
+node scripts\tur011-license-gate.mjs "%TEMP%\topwhiz-demo-licenses.json" --local-demo-review-only > "%TEMP%\topwhiz-demo-license-report.txt"
 if errorlevel 1 (
   echo DEMO_PREPARE_FAIL: license gate 1>&2
   if exist "%TEMP%\topwhiz-demo-license-report.txt" type "%TEMP%\topwhiz-demo-license-report.txt"

@@ -18,7 +18,7 @@ function dependencies(){
  const p=JSON.parse(readFileSync(require.resolve('wrangler/package.json'),'utf8'));
  if(p.version!=='4.158.0'||!['MIT','Apache-2.0','MIT OR Apache-2.0'].includes(p.license))throw Error('DEMO_WRANGLER_PIN_OR_LICENSE');
  const report=JSON.parse(readFileSync(regular(inventory),'utf8'));
- if(report.scanComplete!==true||!Number.isSafeInteger(report.checked)||report.checked<1||!Array.isArray(report.unknownLicenses)||report.unknownLicenses.some(x=>x!=='LGPL-3.0-or-later')||report.approved!==!report.unknownLicenses.length)throw Error('DEMO_LICENSE_REPORT');
+ if(report.scanComplete!==true||!Number.isSafeInteger(report.checked)||report.checked<1||!Array.isArray(report.unknownLicenses)||report.unknownLicenses.some(x=>x!=='LGPL-3.0-or-later'&&x!=='Apache-2.0 AND LGPL-3.0-or-later')||report.approved!==!report.unknownLicenses.length||report.releaseBlocked!==Boolean(report.unknownLicenses.length)||report.legalReviewRequired!==Boolean(report.unknownLicenses.length))throw Error('DEMO_LICENSE_REPORT');
  if(!report.approved)console.log('LICENSE REVIEW BLOCKER: local use only; no redistribution or release');
  const config=JSON.parse(readFileSync(resolve(root,base+'wrangler.ci-d1.jsonc'),'utf8'));
  if(config.workers_dev!==false||config.triggers.crons.length!==0||config.vars.TPW_MODE!=='CLOSED'||config.vars.TPW_RELEASE_GATE!=='CLOSED'||config.vars.TPW_GITHUB_WRITES!=='DISABLED'||config.d1_databases.length!==1||config.d1_databases[0].binding!=='TPW_DB'||config.d1_databases[0].database_id!=='00000000-0000-0000-0000-000000000165')throw Error('DEMO_CONFIG');
