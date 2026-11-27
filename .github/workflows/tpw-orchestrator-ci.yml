@@ -151,7 +151,7 @@ jobs:
         run: |
           call local-text\TOPWHIZ-DINAMIK-HAZIRLA.cmd
           if errorlevel 1 exit /b 1
-          node -e "const r=require('./services/tpw-orchestrator/unified-demo-licenses.json');console.log(JSON.stringify({checked:r.checked,categories:r.categories,unknownLicenses:r.unknownLicenses,approved:r.approved,releaseBlocked:r.releaseBlocked,reviewPackages:r.reviewPackages?.map(p=>({name:p.name,versions:p.versions,license:p.license})),redistribution:'BLOCKED_BY_PROJECT_POLICY'}))"
+          node -e "const r=require('./services/tpw-orchestrator/unified-demo-licenses.json');console.log(JSON.stringify({checked:r.checked,categories:r.categories,unknownLicenses:r.unknownLicenses,approved:r.approved,releaseBlocked:r.releaseBlocked,legalReviewRequired:r.legalReviewRequired,reviewPackages:r.reviewPackages?.map(p=>({name:p.name,versions:p.versions,license:p.license})),redistribution:'BLOCKED_BY_PROJECT_POLICY'}))"
       - name: Verify SHA-256 checkout integrity
         run: node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
       - name: Reject tampered CSS with exact integrity error and restore original bytes
@@ -166,3 +166,12 @@ jobs:
         shell: cmd
         run: |
           node -e "const fs=require('node:fs');for(const n of ['wrangler.jsonc','wrangler.ci-d1.jsonc']){const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/'+n,'utf8'));if(c.triggers.crons.length||c.vars.TPW_MODE!=='CLOSED'||c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1)}console.log('Windows hosted runner only; physical Windows NOT_RUN; OS offline NOT_VERIFIED; redistribution BLOCKED; HARD NO-GO')"
+      - name: Windows helper fresh install and process-scoped firewall reuse (no redistribution)
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
+          if (Test-Path -LiteralPath $env:LOCALAPPDATA) { throw 'HELPER_TEST_DIRECTORY_EXISTS' }
+          New-Item -ItemType Directory -Path $env:LOCALAPPDATA | Out-Null
+          node services/tpw-orchestrator/ci/windows-helper-e2e.mjs install
+          if ($LASTEXITCODE -ne 0) { throw 'HELPER_INSTALL_FAILED' }
+          & services/tpw-orchestrator/ci/windows-helper-firewall.ps1

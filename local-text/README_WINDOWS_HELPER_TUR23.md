@@ -1,0 +1,5 @@
+# TUR23 Windows helper candidate
+
+Pinned installation target: 65a79089bd1226cd31c495a89f191cba2f08c8ad (19/19 workflows, 58/58 jobs, Windows hosted runner PASS). The helper source in this commit is a candidate, not a tested portable distribution. No bundled dependencies or third-party binaries. Explicit --yes confirms first installation and suppresses interactive pause for CI; default remains interactive. No automatic updates, deletion or resealing.
+
+Hosted Windows acceptance: fresh checkout and frozen install, exact Git SHA, signed synthetic D1 loopback, stop and closed port. Reuse is exercised with program-specific Windows firewall outbound rules on node.exe and discovered workerd.exe; a positive/negative/restored external TCP control runs through node.exe. The runner remains online. Other processes, DNS service, full host offline operation, initial offline install and physical Windows remain unverified. No production or redistribution authorization. Issue #22 OPEN, Dragon Point DISABLED, HARD NO-GO.
