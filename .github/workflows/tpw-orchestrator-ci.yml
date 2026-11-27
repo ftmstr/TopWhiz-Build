@@ -182,8 +182,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'HELPER_INSTALL_FAILED' }
           & services/tpw-orchestrator/ci/windows-helper-firewall.ps1
       - name: Install pinned Windows Chromium (CI only)
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
         run: pnpm --filter @topwhiz/web exec playwright install chromium
       - name: Windows launcher and real Chromium TR EN desktop mobile acceptance
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
         shell: pwsh
         run: |
           $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
