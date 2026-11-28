@@ -197,12 +197,13 @@ async function testRuntime(runtime,fixture,base,dir){
    await page.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin!==base||!['/tpw-ci-signed/tr','/tpw-ci-signed/en','/tpw-ci-signed/css'].includes(u.pathname)){external.push(u.href);return r.abort()}return r.continue()});
    try{
     const res=await page.goto(base+'/tpw-ci-signed/'+lang);assert.equal(res.status(),200);assert.equal(await page.locator('html').getAttribute('lang'),lang);
-    assert.equal(await page.locator('[data-generation]').getAttribute('data-generation'),'2');assert.equal(await page.locator('#news article').count(),2);assert.equal(await page.locator('#phones article').count(),2);
+    assert.equal(await page.locator('[data-generation]').getAttribute('data-generation'),'2');assert.equal(await page.locator('[data-renderer=react-static-ssr]').count(),1);assert.equal(await page.locator('#news article').count(),2);assert.equal(await page.locator('#phones article').count(),2);
     assert.ok((await page.locator('#news h3').allTextContents()).every(x=>x.includes('CURRENT')));
     assert.match(await page.locator('#compare').innerText(),/6\.7 inch/);assert.match(await page.locator('#compare').innerText(),/6\.5 inch/);assert.doesNotMatch(await page.locator('#compare').innerText(),/6\.1 inch/);
     assert.match(await page.locator('#compare').innerText(),lang==='tr'?/Bilinmiyor/:/Unknown/);assert.equal(await page.locator('[data-dp-state=DISABLED]').count(),1);
-    assert.equal(await page.locator('[data-category-filtering=false]').count(),1);assert.equal(await page.locator('#phones meter').count(),2);
-    assert.equal(await page.locator('script,img,iframe,video,object,embed,form').count(),0);
+    assert.equal(await page.locator('[data-category-filtering=false]').count(),1);assert.equal(await page.locator('#phones meter').count(),2);assert.deepEqual(await page.locator('#phones meter').evaluateAll(ms=>ms.map(m=>[m.value,m.max])),[[1,7],[1,7]]);assert.equal(await page.locator('#compare tr[data-known-difference=true]').count(),1);assert.equal(await page.locator('#compare td[data-unknown=true]').count(),12);assert.equal(await page.locator('#dp .method div').count(),3);
+    if(name==='mobile'){const menu=page.locator('details.mobile');assert.equal(await menu.locator('nav').isVisible(),false);await menu.locator('summary').click();assert.equal(await menu.locator('nav').isVisible(),true);await menu.locator('summary').click();assert.equal(await menu.locator('nav').isVisible(),false)}
+    assert.equal(await page.locator('script,img,iframe,video,object,embed,form,[style]').count(),0);
     if(lang==='tr'){await page.locator('#news summary').first().click();assert.match(await page.locator('#news details p').first().innerText(),/<\/template><img/);await page.locator('#news summary').first().click()}
     const backgrounds=new Set();
     for(const theme of ['dark','light']){
@@ -231,8 +232,8 @@ async function testRuntime(runtime,fixture,base,dir){
   fixture.expire(true);await checked(path,503);fixture.expire(false);await checked();
   await fixture.advance();assert.match(await checked(),/data-generation="3"/);
   await fixture.revoke();await checked(path,503,{'if-none-match':'"old"'});await checked(base+'/tpw-ci-signed/en',503);
-  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',transport:runtime==='workerd'?'NAMED_MINIFLARE_SERVICE_BINDING_CI_ONLY':'DIRECT_NODE_LOOPBACK',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
-  console.log('PASS TUR37 '+runtime+' request-time signed D1 HTTP, generation, corruption, expiry, signed epoch, empty 503, no-store, browser CSP, 8 PNG');
+  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),renderer:'REACT_STATIC_SSR',hydration:'NOT_REQUESTED_SCRIPT_NONE',signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',transport:runtime==='workerd'?'NAMED_MINIFLARE_SERVICE_BINDING_CI_ONLY':'DIRECT_NODE_LOOPBACK',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
+  console.log('PASS TUR44 '+runtime+' React static SSR signed D1 HTTP, generation, corruption, expiry, signed epoch, empty 503, no-store, browser CSP, 8 PNG');
  }finally{await browser.close()}
 }
 mkdirSync(route);try{
