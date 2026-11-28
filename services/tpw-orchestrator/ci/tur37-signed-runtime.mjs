@@ -148,7 +148,8 @@ async function launchBoundWorkerd(fixture){
  const mf=new Miniflare(options);
  try{
   const url=await mf.ready;assert.equal(url.hostname,'127.0.0.1');assert.equal(url.port,'3116');
-  const bindings=await mf.getBindings(config.name);assert.equal(typeof bindings.TPW_CI_READ?.fetch,'function');
+  // Single configured Worker; V4-to-V5 conversion does not preserve the config name for this lookup.
+  const bindings=await mf.getBindings();assert.equal(typeof bindings.TPW_CI_READ?.fetch,'function');
   const beforeBinding=fixture.reads();
   for(const req of [new Request(fixed),new Request(fixed,{method:'POST',headers:{Authorization:'Bearer '+token}}),new Request(fixed+'?x=1',{headers:{Authorization:'Bearer '+token}}),new Request('http://127.0.0.1:3136/read',{headers:{Authorization:'Bearer '+token}}),new Request('https://example.invalid/read',{headers:{Authorization:'Bearer '+token}})]){
    const res=await bindings.TPW_CI_READ.fetch(req);assert.equal(res.status,403);assert.equal((await res.arrayBuffer()).byteLength,0)
