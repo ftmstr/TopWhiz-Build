@@ -64,19 +64,22 @@ async function signedFixture(token){
 
   const n1=await fixture.signed(1,null,'a',301),r1=await projectLocalNews(n1);
   const n2=await fixture.signed(2,r1.operationId,'b',302),r2=await projectLocalNews(n2);
-  let reads=0;
+  let reads=0;const counts={requests:0,hostDenied:0,methodOrPathDenied:0,authDenied:0,verified:0,verificationDenied:0};
   const send=(res,status,bytes=Buffer.alloc(0))=>{res.writeHead(status,{'Cache-Control':'private, no-store, max-age=0','Content-Type':'application/json; charset=utf-8','Content-Length':bytes.length,'X-Content-Type-Options':'nosniff'});res.end(bytes)};
   server=http.createServer(async(req,res)=>{
+   counts.requests++;
    const got=Buffer.from(req.headers.authorization||''),want=Buffer.from('Bearer '+token);
-   if(req.headers.host!=='127.0.0.1:3135'||req.method!=='GET'||req.url!=='/read'||got.length!==want.length||!timingSafeEqual(got,want)){send(res,403);return}
-   try{reads++;const dto=await readTpwNextDto(combined,()=>now);send(res,200,Buffer.from(JSON.stringify(dto)))}catch{send(res,503)}
+   if(req.headers.host!=='127.0.0.1:3135'){counts.hostDenied++;send(res,403);return}
+   if(req.method!=='GET'||req.url!=='/read'){counts.methodOrPathDenied++;send(res,403);return}
+   if(got.length!==want.length||!timingSafeEqual(got,want)){counts.authDenied++;send(res,403);return}
+   try{reads++;const dto=await readTpwNextDto(combined,()=>now);counts.verified++;send(res,200,Buffer.from(JSON.stringify(dto)))}catch{counts.verificationDenied++;send(res,503)}
   });
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(3135,'127.0.0.1',resolve)});
   const row=await db.prepare('SELECT path,document_json FROM tpw_news_projection_rows WHERE operation_id=? ORDER BY path LIMIT 1').bind(r2.operationId).first();
   const rev=current.result.revisionHash,saved=await db.prepare('SELECT article_json FROM tpw_device_evidence WHERE revision_hash=?').bind(rev).first();
   const originalNow=now;
   return {
-   reads:()=>reads,
+   reads:()=>reads,diagnostics:()=>({...counts}),
    corruptNews:async bad=>db.prepare('UPDATE tpw_news_projection_rows SET document_json=? WHERE operation_id=? AND path=?').bind(bad?'{}':row.document_json,r2.operationId,row.path).run(),
    corruptDevice:async bad=>db.prepare('UPDATE tpw_device_evidence SET article_json=? WHERE revision_hash=?').bind(bad?'{}':saved.article_json,rev).run(),
    expire:bad=>{now=bad?expiry:originalNow},
@@ -99,8 +102,14 @@ async function stop(p,base){try{process.kill(-p.c.pid,'SIGTERM')}catch(e){if(e.c
 async function testRuntime(runtime,fixture,base,dir){
  const path=base+'/tpw-ci-signed/tr';mkdirSync(dir,{recursive:true});
  const authless=await fetch('http://127.0.0.1:3135/read');assert.equal(authless.status,403);assert.equal((await authless.arrayBuffer()).byteLength,0);
+ const direct=await fetch('http://127.0.0.1:3135/read',{headers:{Authorization:'Bearer '+token},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(5000)});
+ assert.equal(direct.status,200,'DIRECT_AUTHENTICATED_BRIDGE_NOT_READY '+runtime);assert.match(direct.headers.get('cache-control')||'',/no-store/);
+ assert.equal((await direct.json()).generation,2);
+ const beforeReady=fixture.diagnostics();console.log('PASS TUR38 direct authenticated bridge preflight '+runtime);
  let ready;
  for(let i=0;i<100;i++){try{ready=await fetch(path,{signal:AbortSignal.timeout(2000)});if(ready.status===200)break}catch{}await sleep(500)}
+ const afterReady=fixture.diagnostics();
+ console.log('TUR38 bridge readiness counters '+runtime+' '+JSON.stringify(Object.fromEntries(Object.keys(afterReady).map(k=>[k,afterReady[k]-beforeReady[k]]))));
  assert.equal(ready?.status,200,'SIGNED_RUNTIME_NOT_READY '+runtime);
  const checked=async(url=path,status=200,headers={})=>{
   const res=await fetch(url,{headers,cache:'no-store'});assert.equal(res.status,status);

@@ -18,10 +18,22 @@ function validate(value:unknown):Dto{
  for(const p of d.phones){if(!keys(p,["variantId","label","specifications"])||typeof p.variantId!=="string"||!/^[a-f0-9]{64}$/.test(p.variantId)||ids.has(p.variantId)||!text(p.label,1024)||!keys(p.specifications,fields)||fields.some(k=>p.specifications[k]!==null&&!text(p.specifications[k],1024)))throw Error("PHONE");ids.add(p.variantId)}
  return d;
 }
+// CI diagnostics only: fixed codes, never raw exception text, headers, keys or DTO.
+const reported=new Set<string>();
+function report(code:string){if(!reported.has(code)){reported.add(code);console.warn("TPW_SIGNED_READ_DENIED "+code)}}
+function transportCode(error:unknown){
+ const msg=error instanceof Error?error.message.toLowerCase():"";
+ if(error instanceof Error&&(error.name==="TimeoutError"||error.name==="AbortError"))return "TRANSPORT_TIMEOUT";
+ if(/private ip|private address|loopback|local address|destination address|network address/.test(msg))return "TRANSPORT_ADDRESS";
+ if(/connection refused|econnrefused/.test(msg))return "TRANSPORT_REFUSED";
+ return "TRANSPORT_OTHER";
+}
 async function read():Promise<Dto>{
  if(!/^[a-f0-9]{64}$/.test(secret))throw Error("CI_ONLY");
- const r=await fetch(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},cache:"no-store",redirect:"error",signal:AbortSignal.timeout(5000)});
- if(r.status!==200||!r.headers.get("content-type")?.startsWith("application/json")||!r.headers.get("cache-control")?.includes("no-store")||!r.body)throw Error("BRIDGE");
+ let r:Response;
+ try{r=await fetch(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},cache:"no-store",redirect:"error",signal:AbortSignal.timeout(5000)})}catch(error){report(transportCode(error));throw Error("BRIDGE")}
+ if(r.status!==200){report(r.status===403?"BRIDGE_HTTP_403":r.status===503?"BRIDGE_HTTP_503":"BRIDGE_HTTP_OTHER");throw Error("BRIDGE")}
+ if(!r.headers.get("content-type")?.startsWith("application/json")||!r.headers.get("cache-control")?.includes("no-store")||!r.body){report("BRIDGE_METADATA");throw Error("BRIDGE")}
  const reader=r.body.getReader(),decoder=new TextDecoder("utf-8",{fatal:true});let n=0,s="";
  try{for(;;){const x=await reader.read();if(x.done)break;n+=x.value.byteLength;if(n>2000000)throw Error("LIMIT");s+=decoder.decode(x.value,{stream:true})}s+=decoder.decode();return validate(JSON.parse(s))}
  finally{await reader.cancel().catch(()=>{});reader.releaseLock()}
@@ -46,5 +58,5 @@ export async function GET(request:Request,{params}:{params:Promise<{locale:strin
  if(!/^[a-f0-9]{64}$/.test(secret))return response(503);
  if(locale==="css")return response(200,css,"text/css; charset=utf-8");
  if(locale!=="tr"&&locale!=="en")return response(404);
- try{return response(200,render(await read(),locale))}catch{return response(503)}
+ try{return response(200,render(await read(),locale))}catch(error){const code=error instanceof Error?error.message:"";report(["CI_ONLY","BRIDGE","LIMIT","DTO","STORY","TEXT","PHONE"].includes(code)?code:"DECODE_OR_RENDER");return response(503)}
 }
