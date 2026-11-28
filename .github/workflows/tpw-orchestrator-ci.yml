@@ -174,7 +174,13 @@ jobs:
           cleanup
           trap - EXIT
           test ! -e "$route"
+          # Next.js/vinext regenerate this tracked declaration during build.
+          # Reject every other tracked change before restoring only the generated file.
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml ':!apps/web/next-env.d.ts'
+          git diff HEAD -- apps/web/next-env.d.ts
+          git restore --source=HEAD --staged --worktree -- apps/web/next-env.d.ts
           git diff --exit-code HEAD -- apps/web pnpm-lock.yaml
+          echo 'PASS temporary route removed and tracked source restored'
       - name: Upload TUR34 Next.js and workerd synthetic visual evidence
         uses: actions/upload-artifact@v4
         with:
