@@ -130,6 +130,62 @@ jobs:
             ${{ runner.temp }}/topwhiz-tur31-ubuntu/*.png
             ${{ runner.temp }}/topwhiz-tur31-ubuntu/evidence.json
 
+      - name: TUR34 isolated synthetic Next.js production and local workerd visual acceptance
+        shell: bash
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          TOPWHIZ_CMS_API_BASE: ''
+          TOPWHIZ_CMS_API_HOST: ''
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          NEXT_TELEMETRY_DISABLED: '1'
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TOPWHIZ_EXPECTED_HEAD"
+          route='apps/web/app/tpw-ci-preview'
+          test ! -e "$route"
+          mkdir -p "$route/[locale]"
+          server_pid=''
+          cleanup() {
+            if [ -n "$server_pid" ]; then kill -- "-$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
+            rm -f "$route/[locale]/page.tsx"
+            rmdir "$route/[locale]" "$route"
+          }
+          trap cleanup EXIT
+          cp apps/web/ci/tpw-preview-page.tsx "$route/[locale]/page.tsx"
+          pnpm --filter @topwhiz/web build
+          setsid pnpm --filter @topwhiz/web exec next start -H 127.0.0.1 -p 3134 > "$RUNNER_TEMP/tpw34-next.log" 2>&1 &
+          server_pid=$!
+          if ! node services/tpw-orchestrator/ci/tur34-next-preview.mjs next "$RUNNER_TEMP/tpw34-next"; then tail -n 100 "$RUNNER_TEMP/tpw34-next.log"; exit 1; fi
+          kill -- "-$server_pid" 2>/dev/null || true
+          wait "$server_pid" 2>/dev/null || true
+          server_pid=''
+          node -e "fetch('http://127.0.0.1:3134/tpw-ci-preview/tr',{signal:AbortSignal.timeout(3000)}).then(()=>process.exit(1),()=>console.log('PASS Next loopback closed'))"
+          node scripts/tur011-workerd-config-gate.mjs
+          pnpm --filter @topwhiz/web build:workerd
+          setsid pnpm --filter @topwhiz/web preview:workerd > "$RUNNER_TEMP/tpw34-workerd.log" 2>&1 &
+          server_pid=$!
+          if ! node services/tpw-orchestrator/ci/tur34-next-preview.mjs workerd "$RUNNER_TEMP/tpw34-workerd"; then tail -n 100 "$RUNNER_TEMP/tpw34-workerd.log"; exit 1; fi
+          kill -- "-$server_pid" 2>/dev/null || true
+          wait "$server_pid" 2>/dev/null || true
+          server_pid=''
+          node -e "fetch('http://127.0.0.1:3116/tpw-ci-preview/tr',{signal:AbortSignal.timeout(3000)}).then(()=>process.exit(1),()=>console.log('PASS workerd loopback closed'))"
+          cleanup
+          trap - EXIT
+          test ! -e "$route"
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml
+      - name: Upload TUR34 Next.js and workerd synthetic visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur34-next-workerd-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/tpw34-next/*.png
+            ${{ runner.temp }}/tpw34-next/evidence.json
+            ${{ runner.temp }}/tpw34-workerd/*.png
+            ${{ runner.temp }}/tpw34-workerd/evidence.json
+
   windows-unified-demo:
     needs: synthetic-safety
     runs-on: windows-2025
