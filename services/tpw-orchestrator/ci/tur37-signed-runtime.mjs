@@ -156,9 +156,14 @@ async function launchBoundWorkerd(fixture){
   }
   assert.equal(counts.denied,10);assert.equal(counts.forwarded,0);assert.equal(fixture.reads(),beforeBinding);
   console.log('PASS TUR40 actual workerd bundle and named binding five negative requests, no bridge reads');
-  return {mf,counts}
+  // Positive binding preflight distinguishes a functioning host binding from a route-side failure.
+  const positive=await bindings.TPW_CI_READ.fetch(new Request(fixed,{headers:{Authorization:'Bearer '+token,Accept:'application/json','Cache-Control':'no-store'},redirect:'error',signal:AbortSignal.timeout(5000)}));
+  assert.equal(positive.status,200,'BINDING_AUTHENTICATED_PREFLIGHT');assert.match(positive.headers.get('cache-control')||'',/no-store/);assert.equal((await positive.json()).generation,2);
+  assert.equal(counts.forwarded,1);assert.equal(counts.denied,10);assert.equal(counts.globalDenied,0);assert.equal(fixture.reads(),beforeBinding+1);
+  console.log('PASS TUR42 authenticated Miniflare binding preflight, exactly one verified D1 read');
+  return {mf,counts,forwardedBeforeRuntime:counts.forwarded}
  }
- catch(e){await mf.dispose();throw e}
+ catch(e){console.log('TUR42 binding launch counters '+JSON.stringify(counts));await mf.dispose();throw e}
 }
 async function stop(p,base){if(p.mf){await p.mf.dispose();await assert.rejects(fetch(base+'/tpw-ci-signed/tr',{signal:AbortSignal.timeout(3000)}));return}
 try{process.kill(-p.c.pid,'SIGTERM')}catch(e){if(e.code!=='ESRCH')throw e}if(await Promise.race([p.done.then(()=>true),sleep(5000).then(()=>false)])===false){try{process.kill(-p.c.pid,'SIGKILL')}catch(e){if(e.code!=='ESRCH')throw e}await p.done}
@@ -238,13 +243,22 @@ mkdirSync(route);try{
    // Only the temporary workerd route imports the runtime binding. Next source stays unchanged.
    const routeFile=join(leaf,'route.ts'),nextSource=readFileSync(routeFile,'utf8');
    const from='r=await fetch(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},cache:"no-store",redirect:"error",signal:AbortSignal.timeout(5000)})';
-   const to='r=await (tpwCiEnv as unknown as {TPW_CI_READ:{fetch(request:Request):Promise<Response>}}).TPW_CI_READ.fetch(new Request(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},redirect:"error",signal:AbortSignal.timeout(5000)}))';
+   const to=`let binding:{fetch(request:Request):Promise<Response>}|undefined;
+   try{binding=(tpwCiEnv as unknown as {TPW_CI_READ?:{fetch(request:Request):Promise<Response>}})?.TPW_CI_READ}
+   catch(error){report("BINDING_ENV_ACCESS");throw error}
+   if(!binding||typeof binding.fetch!=="function"){report("BINDING_MISSING");throw Error("BINDING_MISSING")}
+   let request:Request;
+   try{
+    if(typeof AbortSignal.timeout!=="function"){report("BINDING_TIMEOUT_API_MISSING");throw Error("TIMEOUT_API")}
+    request=new Request(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},redirect:"error",signal:AbortSignal.timeout(5000)})
+   }catch(error){report("BINDING_REQUEST_INIT");throw error}
+   try{r=await binding.fetch(request)}catch(error){report("BINDING_FETCH_REJECTED");throw error}`;
    assert.equal(nextSource.split(from).length,2,'SIGNED_TRANSPORT_SOURCE_MATCH');
    writeFileSync(routeFile,'import {env as tpwCiEnv} from "cloudflare:workers";\n'+nextSource.replace(from,to));
   }
   await run(['--filter','@topwhiz/web',runtime==='next'?'build':'build:workerd']);
   const base='http://127.0.0.1:'+(runtime==='next'?3134:3116),fixture=await signedFixture(token);let proc;
-  try{proc=runtime==='next'?await launch(['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']):await launchBoundWorkerd(fixture);await testRuntime(runtime,fixture,base,join(out,runtime));if(runtime==='workerd'){assert.ok(proc.counts.forwarded>0);assert.equal(proc.counts.denied,10);assert.equal(proc.counts.globalDenied,0);console.log('PASS TUR40 named binding authenticated calls '+proc.counts.forwarded+'; unrelated destinations denied')}}
+  try{proc=runtime==='next'?await launch(['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']):await launchBoundWorkerd(fixture);await testRuntime(runtime,fixture,base,join(out,runtime));if(runtime==='workerd'){assert.ok(proc.counts.forwarded>proc.forwardedBeforeRuntime,'ROUTE_MUST_FORWARD_BEYOND_PREFLIGHT');assert.equal(proc.counts.denied,10);assert.equal(proc.counts.globalDenied,0);console.log('PASS TUR40 named binding authenticated calls '+proc.counts.forwarded+'; unrelated destinations denied')}}
   finally{try{if(proc?.counts)console.log('TUR40 service binding counters '+JSON.stringify(proc.counts));if(proc)await stop(proc,base)}finally{await fixture.close();await assert.rejects(fetch('http://127.0.0.1:3135/read',{signal:AbortSignal.timeout(3000)}))}}
   console.log('PASS TUR37 '+runtime+' runtime and private bridge ports closed');
  }
