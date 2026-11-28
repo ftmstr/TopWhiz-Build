@@ -1,13 +1,13 @@
 /** Both signed models in one real local D1, one loopback HTTP response. */
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {readFileSync,mkdirSync,writeFileSync,rmSync,existsSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync,rmSync,existsSync,readdirSync} from 'node:fs';
 import http from 'node:http';
 import {randomBytes,createHash,timingSafeEqual} from 'node:crypto';
 import {spawn,spawnSync} from 'node:child_process';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import {join} from 'node:path';
+import {join,resolve,relative,extname} from 'node:path';
 import {candidateDigest} from '../src/lineage.mjs';
 import {canonicalBytes} from '../src/canonical.mjs';
 import {b64url,grantMessage,editorMessage} from '../src/revision-proofs.mjs';
@@ -97,7 +97,59 @@ const source=readFileSync(join(root,'apps/web/ci/tpw-signed-route.ts'),'utf8');a
 const {chromium}=require('@playwright/test');
 const run=async args=>{const c=spawn('pnpm',args,{cwd:root,stdio:'inherit',env:process.env});await new Promise((resolve,reject)=>{c.once('error',reject);c.once('exit',code=>code===0?resolve():reject(Error('BUILD_EXIT '+code)))})};
 async function launch(args){const c=spawn('pnpm',args,{cwd:root,detached:true,stdio:'inherit',env:process.env});const done=new Promise((resolve,reject)=>{c.once('error',reject);c.once('exit',(code,signal)=>resolve({code,signal}))});return {c,done}}
-async function stop(p,base){try{process.kill(-p.c.pid,'SIGTERM')}catch(e){if(e.code!=='ESRCH')throw e}if(await Promise.race([p.done.then(()=>true),sleep(5000).then(()=>false)])===false){try{process.kill(-p.c.pid,'SIGKILL')}catch(e){if(e.code!=='ESRCH')throw e}await p.done}
+// TUR39: use the actual frozen Vite-generated worker bundle in a CI-only
+// Miniflare instance. Its outbound service permits exactly one authenticated
+// loopback read; every other destination is denied, with no network fallback.
+async function launchBoundWorkerd(fixture){
+ const wranglerPath=require.resolve('wrangler');
+ const {unstable_getMiniflareWorkerOptions}=await import(pathToFileURL(wranglerPath).href);
+ const mfRequire=createRequire(wranglerPath);
+ const {Miniflare,convertV4MiniflareOptions,Response:LocalResponse}=mfRequire('miniflare');
+ assert.equal(typeof convertV4MiniflareOptions,'function');
+ const serverDir=join(root,'apps/web/dist/server'),configPath=join(serverDir,'wrangler.json');
+ const config=JSON.parse(readFileSync(configPath,'utf8'));
+ assert.equal(config.name,'topwhiz-tur011-synthetic-local-only');
+ assert.equal(config.workers_dev,false);
+ assert.equal(config.cache?.enabled,false);
+ const main=resolve(serverDir,config.main);
+ assert.equal(main,join(serverDir,'index.js'));
+ const opts=unstable_getMiniflareWorkerOptions(configPath);
+ assert.equal(opts.externalWorkers.length,0);
+ const {modulesRules,...workerOptions}=opts.workerOptions;
+ // v5 requires explicit module entries instead of recursive rules.
+ const types={'.js':'ESModule','.mjs':'ESModule','.wasm':'CompiledWasm'};
+ const paths=readdirSync(serverDir,{recursive:true}).map(x=>join(serverDir,x)).filter(x=>Object.hasOwn(types,extname(x)));
+ assert.ok(paths.includes(main));const modules=[main,...paths.filter(x=>x!==main).sort()].map(path=>({type:types[extname(path)],path}));
+ assert.ok(modules.length>1);
+ const fixed='http://127.0.0.1:3135/read',counts={forwarded:0,denied:0};
+ const Resp=LocalResponse??Response;
+ const allowed=req=>{
+  const got=Buffer.from(req.headers.get('authorization')||''),want=Buffer.from('Bearer '+token);
+  return req.method==='GET'&&req.url===fixed&&got.length===want.length&&timingSafeEqual(got,want);
+ };
+ const outbound=async req=>{
+  if(!allowed(req)){counts.denied++;return new Resp(null,{status:403,headers:{'Cache-Control':'no-store'}})}
+  counts.forwarded++;
+  try{
+   const res=await fetch(fixed,{method:'GET',headers:{Authorization:'Bearer '+token,Accept:'application/json','Cache-Control':'no-store'},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(5000)});
+   if(![200,403,503].includes(res.status))return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}});
+   const size=Number(res.headers.get('content-length'));
+   if(!Number.isSafeInteger(size)||size<0||size>2000000){await res.body?.cancel();return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}})}
+   const bytes=await res.arrayBuffer();if(bytes.byteLength!==size)return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}});
+   return new Resp(bytes.byteLength?bytes:null,{status:res.status,headers:{'Cache-Control':res.headers.get('cache-control')||'','Content-Type':res.headers.get('content-type')||'','X-Content-Type-Options':'nosniff'}});
+  }catch{return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}})}
+ };
+ const before=fixture.reads();
+ for(const req of [new Request(fixed),new Request(fixed,{method:'POST',headers:{Authorization:'Bearer '+token}}),new Request(fixed+'?x=1',{headers:{Authorization:'Bearer '+token}}),new Request('http://127.0.0.1:3136/read',{headers:{Authorization:'Bearer '+token}}),new Request('https://example.invalid/read',{headers:{Authorization:'Bearer '+token}})]){const res=await outbound(req);assert.equal(res.status,403);assert.equal((await res.arrayBuffer()).byteLength,0)}
+ assert.equal(counts.denied,5);assert.equal(counts.forwarded,0);assert.equal(fixture.reads(),before);
+ console.log('PASS TUR39 scoped outbound denial preflight (wrong auth, method, query, port, external host)');
+ const options=convertV4MiniflareOptions({host:'127.0.0.1',port:3116,workers:[{...workerOptions,modulesRoot:serverDir,modules,outboundService:outbound}]});
+ const mf=new Miniflare(options);
+ try{const url=await mf.ready;assert.equal(url.hostname,'127.0.0.1');assert.equal(url.port,'3116');console.log('PASS TUR39 actual built workerd bundle with fixed CI outbound service');return {mf,counts}}
+ catch(e){await mf.dispose();throw e}
+}
+async function stop(p,base){if(p.mf){await p.mf.dispose();await assert.rejects(fetch(base+'/tpw-ci-signed/tr',{signal:AbortSignal.timeout(3000)}));return}
+try{process.kill(-p.c.pid,'SIGTERM')}catch(e){if(e.code!=='ESRCH')throw e}if(await Promise.race([p.done.then(()=>true),sleep(5000).then(()=>false)])===false){try{process.kill(-p.c.pid,'SIGKILL')}catch(e){if(e.code!=='ESRCH')throw e}await p.done}
  await assert.rejects(fetch(base+'/tpw-ci-signed/tr',{signal:AbortSignal.timeout(3000)}));}
 async function testRuntime(runtime,fixture,base,dir){
  const path=base+'/tpw-ci-signed/tr';mkdirSync(dir,{recursive:true});
@@ -162,7 +214,7 @@ async function testRuntime(runtime,fixture,base,dir){
   fixture.expire(true);await checked(path,503);fixture.expire(false);await checked();
   await fixture.advance();assert.match(await checked(),/data-generation="3"/);
   await fixture.revoke();await checked(path,503,{'if-none-match':'"old"'});await checked(base+'/tpw-ci-signed/en',503);
-  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
+  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',transport:runtime==='workerd'?'SCOPED_MINIFLARE_OUTBOUND_CI_ONLY':'DIRECT_NODE_LOOPBACK',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
   console.log('PASS TUR37 '+runtime+' request-time signed D1 HTTP, generation, corruption, expiry, signed epoch, empty 503, no-store, browser CSP, 8 PNG');
  }finally{await browser.close()}
 }
@@ -172,7 +224,7 @@ mkdirSync(route);try{
   if(runtime==='workerd'){const gate=spawnSync('node',['scripts/tur011-workerd-config-gate.mjs'],{cwd:root,stdio:'inherit'});assert.equal(gate.status,0)}
   await run(['--filter','@topwhiz/web',runtime==='next'?'build':'build:workerd']);
   const base='http://127.0.0.1:'+(runtime==='next'?3134:3116),fixture=await signedFixture(token);let proc;
-  try{proc=await launch(runtime==='next'?['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']:['--filter','@topwhiz/web','preview:workerd']);await testRuntime(runtime,fixture,base,join(out,runtime))}
+  try{proc=runtime==='next'?await launch(['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']):await launchBoundWorkerd(fixture);await testRuntime(runtime,fixture,base,join(out,runtime));if(runtime==='workerd'){assert.ok(proc.counts.forwarded>0);assert.equal(proc.counts.denied,5);console.log('PASS TUR39 workerd authenticated outbound calls '+proc.counts.forwarded+'; unrelated destinations denied')}}
   finally{try{if(proc)await stop(proc,base)}finally{await fixture.close();await assert.rejects(fetch('http://127.0.0.1:3135/read',{signal:AbortSignal.timeout(3000)}))}}
   console.log('PASS TUR37 '+runtime+' runtime and private bridge ports closed');
  }
