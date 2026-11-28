@@ -192,6 +192,36 @@ jobs:
             ${{ runner.temp }}/tpw34-workerd/*.png
             ${{ runner.temp }}/tpw34-workerd/evidence.json
 
+      - name: TUR37 request-time signed D1 Next and workerd HTTP acceptance
+        shell: bash
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          TOPWHIZ_CMS_API_BASE: ''
+          TOPWHIZ_CMS_API_HOST: ''
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          NEXT_TELEMETRY_DISABLED: '1'
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          node services/tpw-orchestrator/ci/tur37-signed-runtime.mjs "$RUNNER_TEMP/tpw37-signed"
+          test ! -e apps/web/app/tpw-ci-signed
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml ':!apps/web/next-env.d.ts'
+          git diff HEAD -- apps/web/next-env.d.ts
+          git restore --source=HEAD --staged --worktree -- apps/web/next-env.d.ts
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml
+          echo 'PASS TUR37 temporary signed route removed and tracked source restored'
+      - name: Upload TUR37 signed D1 runtime visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur37-signed-runtime
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/tpw37-signed/next/*.png
+            ${{ runner.temp }}/tpw37-signed/next/evidence.json
+            ${{ runner.temp }}/tpw37-signed/workerd/*.png
+            ${{ runner.temp }}/tpw37-signed/workerd/evidence.json
+
   windows-unified-demo:
     needs: synthetic-safety
     runs-on: windows-2025
