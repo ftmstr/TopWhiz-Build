@@ -1,0 +1,332 @@
+name: TOPWHIZ TPW Cloudflare orchestration (CI-only / no deploy)
+on:
+  pull_request:
+    paths:
+      - 'services/tpw-orchestrator/**'
+      - 'local-text/**'
+      - 'packages/tpw-content/**'
+      - 'content-approved/**'
+      - 'docs/TPW_CLOUDFLARE_IMPLEMENTATION_20261123.md'
+      - '.github/workflows/tpw-orchestrator-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Worker source syntax
+        run: |
+          for file in services/tpw-orchestrator/src/*.mjs services/tpw-orchestrator/scripts/*.mjs services/tpw-orchestrator/ci/*.mjs; do node --check "$file"; done
+      - name: Run offline adversarial smoke tests
+        run: node --test services/tpw-orchestrator/tests/*.test.mjs
+      - name: Verify exact local-demo-only Windows LGPL classification
+        run: node --test services/tpw-orchestrator/ci/license-review-only.test.mjs
+      - name: Reject unapproved JSON from content-approved
+        run: node services/tpw-orchestrator/scripts/validate-approved.mjs content-approved
+      - name: Release gates remain closed
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'); const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/wrangler.jsonc','utf8'));
+          if(c.triggers.crons.length || c.vars.TPW_MODE!=='CLOSED' || c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1);
+          console.log('CI-ONLY; no cron, no GitHub writes, no deploy');
+          NODE
+
+  workerd-d1-local:
+    needs: synthetic-safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - name: Frozen dependency install (test only, no deployment)
+        run: pnpm install --frozen-lockfile
+      - name: Assert local configs do not register Cron or permit external writes
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          for(const name of ['wrangler.ci-local.jsonc','wrangler.ci-d1.jsonc']){
+            const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/'+name,'utf8'));
+            if(c.triggers.crons.length || c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1);
+          }
+          NODE
+      - name: Real local workerd Cron/Workflow and isolated D1 acceptance
+        run: node services/tpw-orchestrator/ci/local-workerd-d1.mjs
+      - name: Run standalone synthetic pilot and persistent CLI acceptance
+        run: node services/tpw-orchestrator/scripts/pilot-demo.mjs --out "$RUNNER_TEMP/topwhiz-pilot-demo"
+      - name: Unified demo checkout integrity and lifecycle acceptance
+        run: |
+          pnpm --filter @topwhiz/web licenses list --json > "$RUNNER_TEMP/topwhiz-demo-licenses.json"
+          node scripts/tur011-license-gate.mjs "$RUNNER_TEMP/topwhiz-demo-licenses.json" > "$RUNNER_TEMP/topwhiz-demo-license-report.txt"
+          node -e "const fs=require('fs');fs.writeFileSync('services/tpw-orchestrator/unified-demo-licenses.json',JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1],'utf8').split(/\r?\n/)[0])))" "$RUNNER_TEMP/topwhiz-demo-license-report.txt"
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs --seal
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
+          node services/tpw-orchestrator/ci/unified-demo-lifecycle.mjs
+          printf '\nTAMPER\n' >> local-text/site.css
+          if node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs; then exit 1; fi
+          git restore -- local-text/site.css
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
+      - name: Install frozen Playwright Chromium
+        run: pnpm --filter @topwhiz/web exec playwright install --with-deps chromium
+      - name: Real Chromium local operations panel acceptance
+        run: node services/tpw-orchestrator/ci/pilot-chromium.mjs "$RUNNER_TEMP/topwhiz-pilot-demo"
+      - name: Upload redacted synthetic pilot evidence only
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-local-pilot-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-pilot-demo/operations.html
+            ${{ runner.temp }}/topwhiz-pilot-demo/operations.json
+            ${{ runner.temp }}/topwhiz-pilot-demo/README.txt
+            ${{ runner.temp }}/topwhiz-pilot-demo/desktop.png
+            ${{ runner.temp }}/topwhiz-pilot-demo/mobile.png
+            ${{ runner.temp }}/topwhiz-pilot-demo/chromium-evidence.json
+      - name: Real Chromium isolated text-only site acceptance
+        run: node services/tpw-orchestrator/ci/local-text-chromium.mjs "$RUNNER_TEMP/topwhiz-local-text"
+      - name: Preserve local text-only synthetic screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-local-text-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-local-text/desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/mobile.png
+            ${{ runner.temp }}/topwhiz-local-text/evidence.json
+            ${{ runner.temp }}/topwhiz-local-text/projection-desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/projection-mobile.png
+            ${{ runner.temp }}/topwhiz-local-text/devices-desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/devices-mobile.png
+            ${{ runner.temp }}/topwhiz-local-text/unified-desktop.png
+            ${{ runner.temp }}/topwhiz-local-text/unified-mobile.png
+
+      - name: TUR31 exact PR HEAD signed D1 design acceptance (Ubuntu)
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node services/tpw-orchestrator/ci/tur30-design-chromium.mjs "$RUNNER_TEMP/topwhiz-tur31-ubuntu"
+      - name: Upload TUR31 Ubuntu synthetic design evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur31-ubuntu-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-tur31-ubuntu/*.png
+            ${{ runner.temp }}/topwhiz-tur31-ubuntu/evidence.json
+
+      - name: TUR34 isolated synthetic Next.js production and local workerd visual acceptance
+        shell: bash
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          TOPWHIZ_CMS_API_BASE: ''
+          TOPWHIZ_CMS_API_HOST: ''
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          NEXT_TELEMETRY_DISABLED: '1'
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TOPWHIZ_EXPECTED_HEAD"
+          route='apps/web/app/tpw-ci-preview'
+          test ! -e "$route"
+          mkdir -p "$route/[locale]"
+          server_pid=''
+          cleanup() {
+            if [ -n "$server_pid" ]; then kill -- "-$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
+            rm -f "$route/[locale]/page.tsx"
+            rmdir "$route/[locale]" "$route"
+          }
+          trap cleanup EXIT
+          cp apps/web/ci/tpw-preview-page.tsx "$route/[locale]/page.tsx"
+          pnpm --filter @topwhiz/web build
+          setsid pnpm --filter @topwhiz/web exec next start -H 127.0.0.1 -p 3134 > "$RUNNER_TEMP/tpw34-next.log" 2>&1 &
+          server_pid=$!
+          if ! node services/tpw-orchestrator/ci/tur34-next-preview.mjs next "$RUNNER_TEMP/tpw34-next"; then tail -n 100 "$RUNNER_TEMP/tpw34-next.log"; exit 1; fi
+          kill -- "-$server_pid" 2>/dev/null || true
+          wait "$server_pid" 2>/dev/null || true
+          server_pid=''
+          node -e "fetch('http://127.0.0.1:3134/tpw-ci-preview/tr',{signal:AbortSignal.timeout(3000)}).then(()=>process.exit(1),()=>console.log('PASS Next loopback closed'))"
+          node scripts/tur011-workerd-config-gate.mjs
+          pnpm --filter @topwhiz/web build:workerd
+          setsid pnpm --filter @topwhiz/web preview:workerd > "$RUNNER_TEMP/tpw34-workerd.log" 2>&1 &
+          server_pid=$!
+          if ! node services/tpw-orchestrator/ci/tur34-next-preview.mjs workerd "$RUNNER_TEMP/tpw34-workerd"; then tail -n 100 "$RUNNER_TEMP/tpw34-workerd.log"; exit 1; fi
+          kill -- "-$server_pid" 2>/dev/null || true
+          wait "$server_pid" 2>/dev/null || true
+          server_pid=''
+          node -e "fetch('http://127.0.0.1:3116/tpw-ci-preview/tr',{signal:AbortSignal.timeout(3000)}).then(()=>process.exit(1),()=>console.log('PASS workerd loopback closed'))"
+          cleanup
+          trap - EXIT
+          test ! -e "$route"
+          # Next.js/vinext regenerate this tracked declaration during build.
+          # Reject every other tracked change before restoring only the generated file.
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml ':!apps/web/next-env.d.ts'
+          git diff HEAD -- apps/web/next-env.d.ts
+          git restore --source=HEAD --staged --worktree -- apps/web/next-env.d.ts
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml
+          echo 'PASS temporary route removed and tracked source restored'
+      - name: Upload TUR34 Next.js and workerd synthetic visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur34-next-workerd-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/tpw34-next/*.png
+            ${{ runner.temp }}/tpw34-next/evidence.json
+            ${{ runner.temp }}/tpw34-workerd/*.png
+            ${{ runner.temp }}/tpw34-workerd/evidence.json
+
+      - name: TUR37 request-time signed D1 Next and workerd HTTP acceptance
+        shell: bash
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          TOPWHIZ_CMS_API_BASE: ''
+          TOPWHIZ_CMS_API_HOST: ''
+          CLOUDFLARE_API_TOKEN: ''
+          CLOUDFLARE_ACCOUNT_ID: ''
+          NEXT_TELEMETRY_DISABLED: '1'
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          set -euo pipefail
+          node services/tpw-orchestrator/ci/tur37-signed-runtime.mjs "$RUNNER_TEMP/tpw37-signed"
+          test ! -e apps/web/app/tpw-ci-signed
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml ':!apps/web/next-env.d.ts'
+          git diff HEAD -- apps/web/next-env.d.ts
+          git restore --source=HEAD --staged --worktree -- apps/web/next-env.d.ts
+          git diff --exit-code HEAD -- apps/web pnpm-lock.yaml
+          echo 'PASS TUR37 temporary signed route removed and tracked source restored'
+      - name: Upload TUR37 signed D1 runtime visual evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur37-signed-runtime
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/tpw37-signed/next/*.png
+            ${{ runner.temp }}/tpw37-signed/next/evidence.json
+            ${{ runner.temp }}/tpw37-signed/workerd/*.png
+            ${{ runner.temp }}/tpw37-signed/workerd/evidence.json
+
+  windows-unified-demo:
+    needs: synthetic-safety
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      DO_NOT_TRACK: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert Windows runner and frozen tool versions
+        shell: cmd
+        run: |
+          node -e "if(process.platform!=='win32'||process.versions.node.split('.')[0]!=='22')process.exit(1);console.log(process.platform,process.arch,process.version)"
+          if errorlevel 1 exit /b 1
+          call pnpm --version
+          if errorlevel 1 exit /b 1
+          for /f "delims=" %%V in ('pnpm --version') do if not "%%V"=="10.18.3" exit /b 1
+      - name: Frozen Windows dependency install (local CI only)
+        shell: cmd
+        run: |
+          call pnpm install --frozen-lockfile
+          if errorlevel 1 exit /b 1
+          git diff --exit-code HEAD -- pnpm-lock.yaml
+      - name: Prepare via existing Windows launcher and inspect license report
+        shell: cmd
+        run: |
+          call local-text\TOPWHIZ-DINAMIK-HAZIRLA.cmd
+          if errorlevel 1 exit /b 1
+          node -e "const r=require('./services/tpw-orchestrator/unified-demo-licenses.json');console.log(JSON.stringify({checked:r.checked,categories:r.categories,unknownLicenses:r.unknownLicenses,approved:r.approved,releaseBlocked:r.releaseBlocked,legalReviewRequired:r.legalReviewRequired,reviewPackages:r.reviewPackages?.map(p=>({name:p.name,versions:p.versions,license:p.license})),redistribution:'BLOCKED_BY_PROJECT_POLICY'}))"
+      - name: Verify SHA-256 checkout integrity
+        run: node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
+      - name: Reject tampered CSS with exact integrity error and restore original bytes
+        shell: cmd
+        run: |
+          node -e "const fs=require('node:fs'),a=require('node:assert/strict'),{spawnSync}=require('node:child_process'),p='local-text/site.css',b=fs.readFileSync(p);try{fs.appendFileSync(p,'\nTUR20_TAMPER\n');const r=spawnSync(process.execPath,['services/tpw-orchestrator/scripts/unified-demo-integrity.mjs'],{encoding:'utf8'});a.equal(r.status,1);a.match(r.stderr,/Error: DEMO_INTEGRITY/);console.log('PASS Windows tamper rejected by DEMO_INTEGRITY')}finally{fs.writeFileSync(p,b)}"
+          if errorlevel 1 exit /b 1
+          node services/tpw-orchestrator/scripts/unified-demo-integrity.mjs
+      - name: Signed local D1 HTTP readiness stop and closed loopback port on Windows
+        run: node services/tpw-orchestrator/ci/unified-demo-lifecycle.mjs
+      - name: Report scope and keep all release gates closed
+        shell: cmd
+        run: |
+          node -e "const fs=require('node:fs');for(const n of ['wrangler.jsonc','wrangler.ci-d1.jsonc']){const c=JSON.parse(fs.readFileSync('services/tpw-orchestrator/'+n,'utf8'));if(c.triggers.crons.length||c.vars.TPW_MODE!=='CLOSED'||c.vars.TPW_RELEASE_GATE!=='CLOSED'||c.vars.TPW_GITHUB_WRITES!=='DISABLED')process.exit(1)}console.log('Windows hosted runner only; physical Windows NOT_RUN; OS offline NOT_VERIFIED; redistribution BLOCKED; HARD NO-GO')"
+      - name: Windows helper fresh install and process-scoped firewall reuse (no redistribution)
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
+          if (Test-Path -LiteralPath $env:LOCALAPPDATA) { throw 'HELPER_TEST_DIRECTORY_EXISTS' }
+          New-Item -ItemType Directory -Path $env:LOCALAPPDATA | Out-Null
+          $env:TOPWHIZ_COLD_STORE = Join-Path $env:RUNNER_TEMP 'topwhiz-tur27-empty-pnpm-store'
+          if (Test-Path -LiteralPath $env:TOPWHIZ_COLD_STORE) { throw 'COLD_STORE_ALREADY_EXISTS' }
+          $env:npm_config_store_dir = $env:TOPWHIZ_COLD_STORE
+          New-Item -ItemType Directory -Path $env:TOPWHIZ_COLD_STORE | Out-Null
+          if (@(Get-ChildItem -LiteralPath $env:TOPWHIZ_COLD_STORE -Force).Count -ne 0) { throw 'COLD_STORE_NOT_EMPTY' }
+          Write-Host 'PASS empty isolated pnpm store before helper install'
+          node services/tpw-orchestrator/ci/windows-helper-e2e.mjs install
+          if ($LASTEXITCODE -ne 0) { throw 'HELPER_INSTALL_FAILED' }
+          & services/tpw-orchestrator/ci/windows-helper-firewall.ps1
+      - name: Install pinned Windows Chromium (CI only)
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
+        run: pnpm --filter @topwhiz/web exec playwright install chromium
+      - name: Windows launcher and real Chromium TR EN desktop mobile acceptance
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'topwhiz-helper-localappdata'
+          node services/tpw-orchestrator/ci/windows-launcher-chromium.mjs (Join-Path $env:RUNNER_TEMP 'topwhiz-windows-visual')
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_VISUAL_FAILED' }
+      - name: Upload four synthetic Windows screenshots and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-windows-visual-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-windows-visual/desktop-tr.png
+            ${{ runner.temp }}/topwhiz-windows-visual/desktop-en.png
+            ${{ runner.temp }}/topwhiz-windows-visual/mobile-tr.png
+            ${{ runner.temp }}/topwhiz-windows-visual/mobile-en.png
+            ${{ runner.temp }}/topwhiz-windows-visual/evidence.json
+      - name: TUR31 exact PR HEAD signed D1 design acceptance (Windows)
+        env:
+          TOPWHIZ_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/topwhiz-windows-playwright
+        shell: pwsh
+        run: |
+          node services/tpw-orchestrator/ci/tur30-design-chromium.mjs (Join-Path $env:RUNNER_TEMP 'topwhiz-tur31-windows')
+          if ($LASTEXITCODE -ne 0) { throw 'TUR30_DESIGN_FAILED' }
+      - name: Upload TUR31 Windows synthetic design evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tpw-tur31-windows-design
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/topwhiz-tur31-windows/*.png
+            ${{ runner.temp }}/topwhiz-tur31-windows/evidence.json

@@ -1,0 +1,28 @@
+{
+  "name": "topwhiz-tpw-ci-isolated",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-11",
+  "workers_dev": false,
+  "triggers": {
+    "crons": []
+  },
+  "vars": {
+    "TPW_MODE": "LOCAL_DRY_RUN",
+    "TPW_RELEASE_GATE": "CLOSED",
+    "TPW_GITHUB_WRITES": "DISABLED"
+  },
+  "d1_databases": [
+    {
+      "binding": "TPW_DB",
+      "database_name": "topwhiz-tpw-synthetic-ci",
+      "database_id": "00000000-0000-0000-0000-000000000165"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "TPW_AGENT_WORKFLOW",
+      "name": "topwhiz-tpw-agent-ci",
+      "class_name": "TPWAgentWorkflow"
+    }
+  ]
+}

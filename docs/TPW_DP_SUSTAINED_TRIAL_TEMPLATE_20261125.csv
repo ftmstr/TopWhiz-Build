@@ -1,0 +1,1 @@
+protocol_tag,private_variant_id,run_id,loop_index,os_firmware,benchmark_app_build,stress_mode,ambient_c,battery_start_pct,thermal_recovery_confirmed,loop_raw_value,raw_unit,loop_duration_seconds,temp_c,instrument_uncertainty,run_state,invalid_reason,raw_evidence_sha256,license_receipt_ref,independent_reviewer

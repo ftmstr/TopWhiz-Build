@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TOPWHIZ TPW approved-content contract — structural, not source authenticity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "kind",
+    "status",
+    "title",
+    "summary",
+    "body",
+    "sources",
+    "review",
+    "media",
+    "publishedAt",
+    "sourceDigest"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^news_[a-z0-9][a-z0-9_-]{5,90}$"
+    },
+    "kind": {
+      "const": "news"
+    },
+    "status": {
+      "const": "APPROVED"
+    },
+    "title": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tr",
+        "en"
+      ],
+      "properties": {
+        "tr": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 180
+        },
+        "en": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 180
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tr",
+        "en"
+      ],
+      "properties": {
+        "tr": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 600
+        },
+        "en": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 600
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tr",
+        "en"
+      ],
+      "properties": {
+        "tr": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 15000
+        },
+        "en": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 15000
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "publisher",
+          "rights",
+          "type",
+          "checkedAt",
+          "claimHash"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "pattern": "^https://"
+          },
+          "publisher": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "rights": {
+            "enum": [
+              "LINK_ONLY",
+              "PERMISSION_GRANTED"
+            ]
+          },
+          "type": {
+            "enum": [
+              "PRIMARY",
+              "INDEPENDENT"
+            ]
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "claimHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent",
+        "decision",
+        "factCheck",
+        "rightsCheck",
+        "translationCheck",
+        "reviewedAt",
+        "evidenceHash",
+        "signature"
+      ],
+      "properties": {
+        "agent": {
+          "const": "TPW2"
+        },
+        "decision": {
+          "const": "APPROVED"
+        },
+        "factCheck": {
+          "const": "VERIFIED"
+        },
+        "rightsCheck": {
+          "const": "CLEARED"
+        },
+        "translationCheck": {
+          "const": "VERIFIED"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidenceHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$",
+          "description": "Detached ECDSA P-256 SHA-256 P1363 signature over domain-separated full approved document; trusted public SPKI pinned outside content"
+        }
+      }
+    },
+    "media": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sourceDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

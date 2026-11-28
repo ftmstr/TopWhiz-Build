@@ -1,0 +1,21 @@
+{
+  "name": "topwhiz-tpw-d1-ci-proxy",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-23",
+  "workers_dev": false,
+  "triggers": {
+    "crons": []
+  },
+  "vars": {
+    "TPW_MODE": "CLOSED",
+    "TPW_RELEASE_GATE": "CLOSED",
+    "TPW_GITHUB_WRITES": "DISABLED"
+  },
+  "d1_databases": [
+    {
+      "binding": "TPW_DB",
+      "database_name": "topwhiz-tpw-synthetic-ci",
+      "database_id": "00000000-0000-0000-0000-000000000165"
+    }
+  ]
+}
