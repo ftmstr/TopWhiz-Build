@@ -98,8 +98,8 @@ const {chromium}=require('@playwright/test');
 const run=async args=>{const c=spawn('pnpm',args,{cwd:root,stdio:'inherit',env:process.env});await new Promise((resolve,reject)=>{c.once('error',reject);c.once('exit',code=>code===0?resolve():reject(Error('BUILD_EXIT '+code)))})};
 async function launch(args){const c=spawn('pnpm',args,{cwd:root,detached:true,stdio:'inherit',env:process.env});const done=new Promise((resolve,reject)=>{c.once('error',reject);c.once('exit',(code,signal)=>resolve({code,signal}))});return {c,done}}
 // TUR39: use the actual frozen Vite-generated worker bundle in a CI-only
-// Miniflare instance. Its outbound service permits exactly one authenticated
-// loopback read; every other destination is denied, with no network fallback.
+// Miniflare instance. TUR40: use an explicit service binding, not global fetch.
+// Global outbound is denied; the named service permits one authenticated read.
 async function launchBoundWorkerd(fixture){
  const wranglerPath=require.resolve('wrangler');
  const {unstable_getMiniflareWorkerOptions}=await import(pathToFileURL(wranglerPath).href);
@@ -121,7 +121,7 @@ async function launchBoundWorkerd(fixture){
  const paths=readdirSync(serverDir,{recursive:true}).map(x=>join(serverDir,x)).filter(x=>Object.hasOwn(types,extname(x)));
  assert.ok(paths.includes(main));const modules=[main,...paths.filter(x=>x!==main).sort()].map(path=>({type:types[extname(path)],path}));
  assert.ok(modules.length>1);
- const fixed='http://127.0.0.1:3135/read',counts={forwarded:0,denied:0};
+ const fixed='http://127.0.0.1:3135/read',counts={forwarded:0,denied:0,globalDenied:0};
  const Resp=LocalResponse??Response;
  const allowed=req=>{
   const got=Buffer.from(req.headers.get('authorization')||''),want=Buffer.from('Bearer '+token);
@@ -133,7 +133,7 @@ async function launchBoundWorkerd(fixture){
   try{
    const res=await fetch(fixed,{method:'GET',headers:{Authorization:'Bearer '+token,Accept:'application/json','Cache-Control':'no-store'},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(5000)});
    if(![200,403,503].includes(res.status))return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}});
-   const size=Number(res.headers.get('content-length'));
+   const rawLength=res.headers.get('content-length');const size=rawLength===null?NaN:Number(rawLength);
    if(!Number.isSafeInteger(size)||size<0||size>2000000){await res.body?.cancel();return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}})}
    const bytes=await res.arrayBuffer();if(bytes.byteLength!==size)return new Resp(null,{status:503,headers:{'Cache-Control':'no-store'}});
    return new Resp(bytes.byteLength?bytes:null,{status:res.status,headers:{'Cache-Control':res.headers.get('cache-control')||'','Content-Type':res.headers.get('content-type')||'','X-Content-Type-Options':'nosniff'}});
@@ -143,9 +143,20 @@ async function launchBoundWorkerd(fixture){
  for(const req of [new Request(fixed),new Request(fixed,{method:'POST',headers:{Authorization:'Bearer '+token}}),new Request(fixed+'?x=1',{headers:{Authorization:'Bearer '+token}}),new Request('http://127.0.0.1:3136/read',{headers:{Authorization:'Bearer '+token}}),new Request('https://example.invalid/read',{headers:{Authorization:'Bearer '+token}})]){const res=await outbound(req);assert.equal(res.status,403);assert.equal((await res.arrayBuffer()).byteLength,0)}
  assert.equal(counts.denied,5);assert.equal(counts.forwarded,0);assert.equal(fixture.reads(),before);
  console.log('PASS TUR39 scoped outbound denial preflight (wrong auth, method, query, port, external host)');
- const options=convertV4MiniflareOptions({host:'127.0.0.1',port:3116,workers:[{...workerOptions,modulesRoot:serverDir,modules,outboundService:outbound}]});
+ const denyGlobal=async()=>{counts.globalDenied++;return new Resp(null,{status:403,headers:{'Cache-Control':'no-store'}})};
+ const options=convertV4MiniflareOptions({host:'127.0.0.1',port:3116,cf:false,workers:[{...workerOptions,modulesRoot:serverDir,modules,serviceBindings:{...workerOptions.serviceBindings,TPW_CI_READ:outbound},outboundService:denyGlobal}]});
  const mf=new Miniflare(options);
- try{const url=await mf.ready;assert.equal(url.hostname,'127.0.0.1');assert.equal(url.port,'3116');console.log('PASS TUR39 actual built workerd bundle with fixed CI outbound service');return {mf,counts}}
+ try{
+  const url=await mf.ready;assert.equal(url.hostname,'127.0.0.1');assert.equal(url.port,'3116');
+  const bindings=await mf.getBindings(config.name);assert.equal(typeof bindings.TPW_CI_READ?.fetch,'function');
+  const beforeBinding=fixture.reads();
+  for(const req of [new Request(fixed),new Request(fixed,{method:'POST',headers:{Authorization:'Bearer '+token}}),new Request(fixed+'?x=1',{headers:{Authorization:'Bearer '+token}}),new Request('http://127.0.0.1:3136/read',{headers:{Authorization:'Bearer '+token}}),new Request('https://example.invalid/read',{headers:{Authorization:'Bearer '+token}})]){
+   const res=await bindings.TPW_CI_READ.fetch(req);assert.equal(res.status,403);assert.equal((await res.arrayBuffer()).byteLength,0)
+  }
+  assert.equal(counts.denied,10);assert.equal(counts.forwarded,0);assert.equal(fixture.reads(),beforeBinding);
+  console.log('PASS TUR40 actual workerd bundle and named binding five negative requests, no bridge reads');
+  return {mf,counts}
+ }
  catch(e){await mf.dispose();throw e}
 }
 async function stop(p,base){if(p.mf){await p.mf.dispose();await assert.rejects(fetch(base+'/tpw-ci-signed/tr',{signal:AbortSignal.timeout(3000)}));return}
@@ -214,18 +225,26 @@ async function testRuntime(runtime,fixture,base,dir){
   fixture.expire(true);await checked(path,503);fixture.expire(false);await checked();
   await fixture.advance();assert.match(await checked(),/data-generation="3"/);
   await fixture.revoke();await checked(path,503,{'if-none-match':'"old"'});await checked(base+'/tpw-ci-signed/en',503);
-  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',transport:runtime==='workerd'?'SCOPED_MINIFLARE_OUTBOUND_CI_ONLY':'DIRECT_NODE_LOOPBACK',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
+  assert.equal(evidence.length,8);writeFileSync(join(dir,'evidence.json'),JSON.stringify({head:sha,runtime,chromium:browser.version(),signedD1Integration:'REQUEST_TIME_LOCAL_CI_BRIDGE',transport:runtime==='workerd'?'NAMED_MINIFLARE_SERVICE_BINDING_CI_ONLY':'DIRECT_NODE_LOOPBACK',cspEnforcement:'BROWSER_INLINE_SCRIPT_AND_CONNECT_DENIED',noStore:true,invalidEmpty503:true,generationAdvance:true,epochRevocation:true,expiredProof:true,receiverLastByte:'NOT_VERIFIED',evidence},null,2)+'\n');
   console.log('PASS TUR37 '+runtime+' request-time signed D1 HTTP, generation, corruption, expiry, signed epoch, empty 503, no-store, browser CSP, 8 PNG');
  }finally{await browser.close()}
 }
 mkdirSync(route);try{
  mkdirSync(leaf);writeFileSync(join(leaf,'route.ts'),source.replace('__TPW_CI_SECRET__',token),{flag:'wx'});
  for(const runtime of ['next','workerd']){
-  if(runtime==='workerd'){const gate=spawnSync('node',['scripts/tur011-workerd-config-gate.mjs'],{cwd:root,stdio:'inherit'});assert.equal(gate.status,0)}
+  if(runtime==='workerd'){
+   const gate=spawnSync('node',['scripts/tur011-workerd-config-gate.mjs'],{cwd:root,stdio:'inherit'});assert.equal(gate.status,0);
+   // Only the temporary workerd route imports the runtime binding. Next source stays unchanged.
+   const routeFile=join(leaf,'route.ts'),nextSource=readFileSync(routeFile,'utf8');
+   const from='r=await fetch(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},cache:"no-store",redirect:"error",signal:AbortSignal.timeout(5000)})';
+   const to='r=await (tpwCiEnv as unknown as {TPW_CI_READ:{fetch(request:Request):Promise<Response>}}).TPW_CI_READ.fetch(new Request(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},redirect:"error",signal:AbortSignal.timeout(5000)}))';
+   assert.equal(nextSource.split(from).length,2,'SIGNED_TRANSPORT_SOURCE_MATCH');
+   writeFileSync(routeFile,'import {env as tpwCiEnv} from "cloudflare:workers";\n'+nextSource.replace(from,to));
+  }
   await run(['--filter','@topwhiz/web',runtime==='next'?'build':'build:workerd']);
   const base='http://127.0.0.1:'+(runtime==='next'?3134:3116),fixture=await signedFixture(token);let proc;
-  try{proc=runtime==='next'?await launch(['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']):await launchBoundWorkerd(fixture);await testRuntime(runtime,fixture,base,join(out,runtime));if(runtime==='workerd'){assert.ok(proc.counts.forwarded>0);assert.equal(proc.counts.denied,5);console.log('PASS TUR39 workerd authenticated outbound calls '+proc.counts.forwarded+'; unrelated destinations denied')}}
-  finally{try{if(proc)await stop(proc,base)}finally{await fixture.close();await assert.rejects(fetch('http://127.0.0.1:3135/read',{signal:AbortSignal.timeout(3000)}))}}
+  try{proc=runtime==='next'?await launch(['--filter','@topwhiz/web','exec','next','start','-H','127.0.0.1','-p','3134']):await launchBoundWorkerd(fixture);await testRuntime(runtime,fixture,base,join(out,runtime));if(runtime==='workerd'){assert.ok(proc.counts.forwarded>0);assert.equal(proc.counts.denied,10);assert.equal(proc.counts.globalDenied,0);console.log('PASS TUR40 named binding authenticated calls '+proc.counts.forwarded+'; unrelated destinations denied')}}
+  finally{try{if(proc?.counts)console.log('TUR40 service binding counters '+JSON.stringify(proc.counts));if(proc)await stop(proc,base)}finally{await fixture.close();await assert.rejects(fetch('http://127.0.0.1:3135/read',{signal:AbortSignal.timeout(3000)}))}}
   console.log('PASS TUR37 '+runtime+' runtime and private bridge ports closed');
  }
 }finally{rmSync(route,{recursive:true,force:true})}
