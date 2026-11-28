@@ -247,12 +247,17 @@ mkdirSync(route);try{
    try{binding=(tpwCiEnv as unknown as {TPW_CI_READ?:{fetch(request:Request):Promise<Response>}})?.TPW_CI_READ}
    catch(error){report("BINDING_ENV_ACCESS");throw error}
    if(!binding||typeof binding.fetch!=="function"){report("BINDING_MISSING");throw Error("BINDING_MISSING")}
+   // The real Worker failed inside Request initialization before the binding was invoked.
+   // Use the minimal GET Request shape; the trusted host adapter rejects redirects and
+   // independently aborts its fixed loopback fetch at five seconds.
    let request:Request;
+   try{request=new Request(bridge,{method:"GET",headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"}})}
+   catch(error){report("BINDING_REQUEST_INIT_MINIMAL");throw error}
+   let timer:ReturnType<typeof setTimeout>|undefined;
    try{
-    if(typeof AbortSignal.timeout!=="function"){report("BINDING_TIMEOUT_API_MISSING");throw Error("TIMEOUT_API")}
-    request=new Request(bridge,{headers:{Authorization:"Bearer "+secret,Accept:"application/json","Cache-Control":"no-store"},redirect:"error",signal:AbortSignal.timeout(5000)})
-   }catch(error){report("BINDING_REQUEST_INIT");throw error}
-   try{r=await binding.fetch(request)}catch(error){report("BINDING_FETCH_REJECTED");throw error}`;
+    r=await Promise.race([binding.fetch(request),new Promise<Response>((_,reject)=>{timer=setTimeout(()=>{report("BINDING_DEADLINE");reject(Error("BINDING_DEADLINE"))},5000)})])
+   }catch(error){report("BINDING_FETCH_REJECTED");throw error}
+   finally{if(timer!==undefined)clearTimeout(timer)}`;
    assert.equal(nextSource.split(from).length,2,'SIGNED_TRANSPORT_SOURCE_MATCH');
    writeFileSync(routeFile,'import {env as tpwCiEnv} from "cloudflare:workers";\n'+nextSource.replace(from,to));
   }
