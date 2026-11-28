@@ -6,3 +6,11 @@
 @media(max-width:900px){.tpw34 .tpw34-menu{display:block;margin-left:auto}.tpw34-nav nav{display:none;order:3;flex-basis:100%}.tpw34-nav nav[data-open=true]{display:flex}.tpw34-hero{grid-template-columns:1fr;padding:18px}.tpw34-newsgrid,.tpw34-phonegrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.tpw34 .tpw34-wrap{width:calc(100% - 24px)}.tpw34-tools{flex-basis:100%;justify-content:space-between}.tpw34 h1{font-size:30px}.tpw34 h2{font-size:24px}.tpw34-hero aside{padding:10px}.tpw34-card{padding:12px}.tpw34-newsgrid{grid-template-columns:1fr}.tpw34-phonegrid h3{font-size:18px}.tpw34-dp{grid-template-columns:1fr}.tpw34-ring{width:120px;justify-self:center}.tpw34 th,.tpw34 td{font-size:12px;padding:6px}.tpw34-method b{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.tpw34 *{scroll-behavior:auto!important}}
+
+/* TUR36: review of accepted Next/workerd screenshots; no media or external assets. */
+.tpw34 .tpw34-card{display:flex;flex-direction:column}
+.tpw34 .tpw34-phonegrid .tpw34-card button{margin-top:auto;align-self:flex-start}
+.tpw34 .tpw34-coverage meter{display:block;width:100%;height:8px;margin:6px 0 10px;accent-color:var(--blue)}
+.tpw34 .tpw34-coverage p{margin:4px 0}
+.tpw34 .tpw34-newsgrid .tpw34-card h3{line-height:1.3}
+@media(max-width:540px){.tpw34 .tpw34-hero{margin-block:14px 20px;gap:12px;padding:14px}.tpw34-hero aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}.tpw34-hero aside .tpw34-kicker{grid-column:1/-1}.tpw34-desk{font-size:12px;line-height:1.4;margin:2px 0;padding:6px 7px;min-height:44px;display:flex;align-items:center}.tpw34 .tpw34-phonegrid .tpw34-card:last-child:nth-child(odd){grid-column:1/-1}.tpw34 .tpw34-selects label{min-width:0;flex:1 1 140px}.tpw34 .tpw34-selects select{width:100%}}

@@ -30,6 +30,9 @@ try{
     await page.waitForFunction(l=>document.documentElement.lang===l,lang);
     assert.equal(await page.locator('[data-preview=synthetic-only]').getAttribute('lang'),lang);
     assert.equal(await page.locator('#tpw34-news article').count(),3);assert.equal(await page.locator('#tpw34-phones article').count(),3);
+    assert.equal(await page.locator('#tpw34-phones meter').count(),3);assert.deepEqual(await page.locator('#tpw34-phones meter').evaluateAll(ms=>ms.map(m=>[m.value,m.max])),[[1,7],[1,7],[3,7]]);
+    const search=page.locator('#tpw34-news input[type=search]');await search.fill('NO_MATCH_TUR36');assert.equal(await page.locator('#tpw34-news article').count(),0);await search.fill('');assert.equal(await page.locator('#tpw34-news article').count(),3);
+    const ps=page.locator('#tpw34-phones input[type=search]');await ps.fill('EX-002');assert.equal(await page.locator('#tpw34-phones article').count(),1);await ps.fill('');assert.equal(await page.locator('#tpw34-phones article').count(),3);
     await page.locator('button[data-cat=trdef]').click();assert.equal(await page.locator('#tpw34-news article').count(),1);
     await page.locator('button[data-cat=all]').click();assert.equal(await page.locator('#tpw34-news article').count(),3);
     await page.locator('#tpw34-diff').check();assert.equal(await page.locator('#tpw34-compare tbody tr').count(),1);await page.locator('#tpw34-diff').uncheck();

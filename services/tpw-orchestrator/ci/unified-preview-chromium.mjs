@@ -14,6 +14,7 @@ import {applyRevocation,revokeMessage} from '../src/revision-authority.mjs';
 import {createNewsProjectionFixture} from './news-projection-d1.mjs';
 import {projectLocalNews} from '../src/news-projection.mjs';
 import {startUnifiedPreview,loadUnifiedView} from '../src/local-unified-view.mjs';
+import {readTpwNextDto} from '../src/next-read-dto.mjs';
 const require=createRequire(new URL('../../../apps/web/package.json',import.meta.url));
 const at='2026-11-23T00:00:00Z',hash='a'.repeat(64);
 const makeDoc=async c=>({schemaVersion:'1.0',id:c.id,kind:c.kind,status:'APPROVED',title:{tr:'Sentetik teknik duyuru',en:'Synthetic technical announcement'},summary:{tr:'Bu yalnızca yerel çalıştırma için hazırlanmış sentetik bir kayıttır.',en:'This record exists only for synthetic local acceptance testing.'},body:{tr:'Tamamen kurgusal bir metindir; gerçek bir marka, ürün, olay veya haber iddiası içermez.',en:'This entirely synthetic sample does not make any real product, manufacturer or news claim.'},sources:[{...c.source,checkedAt:at,claimHash:hash},{url:'https://independent.example.net/lab',publisher:'Synthetic laboratory',rights:'LINK_ONLY',type:'INDEPENDENT',checkedAt:at,claimHash:hash}],review:{agent:'TPW2',decision:'APPROVED',factCheck:'VERIFIED',rightsCheck:'CLEARED',translationCheck:'VERIFIED',reviewedAt:at,evidenceHash:hash},media:[],publishedAt:at,sourceDigest:await candidateDigest(c),...(c.kind==='device'?{device:{...c.device,specifications:{screen:{value:'6.3',unit:'inch',sourceHash:hash}}}}:{})});
@@ -60,8 +61,19 @@ export async function testUnifiedPreview(browser,out){
   const started=await startUnifiedPreview(combined,0,()=>now);server=started.server;const url=started.url;
   const denied=async()=>{const res=await fetch(url);assert.equal(res.status,503);assert.equal((await res.arrayBuffer()).byteLength,0)};
   await denied(); // devices alone are insufficient.
+  await assert.rejects(readTpwNextDto(combined,()=>now));
   const n1=await fixture.signed(1,null,'a',301),r1=await projectLocalNews(n1);
   const n2=await fixture.signed(2,r1.operationId,'b',302),r2=await projectLocalNews(n2);
+  const dto=await readTpwNextDto(combined,()=>now);
+  assert.equal(dto.generation,2);assert.equal(dto.schemaVersion,'1.0');assert.equal(dto.dragonPoint,'DISABLED');assert.equal(dto.publication,'HARD_NO_GO');assert.equal(dto.categoryFiltering,false);
+  assert.equal(dto.stories.length,2);assert.ok(dto.stories.every(s=>s.category===null&&s.tr.title.includes('CURRENT')&&s.en.title.includes('CURRENT')));
+  assert.match(dto.stories[0].tr.body,/<\/template><img/);
+  assert.equal(dto.phones.length,2);assert.equal(new Set(dto.phones.map(p=>p.variantId)).size,2);
+  const tr=dto.phones.find(p=>p.label.endsWith(' / TR')),us=dto.phones.find(p=>p.label.endsWith(' / US'));
+  assert.equal(tr.specifications.screen,'6.7 inch');assert.equal(us.specifications.screen,'6.5 inch');assert.deepEqual(Object.keys(tr.specifications),['screen','chip','ram','storage','battery','weight','network']);
+  assert.equal(tr.specifications.network,null);assert.equal(tr.specifications.chip,null);assert.ok(!('camera' in tr.specifications));
+  assert.ok(!JSON.stringify(dto).includes('6.1 inch'));
+  await assert.rejects(readTpwNextDto({...combined,TPW_RELEASE_GATE:'OPEN'},()=>now),/UNIFIED_LOCAL_ONLY/);
   const evidence=[];
   for(const [name,width,height] of [['desktop',1920,1080],['mobile',390,844]]){
    const page=await browser.newPage({viewport:{width,height},isMobile:name==='mobile',hasTouch:name==='mobile'}),errors=[],external=[];
@@ -84,17 +96,17 @@ export async function testUnifiedPreview(browser,out){
   }
   // Independent corruptions, no stale/static fallback. Restore only test-owned fixtures.
   const row=await db.prepare('SELECT path,document_json FROM tpw_news_projection_rows WHERE operation_id=? ORDER BY path LIMIT 1').bind(r2.operationId).first();
-  await db.prepare('UPDATE tpw_news_projection_rows SET document_json=? WHERE operation_id=? AND path=?').bind('{}',r2.operationId,row.path).run();await denied();
+  await db.prepare('UPDATE tpw_news_projection_rows SET document_json=? WHERE operation_id=? AND path=?').bind('{}',r2.operationId,row.path).run();await denied();await assert.rejects(readTpwNextDto(combined,()=>now));
   await db.prepare('UPDATE tpw_news_projection_rows SET document_json=? WHERE operation_id=? AND path=?').bind(row.document_json,r2.operationId,row.path).run();
   const rev=current.result.revisionHash,saved=await db.prepare('SELECT article_json FROM tpw_device_evidence WHERE revision_hash=?').bind(rev).first();
-  await db.prepare('UPDATE tpw_device_evidence SET article_json=? WHERE revision_hash=?').bind('{}',rev).run();await denied();
+  await db.prepare('UPDATE tpw_device_evidence SET article_json=? WHERE revision_hash=?').bind('{}',rev).run();await denied();await assert.rejects(readTpwNextDto(combined,()=>now));
   await db.prepare('UPDATE tpw_device_evidence SET article_json=? WHERE revision_hash=?').bind(saved.article_json,rev).run();
   assert.equal((await fetch(url)).status,200);
   // Interpose an actual signed commit AFTER the news reader obtains its rows.
   const n3=await fixture.signed(3,r2.operationId,'c',303);
   let fired=false;
   const interpose=(needle,change)=>({prepare(sql){const stmt=db.prepare(sql);if(!sql.includes(needle))return stmt;return {async all(){const result=await stmt.all();if(!fired){fired=true;await change()}return result}}}});
-  await assert.rejects(loadUnifiedView({...combined,TPW_DB:interpose('r.document_json FROM',()=>projectLocalNews(n3))},()=>now),/UNIFIED_CHANGED/);assert.equal(fired,true);
+  await assert.rejects(readTpwNextDto({...combined,TPW_DB:interpose('r.document_json FROM',()=>projectLocalNews(n3))},()=>now),/UNIFIED_CHANGED/);assert.equal(fired,true);
   assert.match(await (await fetch(url)).text(),/"generation":3/);
   // Advance signed revocation epoch after a device snapshot has been read.
   fired=false;const token=await candidateDigest(grantMessage(current.article.sources[0],expiry));
@@ -102,8 +114,9 @@ export async function testUnifiedPreview(browser,out){
   // Exercise a valid independent admin signature rather than relying on a rejected mutation.
   const signature=await sign(keys[2],revokeMessage(token,0));
   fired=false;
-  await assert.rejects(loadUnifiedView({...combined,TPW_DB:interpose('e.article_json,e.proof_json,z.epoch',()=>applyRevocation({env,token,epoch:0,signature,nowFn:()=>now}))},()=>now),/DEVICE_VIEW_REVOKED|DEVICE_VIEW_CHANGED|UNIFIED_CHANGED/);assert.equal(fired,true);
-  await denied();assert.equal((await fetch(url+'api/news')).status,404);
+  await assert.rejects(readTpwNextDto({...combined,TPW_DB:interpose('e.article_json,e.proof_json,z.epoch',()=>applyRevocation({env,token,epoch:0,signature,nowFn:()=>now}))},()=>now),/DEVICE_VIEW_REVOKED|DEVICE_VIEW_CHANGED|UNIFIED_CHANGED/);assert.equal(fired,true);
+  await denied();await assert.rejects(readTpwNextDto(combined,()=>now));assert.equal((await fetch(url+'api/news')).status,404);
+  console.log('PASS Next read DTO v1 real signed D1 current generation, TR/EN, nulls, variant identity, no categories, corruption and revocation fail closed');
   console.log('PASS unified local D1 news and device preview Chromium desktop/mobile, independent corruptions fail closed, signed generation and epoch races denied, XSS escaped, no external requests');
   return evidence;
  }finally{if(server)await new Promise(r=>server.close(r));await platform.dispose()}
